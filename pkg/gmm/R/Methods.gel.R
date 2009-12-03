@@ -85,9 +85,10 @@ print.summary.gel <- function(x, digits = 5, ...)
 	print.default(format(x$lambda, digits=digits),
                       print.gap = 2, quote = FALSE)
 
-	cat("\nTests of overidentifying restrictions:\n")
-	print.default(format(x$test, digits=digits),
+	cat("\n",x$stest$ntest,"\n")
+	print.default(format(x$stest$test, digits=digits),
                       print.gap = 2, quote = FALSE)
+
 	cat("\nConvergence code for the coefficients: ",x$conv_par,"\n")
 	cat("\nConvergence code for the lambdas: ",x$conv_lambda,"\n")
 	
@@ -98,9 +99,6 @@ summary.gel <- function(object, ...)
 	{
 	z <- object
 	n <- nrow(z$gt)
-	khat <- crossprod(z$gt)/n
-	gbar <- colMeans(z$gt)
-	
 	se_par <- sqrt(diag(z$vcov_par))
 	par <- z$coefficients
 	tval <- par/se_par
@@ -109,11 +107,6 @@ summary.gel <- function(object, ...)
 	lamb <- z$lambda
 	tvall <- lamb/se_parl
 
-	LR_test <- 2*z$objective*n
-	LM_test <- n*crossprod(z$lambda,crossprod(khat,z$lambda))
-	J_test <- n*crossprod(gbar,solve(khat,gbar))
-	test <- c(LR_test,LM_test,J_test)
-	vptest <- pchisq(test,(ncol(z$gt)-length(z$par)),lower.tail=FALSE)
 	ans <- list(type=z$type,call=z$call)
 	names(ans$type) <-"Type of GEL"
 	
@@ -125,8 +118,7 @@ summary.gel <- function(object, ...)
     	dimnames(ans$lambda) <- list(names(z$lambda), 
         c("Estimate", "Std. Error", "t value", "Pr(>|t|)"))
 
-	ans$test <- cbind(test,vptest)
-	dimnames(ans$test) <- list(c("LR test","LM test","J test"),c("statistics","p-value"))	
+	ans$stest=specTest(z)
 
 	if (z$type == "EL")
 		ans$badrho <- z$badrho

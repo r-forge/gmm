@@ -18,21 +18,34 @@ summary.gmm <- function(object, ...)
 	se <- sqrt(diag(z$vcov))
 	par <- z$coefficients
 	tval <- par/se
-	j <- z$objective*z$n
 	ans <- list(met=z$met,kernel=z$kernel,algo=z$algo,call=z$call)
 	names(ans$met) <- "GMM method"
 	names(ans$kernel) <- "kernel for cov matrix"
 		
 	ans$coefficients <- round(cbind(par,se, tval, 2 * pnorm(abs(tval), lower.tail = FALSE)),5)
-
     	dimnames(ans$coefficients) <- list(names(z$coefficients), 
         c("Estimate", "Std. Error", "t value", "Pr(>|t|)"))
+	ans$stest <- specTest(z)
 
-	ans$J_test <- noquote(paste("Test-J degrees of freedom is ",z$df,sep=""))
-	ans$j <- noquote(cbind(j,ifelse(z$df>0,pchisq(j,z$df,lower.tail = FALSE),"*******")))
-	dimnames(ans$j) <- list("Test E(g)=0:  ",c("J-test","Pz(>j)"))
 	class(ans) <- "summary.gmm"
 	ans
+	}
+
+print.summary.gmm <- function(x, digits = 5, ...)
+	{
+	cat("\nCall:\n")
+	cat(paste(deparse(x$call), sep="\n", collapse = "\n"), "\n\n", sep="")
+	cat("\nMethod: ", x$met,"\n\n")
+	cat("Kernel: ", x$kernel,"\n\n")
+	cat("Coefficients:\n")
+	print.default(format(x$coefficients, digits=digits),
+                      print.gap = 2, quote = FALSE)
+	cat("\n")
+	cat(x$stest$ntest,"\n")
+	print.default(format(x$stest$test, digits=digits),
+                      print.gap = 2, quote = FALSE)
+	cat("\n")
+	invisible(x)
 	}
 
 
@@ -90,22 +103,6 @@ coef.gmm <- function(object,...) object$coefficients
 vcov.gmm <- function(object,...) object$vcov
 
 
-print.summary.gmm <- function(x, digits = 5, ...)
-	{
-	cat("\nCall:\n")
-	cat(paste(deparse(x$call), sep="\n", collapse = "\n"), "\n\n", sep="")
-	cat("\nMethod: ", x$met,"\n\n")
-	cat("Kernel: ", x$kernel,"\n\n")
-	cat("Coefficients:\n")
-	print.default(format(x$coefficients, digits=digits),
-                      print.gap = 2, quote = FALSE)
-
-	cat("\nJ-test:\n")
-	print.default(format(x$j, digits=digits),
-                      print.gap = 2, quote = FALSE)
-	cat("\n")
-	invisible(x)
-	}
 
 
 
