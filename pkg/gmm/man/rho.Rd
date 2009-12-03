@@ -8,7 +8,7 @@
  It computes the objective function of GEL, its first and second analytical derivatives. It is called by \code{\link{gel}.}
 }
 \usage{
-rho(x,lamb,derive=0,type=c("EL","ET","CUE"),drop=TRUE)
+rho(x, lamb, derive = 0, type = c("EL", "ET", "CUE"), drop = TRUE)
 }
 \arguments{
 \item{x}{A \eqn{n\times q} matrix with typical element \eqn{(t,i)}, \eqn{g_i(\theta,x_t)}}

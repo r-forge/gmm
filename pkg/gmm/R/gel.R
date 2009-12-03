@@ -68,7 +68,7 @@ rho <- function(x,lamb,derive=0,type=c("EL","ET","CUE"),drop=TRUE)
 	return(rhom)
 	}
 
-get_lamb <- function(g,tet,x,type=c('EL','ET','CUE'),tol_lam=1e-12,maxiterlam=1000,tol_obj=1e-7)
+getLamb <- function(g,tet,x,type=c('EL','ET','CUE'),tol_lam=1e-12,maxiterlam=1000,tol_obj=1e-7)
 	{
 	type <- match.arg(type)	
 	gt <- g(tet,x)
@@ -136,6 +136,41 @@ get_lamb <- function(g,tet,x,type=c('EL','ET','CUE'),tol_lam=1e-12,maxiterlam=10
 	return(z)
 	}
 
+smoothG <- function (x, bw = bwAndrews2, prewhite = 1, ar.method = "ols",weights=weightsAndrews2,
+			kernel=c("Bartlett","Parzen","Truncated","Tukey-Hanning"), approx = c("AR(1)","ARMA(1,1)"),
+			tol = 1e-7) 
+	{
+	kernel <- match.arg(kernel)
+	approx <- match.arg(approx)
+		
+	n <- nrow(x)
+	if (is.function(weights))
+		{
+			w <- weights(x, bw = bw, kernel = kernel,  
+			prewhite = prewhite, ar.method = ar.method, tol = tol, 
+			verbose = FALSE, approx = approx)
+		}
+		else
+			w <- weights
+
+
+	rt <- length(w)
+	if (rt >= 2)
+		{
+		w <- c(w[rt:2],w)
+		w <- w / sum(w)
+		rt <- rt-1
+		sgt <- function(t) crossprod(x[(t-rt):(t+rt),],w)
+		x[(rt+1):(n-rt),] <- t(sapply((rt+1):(n-rt),sgt))
+		sx <- list("smoothx"=x,"kern_weights"=w)
+		return(sx)		
+		}
+	else
+		sx <- list("smoothx"=x,"kern_weights"=1)
+		return(sx)		
+	}
+
+
 gel <- function(g,x,tet0,gradv=NULL,smooth=FALSE,type=c("EL","ET","CUE","ETEL"), vcov=c("HAC","iid"), kernel = c("Bartlett", "Parzen", 
   		"Truncated", "Tukey-Hanning"), bw=bwAndrews2, approx = c("AR(1)", 
     		"ARMA(1,1)"), prewhite = 1, ar.method = "ols", tol_weights = 1e-7, tol_lam=1e-9, tol_obj = 1e-9, 
@@ -168,7 +203,7 @@ gel <- function(g,x,tet0,gradv=NULL,smooth=FALSE,type=c("EL","ET","CUE","ETEL"),
 	if (is(g,"formula"))
 		{
 		typeg=1
-		dat <- get_dat(g,x)
+		dat <- getDat(g,x)
 		x <- dat$x
 		
 		g <- function(tet,x,ny=dat$ny,nh=dat$nh,k=dat$k)
@@ -209,7 +244,7 @@ gel <- function(g,x,tet0,gradv=NULL,smooth=FALSE,type=c("EL","ET","CUE","ETEL"),
 		sg <- function(thet,x)
 			{
 			gf <- g1(thet,x)
-			gt <- smooth_g(gf, weights=w)$smoothx 
+			gt <- smoothG(gf, weights=w)$smoothx 
 			return(gt)
 			}
 		g <- sg
@@ -219,7 +254,7 @@ gel <- function(g,x,tet0,gradv=NULL,smooth=FALSE,type=c("EL","ET","CUE","ETEL"),
 		{
 		if (optlam=="iter")
 			{
-			lamblist <- get_lamb(g,tet,x,type=typel,tol_lam=tol_lam,maxiterlam=maxiterlam,tol_obj=tol_obj)
+			lamblist <- getLamb(g,tet,x,type=typel,tol_lam=tol_lam,maxiterlam=maxiterlam,tol_obj=tol_obj)
 			lamb <- lamblist$lambda
 			gt <- g(tet,x)
 			pt <- -rho(gt,lamb,type=typet,derive=1)$rhomat/nrow(gt)
@@ -276,7 +311,7 @@ gel <- function(g,x,tet0,gradv=NULL,smooth=FALSE,type=c("EL","ET","CUE","ETEL"),
 
 	if (optlam=="iter")
 		{
-		rlamb <- get_lamb(g,res$par,x,type=typel,tol_lam=tol_lam,maxiterlam=maxiterlam,tol_obj=tol_obj)
+		rlamb <- getLamb(g,res$par,x,type=typel,tol_lam=tol_lam,maxiterlam=maxiterlam,tol_obj=tol_obj)
 		z <- list(coefficients=res$par,lambda=rlamb$lam,conv_lambda=rlamb$conv_mes,conv_par=res$convergence)
 		z$foc_lambda <- rlamb$obj
 		}

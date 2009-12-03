@@ -25,7 +25,7 @@ typeg=0
 	if (is(g,"formula"))
 		{
 		typeg=1
-		dat <- get_dat(g,x)
+		dat <- getDat(g,x)
 		x <- dat$x
 		g <- function(tet,x,ny=dat$ny,nh=dat$nh,k=dat$k)
 			{
@@ -198,7 +198,7 @@ else
 		}
 	if (type=="cue")
 		{
-		obj_cue <- function(thet)
+		objCue <- function(thet)
 			{
 			gt <- g(thet,x)
 			gbar <- as.vector(colMeans(gt))
@@ -214,15 +214,15 @@ else
 			if (is.null(t0))
 				t0 <- tetlin(x,diag(rep(1,q)))$par
 			if (optfct == "optim")
-				res2 <- optim(t0,obj_cue, ...)
+				res2 <- optim(t0,objCue, ...)
 			if (optfct == "nlminb")
 				{
-				res2 <- nlminb(t0,obj_cue, ...)
+				res2 <- nlminb(t0,objCue, ...)
 				res2$value <- res2$objective
 				}
 			if (optfct == "optimize")
 				{
-				res2 <- optimize(obj_cue,t0, ...)
+				res2 <- optimize(objCue,t0, ...)
 				res2$par <- res2$minimum
 				res2$value <- res2$objective
 				}
@@ -230,15 +230,15 @@ else
 		else
 			{
 			if (optfct == "optim")
-				res2 <- optim(t0,obj_cue, ...)
+				res2 <- optim(t0,objCue, ...)
 			if (optfct == "nlminb")
 				{
-				res2 <- nlminb(t0,obj_cue, ...)
+				res2 <- nlminb(t0,objCue, ...)
 				res2$value <- res2$objective
 				}
 			if (optfct == "optimize")
 				{
-				res2 <- optimize(obj_cue,t0, ...)
+				res2 <- optimize(objCue,t0, ...)
 				res2$par <- res2$minimum
 				res2$value <- res2$objective
 				}	
@@ -379,10 +379,44 @@ class(z) <- "gmm"
 z
 }
 
-formula.gmm <- function(x, ...)
+getDat <- function (formula,h) 
 {
-    if(is.null(x$terms))
-	stop("The gmm object was not created by a formula")
-    else
-	formula(x$terms)
+	cl <- match.call()
+	mf <- match.call(expand.dots = FALSE)
+	m <- match(c("formula", "data"), names(mf), 0L)
+	mf <- mf[c(1L, m)]
+	mf$drop.unused.levels <- TRUE
+	mf[[1L]] <- as.name("model.frame")
+	mf <- eval(mf, parent.frame())
+	mt <- attr(mf, "terms")
+	if (!is.matrix(h))
+		h <- cbind(rep(1,length(h)),h)
+	else	
+		h <- cbind(rep(1,nrow(h)),h)
+	colnames(h) <- c("h.(Intercept)",paste("h",1:(ncol(h)-1),sep=""))
+	y <- as.matrix(model.response(mf, "numeric"))
+	xt <- as.matrix(model.matrix(mt, mf, NULL))
+	if (attr(mt,"intercept")==0)
+		{
+		h <- as.matrix(h[,2:ncol(h)])
+		}
+	ny <- ncol(y)
+	k <- ncol(xt)
+	nh <- ncol(h)
+	if (nrow(y) != nrow(xt) | nrow(xt) != nrow(h) | nrow(y)!=nrow(h))
+		stop("The number of observations of X, Y and H must be the same")
+	if (nh<k)
+		stop("The number of moment conditions must be at least equal to the number of coefficients to estimate")
+	if (is.null(colnames(y)))
+		{
+		if (ny>1) 
+			colnames(y) <- paste("y",1:ncol(y),sep="")
+		if (ny == 1) 
+			colnames(y) <- "y"
+		}
+	x <- cbind(y,xt,h)
+	colnames(x)<-c(colnames(y),colnames(xt),colnames(h))
+	return(list(x=x,nh=nh,ny=ny,k=k,mf=mf,mt=mt,cl=cl))
 }
+
+

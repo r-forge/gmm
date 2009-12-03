@@ -1,6 +1,6 @@
 Import(stats)
 
-export(HAC,gmm,weightsAndrews2,bwAndrews2,summary.gmm,rho,smooth_g,get_dat,bwNeweyWest2,summary.gel,get_lamb,gel,
+export(HAC,gmm,weightsAndrews2,bwAndrews2,summary.gmm,rho,smoothG,getDat,bwNeweyWest2,summary.gel,getLamb,gel,
 	print.gmm,coef.gmm,vcov.gmm,print.summary.gmm, confint.gel, print.gel, print.summary.gel, vcov.gel, coef.gel, fitted.gmm, 
 	residuals.gmm, fitted.gel, residuals.gel, plot.gmm, plot.gel,formula.gmm, formula.gel, charStable)
  
