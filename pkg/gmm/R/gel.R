@@ -344,22 +344,8 @@ gel <- function(g,x,tet0,gradv=NULL,smooth=FALSE,type=c("EL","ET","CUE","ETEL"),
 		names(z$badrho) <- "Number_of_bad_rho"
 		}
 
-	Gf <- function(thet)
-		{
-		myenv <- new.env()
-		assign('x',x,envir=myenv)
-		assign('thet',thet,envir=myenv)
-		barg <- function(x,thet)
-			{
-			gt <- g(thet,x)
-			gbar <- as.vector(colMeans(gt))
-			return(gbar)
-			}
-		G <- attr(numericDeriv(quote(barg(x,thet)),"thet",myenv),"gradient")
-		return(G)
-		}
 	if (!is.function(gradv)) 
-		G <- Gf(z$coefficients)
+		G <- .Gf(z$coefficients, x, g)
 	else
 		G <- gradv(z$coefficients,x)
 	if (vcov == "iid")

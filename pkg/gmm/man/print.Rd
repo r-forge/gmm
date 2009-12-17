@@ -12,7 +12,7 @@
 \arguments{
  \item{x}{An object of class \code{gmm} or \code{gel} returned by the function \code{\link{gmm}} or \code{\link{gel}}}
 \item{digits}{The number of digits to be printed}
-\item{...}{Other arguments when print is applied to an other classe object}
+\item{...}{Other arguments when print is applied to an other class object}
 }
 
 \value{

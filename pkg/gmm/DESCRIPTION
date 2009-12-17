@@ -1,6 +1,6 @@
 Package: gmm
-Version: 1.1-2
-Date: 2009-12-01
+Version: 1.1-3
+Date: 2009-12-15
 Title: Generalized Method of Moments and Generalized Empirical Likelihood
 Author: Pierre Chausse <pierre.chausse@uqam.ca>
 Maintainer: Pierre Chausse <pierre.chausse@uqam.ca>

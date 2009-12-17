@@ -13,7 +13,7 @@ wmatrix = c("optimal","ident"), vcov = c("HAC","iid"),
 kernel = c("Quadratic Spectral","Truncated", "Bartlett", 
 "Parzen", "Tukey-Hanning"), crit = 10e-7, bw = bwAndrews2, 
 prewhite = FALSE, ar.method = "ols", approx = "AR(1)", tol = 1e-7, 
-itermax = 100, optfct = c("optim","optimize","nlminb"), model=TRUE, X=FALSE, Y=FALSE, ...)
+itermax = 100, optfct = c("optim","optimize","nlminb"), model=TRUE, X=FALSE, Y=FALSE, TypeGmm = "baseGmm", ...)
 }
 \arguments{
 \item{g}{A function of the form \eqn{g(\theta,x)} and which returns a \eqn{n \times q} matrix with typical element \eqn{g_i(\theta,x_t)} for \eqn{i=1,...q} and \eqn{t=1,...,n}. This matrix is then used to build the q sample moment conditions. It can also be a formula if the model is linear (see details below).}
@@ -49,6 +49,8 @@ itermax = 100, optfct = c("optim","optimize","nlminb"), model=TRUE, X=FALSE, Y=F
 \item{optfct}{Only when the dimension of \eqn{\theta} is 1, you can choose between the algorithm \code{\link{optim}} or \code{\link{optimize}}. In that case, the former is unreliable. If \code{\link{optimize}} is chosen, "t0" must be \eqn{1\times 2} which represents the interval in which the algorithm seeks the solution. It is also possible to choose the \code{\link{nlminb}} algorithm. In that case, borns for the coefficients can be set by the options \code{upper=} and \code{lower=}.}
 
 \item{model, X, Y}{logicals.  If \code{TRUE} the corresponding components of the fit (the model frame, the model matrix, the response) are returned if g is a formula.}
+
+\item{TypeGmm}{The name of the class object created by the method \code{getModel}. It allows developers to extand the package and create other GMM methods.}
 
 \item{...}{More options to give to \code{\link{optim}}.}
 }
