@@ -7,9 +7,9 @@ specTest.gmm <- function(x, ...)
 	{
 	j <- x$objective*x$n
 	J_test <- noquote(paste("J-Test: degrees of freedom is ",x$df,sep=""))
-	j <- noquote(cbind(j,ifelse(x$df>0,pchisq(j,x$df,lower.tail = FALSE),"*******")))
-	dimnames(j) <- list("Test E(g)=0:  ",c("J-test","P-value"))
-	ans<-list(ntest=J_test,test=j)
+	j <- noquote(cbind(j, ifelse(x$df>0,pchisq(j,x$df, lower.tail = FALSE),"*******")))
+	dimnames(j) <- list("Test E(g)=0:  ", c("J-test", "P-value"))
+	ans<-list(ntest=J_test, test = j)
 	class(ans) <- "specTest"
 	ans
 	}
@@ -29,15 +29,15 @@ specTest.gel <- function(x, ...)
 	khat <- crossprod(x$gt)/n
 	gbar <- colMeans(x$gt)
 	LR_test <- 2*x$objective*n
-	LM_test <- n*crossprod(x$lambda,crossprod(khat,x$lambda))
-	J_test <- n*crossprod(gbar,solve(khat,gbar))
-	test <- c(LR_test,LM_test,J_test)
-	df <- (ncol(x$gt)-length(x$par))
-	ntest <- noquote(paste("Over-identifying restrictions tests: degrees of freedom is ",df,sep=""))
-	vptest <- pchisq(test,df,lower.tail=FALSE)
+	LM_test <- n*crossprod(x$lambda, crossprod(khat, x$lambda))
+	J_test <- n*crossprod(gbar, solve(khat, gbar))
+	test <- c(LR_test, LM_test, J_test)
+	df <- (ncol(x$gt) - length(x$par))
+	ntest <- noquote(paste("Over-identifying restrictions tests: degrees of freedom is ", df, sep = ""))
+	vptest <- pchisq(test,df,lower.tail = FALSE)
 	test <- cbind(test,vptest)
-	dimnames(test) <- list(c("LR test","LM test","J test"),c("statistics","p-value"))	
-	ans <- list(test=test,ntest=ntest)
+	dimnames(test) <- list(c("LR test", "LM test", "J test"), c("statistics", "p-value"))	
+	ans <- list(test = test, ntest = ntest)
 	class(ans) <- "specTest"
 	ans
 	}

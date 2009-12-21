@@ -11,7 +11,7 @@
 #  A copy of the GNU General Public License is available at
 #  http://www.r-project.org/Licenses/
 
-confint.gel <- function(object, parm, level=0.95, lambda=FALSE, ...)
+confint.gel <- function(object, parm, level = 0.95, lambda = FALSE, ...)
 		{
 		z <- object	
 		n <- nrow(z$gt)
@@ -23,26 +23,26 @@ confint.gel <- function(object, parm, level=0.95, lambda=FALSE, ...)
 		se_parl <- sqrt(diag(z$vcov_lambda))
 		lamb <- z$lambda
 
-		zs <- qnorm((1-level)/2,lower.tail=FALSE)
+		zs <- qnorm((1 - level)/2, lower.tail=FALSE)
 		ch <- zs*se_par
 
 		if(!lambda)
 			{
-			ans <- cbind(par-ch,par+ch)
-			dimnames(ans) <- list(names(par),c((1-level)/2,0.5+level/2))
+			ans <- cbind(par-ch, par+ch)
+			dimnames(ans) <- list(names(par), c((1 - level)/2, 0.5+level/2))
 			}
 		if(lambda)
 			{
 			chl <- zs*se_parl
-			ans <- cbind(lamb-chl,lamb+chl)
-			dimnames(ans) <- list(names(lamb),c((1-level)/2,0.5+level/2))
+			ans <- cbind(lamb - chl, lamb + chl)
+			dimnames(ans) <- list(names(lamb), c((1 - level)/2, 0.5 + level/2))
 			}		
 		if(!missing(parm))
 			ans <- ans[parm,]
 		ans
 		}
 
-coef.gel <- function(object, lambda=FALSE, ...) 
+coef.gel <- function(object, lambda = FALSE, ...) 
 	{
 	if(!lambda)
 		object$coefficients
@@ -50,7 +50,7 @@ coef.gel <- function(object, lambda=FALSE, ...)
 		object$lambda
 	}
 
-vcov.gel <- function(object, lambda=FALSE, ...) 
+vcov.gel <- function(object, lambda = FALSE, ...) 
 	{
 	if(!lambda)
 		object$vcov_par
@@ -58,15 +58,15 @@ vcov.gel <- function(object, lambda=FALSE, ...)
 		object$vcov_lambda
 	}
 
-print.gel <- function(x, digits=5, ...)
+print.gel <- function(x, digits = 5, ...)
 	{
-	cat("Type de GEL: ", x$type,"\n\n")
+	cat("Type de GEL: ", x$type, "\n\n")
 	cat("Coefficients:\n")
-	print.default(format(coef(x), digits=digits),
+	print.default(format(coef(x), digits = digits),
                       print.gap = 2, quote = FALSE)
 	cat("\n")
 	cat("Lambdas:\n")
-	print.default(format(coef(x,lambda=TRUE), digits=digits),
+	print.default(format(coef(x, lambda = TRUE), digits = digits),
                       print.gap = 2, quote = FALSE)
 	invisible(x)
 	}
@@ -74,23 +74,23 @@ print.gel <- function(x, digits=5, ...)
 print.summary.gel <- function(x, digits = 5, ...)
 	{
 	cat("\nCall:\n")
-	cat(paste(deparse(x$call), sep="\n", collapse = "\n"), "\n\n", sep="")
-	cat("\nType of GEL: ", x$type,"\n\n")
-	cat("Kernel: ", x$kernel,"\n\n")
+	cat(paste(deparse(x$call), sep = "\n", collapse = "\n"), "\n\n", sep = "")
+	cat("\nType of GEL: ", x$type, "\n\n")
+	cat("Kernel: ", x$kernel, "\n\n")
 	cat("Coefficients:\n")
-	print.default(format(x$coefficients, digits=digits),
+	print.default(format(x$coefficients, digits = digits),
                       print.gap = 2, quote = FALSE)
 
 	cat("\nLambdas:\n")
 	print.default(format(x$lambda, digits=digits),
                       print.gap = 2, quote = FALSE)
 
-	cat("\n",x$stest$ntest,"\n")
+	cat("\n", x$stest$ntest, "\n")
 	print.default(format(x$stest$test, digits=digits),
                       print.gap = 2, quote = FALSE)
 
-	cat("\nConvergence code for the coefficients: ",x$conv_par,"\n")
-	cat("\nConvergence code for the lambdas: ",x$conv_lambda,"\n")
+	cat("\nConvergence code for the coefficients: ", x$conv_par, "\n")
+	cat("\nConvergence code for the lambdas: ", x$conv_lambda, "\n")
 	
 	invisible(x)
 	}
@@ -107,11 +107,11 @@ summary.gel <- function(object, ...)
 	lamb <- z$lambda
 	tvall <- lamb/se_parl
 
-	ans <- list(type=z$type,call=z$call)
+	ans <- list(type = z$type, call = z$call)
 	names(ans$type) <-"Type of GEL"
 	
-	ans$coefficients <- round(cbind(par,se_par, tval, 2 * pnorm(abs(tval), lower.tail = FALSE)),5)
-	ans$lambda <- round(cbind(lamb,se_parl, tvall, 2 * pnorm(abs(tvall), lower.tail = FALSE)),5)
+	ans$coefficients <- round(cbind(par, se_par, tval, 2 * pnorm(abs(tval), lower.tail = FALSE)), 5)
+	ans$lambda <- round(cbind(lamb,se_parl, tvall, 2 * pnorm(abs(tvall), lower.tail = FALSE)), 5)
 
     	dimnames(ans$coefficients) <- list(names(z$coefficients), 
         c("Estimate", "Std. Error", "t value", "Pr(>|t|)"))
@@ -133,19 +133,19 @@ summary.gel <- function(object, ...)
 	names(ans$conv_par) <- "Convergence_code_theta"
 	names(ans$conv_pt) <- "Sum_of_pt"
 	names(ans$conv_lambda) <- "Convergence_code_for_lambda"
-	dimnames(ans$conv_moment) <- list(names(z$gt),"Sample_moment_with_pt")
+	dimnames(ans$conv_moment) <- list(names(z$gt), "Sample_moment_with_pt")
 	class(ans) <- "summary.gel"
 	ans	
 }
 
-residuals.gel <- function(object,...) 
+residuals.gel <- function(object, ...) 
 	{
 	if(is.null(object$model))
 		stop("The residuals method is valid only for g=formula")
 	object$residuals
 	}
 
-fitted.gel <- function(object,...)
+fitted.gel <- function(object, ...)
 	{
 	if(is.null(object$model))
 		stop("The residuals method is valid only for g=formula")

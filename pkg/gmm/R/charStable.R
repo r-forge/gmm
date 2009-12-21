@@ -12,7 +12,7 @@
 #  http://www.r-project.org/Licenses/
 
 
-charStable <- function(theta,tau,pm=0)
+charStable <- function(theta, tau, pm = 0)
 	{
 	# pm is the type parametrization as described by Nolan(2009)
 	# It takes the value 0 or 1 
@@ -30,29 +30,29 @@ charStable <- function(theta,tau,pm=0)
 			{
 			if(g == 0)
 				{
-				the_car <- exp(complex(ima=d*tau)) 
+				the_car <- exp(complex(ima = d*tau)) 
 				}
 			else
 				{
-				re_p <- -g*abs(tau)
-				im_p <- d*tau
-				im_p[tau!=0] <- im_p[tau!=0] + re_p[tau!=0]*2/pi*b*sign(tau[tau!=0])*log(g*abs(tau[tau!=0]))
-				the_car <- exp(complex(re=re_p,ima=im_p))
+				re_p <- -g * abs(tau)
+				im_p <- d * tau
+				im_p[tau!=0] <- im_p[tau != 0] + re_p[tau != 0]*2/pi*b*sign(tau[tau != 0])*log(g*abs(tau[tau != 0]))
+				the_car <- exp(complex(re = re_p, ima = im_p))
 				}
 			}
 		else
 			{
 			if(g == 0)
 				{
-				the_car <- exp(complex(ima=d*tau)) 
+				the_car <- exp(complex(ima = d*tau)) 
 				}
 			else
 				{
 				phi <- tan(pi*a/2)
 				re_p <- -g^a*abs(tau)^a
 				im_p <- d*tau*1i
-				im_p[tau!=0] <- im_p[tau!=0] + re_p*( b*phi*sign(tau[tau!=0])*(abs(g*tau[tau!=0])^(1-a)-1) )
-				the_car <- exp(complex(re=re_p,ima=im_p))
+				im_p[tau != 0] <- im_p[tau != 0] + re_p*( b*phi*sign(tau[tau != 0])*(abs(g*tau[tau != 0])^(1-a) - 1) )
+				the_car <- exp(complex(re = re_p, ima = im_p))
 				}
 			}
 		}
@@ -63,15 +63,15 @@ charStable <- function(theta,tau,pm=0)
 			{
 			re_p <- -g*abs(tau)
 			im_p <- d*tau
-			im_p[tau!=0] <- im_p[tau!=0]+re_p*(b*2/pi*sign(tau[tau!=0])*log(abs(tau[tau!=0])))			
-			the_car <- exp(complex(re=re_p,ima=im_p))
+			im_p[tau!=0] <- im_p[tau != 0]+re_p*(b*2/pi*sign(tau[tau != 0])*log(abs(tau[tau!=0])))			
+			the_car <- exp(complex(re = re_p, ima = im_p))
 			}
 		else
 			{
 			phi <- tan(pi*a/2)
 			re_p <- -g^a*abs(tau)^a
-			im_p <- re_p*(-phi*b*sign(tau))+d*tau
-			the_car <- exp(complex(re=re_p,ima=im_p))
+			im_p <- re_p*(-phi*b*sign(tau)) + d*tau
+			the_car <- exp(complex(re = re_p, ima = im_p))
 			}
 		}
 	return(the_car)
