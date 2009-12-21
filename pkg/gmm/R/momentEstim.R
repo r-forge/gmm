@@ -80,6 +80,7 @@ momentEstim.baseGmm.twoStep <- function(object, ...)
      z = list(coefficients = res2$par, objective = res2$value, k=k, k2=k2, n=n, q=q, df=df)	
     }
 
+  names(z$coefficients) <- paste("Theta[" ,1:k, "]", sep = "")
   z$x <- P$x
   z$gt <- P$g(z$coefficients, P$x)
   z$gradv <- P$gradv
@@ -310,6 +311,7 @@ momentEstim.baseGmm.iterative <- function(object, ...)
     z = list(coefficients = res$par, objective = res$value,k=k, k2=k2, n=n, q=q, df=df)	
     }
 
+  names(z$coefficients) <- paste("Theta[" ,1:k, "]", sep = "")
   z$x <- P$x
   z$gt <- P$g(z$coefficients, P$x)
   z$gradv <- P$gradv
@@ -450,6 +452,7 @@ momentEstim.baseGmm.cue <- function(object, ...)
     z = list(coefficients=res2$par,objective=res2$value, k=k, k2=k2, n=n, q=q, df=df)	
     }
 
+  names(z$coefficients) <- paste("Theta[" ,1:k, "]", sep = "")
   z$x <- P$x
   z$gt <- P$g(z$coefficients, P$x)
   z$gradv <- P$gradv
