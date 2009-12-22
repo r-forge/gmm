@@ -1,5 +1,6 @@
 \name{getModel}
 \alias{getModel.baseGmm}
+\alias{getModel.baseGel}
 \title{Method for setting the properties of a model}
 \description{
 It collects what is needed by the method \code{momentEstim} (see details). 

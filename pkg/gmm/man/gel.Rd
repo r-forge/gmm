@@ -12,7 +12,7 @@ gel(g, x, tet0, gradv = NULL, smooth = FALSE, type = c("EL","ET","CUE","ETEL"), 
     kernel = c("Bartlett", "Parzen", "Truncated", "Tukey-Hanning"), bw = bwAndrews2, 
     approx = c("AR(1)", "ARMA(1,1)"), prewhite = 1, ar.method = "ols", tol_weights = 1e-7, 
     tol_lam = 1e-9, tol_obj = 1e-9, tol_mom = 1e-9, maxiterlam = 1000, constraint = FALSE,
-    optfct = c("optim", "optimize", "nlminb"), optlam = c("iter","numeric"), model = TRUE, X = FALSE, Y = FALSE,...)
+    optfct = c("optim", "optimize", "nlminb"), optlam = c("iter","numeric"), model = TRUE, X = FALSE, Y = FALSE, TypeGel = "baseGel",...)
 }
 \arguments{
 \item{g}{A function of the form \eqn{g(\theta,x)} and which returns a \eqn{n \times q} matrix with typical element \eqn{g_i(\theta,x_t)} for \eqn{i=1,...q} and \eqn{t=1,...,n}. This matrix is then used to build the q sample moment conditions. It can also be a formula if the model is linear (see details below).  }
@@ -56,6 +56,8 @@ gel(g, x, tet0, gradv = NULL, smooth = FALSE, type = c("EL","ET","CUE","ETEL"), 
 \item{optlam}{The default is "iter" which solves for \eqn{\lambda} using the Newton iterative method \code{\link{getLamb}}. If set to "numeric", the algorithm \code{\link{optim}} is used to compute \eqn{\lambda} instead.}
 
 \item{model, X, Y}{logicals.  If \code{TRUE} the corresponding components of the fit (the model frame, the model matrix, the response) are returned if g is a formula.}
+
+\item{TypeGel}{The name of the class object created by the method \code{getModel}. It allows developers to extand the package and create other GEL methods.}
 
 \item{...}{More options to give to \code{\link{optim}}, \code{\link{optimize}} or \code{\link{constrOptim}}.}
 

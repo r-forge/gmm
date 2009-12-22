@@ -5,6 +5,8 @@
 \alias{momentEstim.baseGmm.iterative}
 \alias{momentEstim.baseGmm.cue.formula}
 \alias{momentEstim.baseGmm.cue}
+\alias{momentEstim.baseGel.mod}
+\alias{momentEstim.baseGel.modFormula}
 \title{Method for estimating models based on moment conditions}
 \description{
 It estimates a model which is caracterized by the method \code{getModel} (see details). 
