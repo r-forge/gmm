@@ -667,10 +667,10 @@ momentEstim.baseGel.mod <- function(object, ...)
   z$bwVal <- P$bwVal
   names(z$bwVal) <- "Bandwidth"
  
-  if(is.null(names(P$t0)))
+  if(is.null(names(P$tet0)))
     names(z$coefficients) <- paste("Theta[" ,1:P$k, "]", sep = "")
   else
-    names(z$coefficients) <- names(P$t0)
+    names(z$coefficients) <- names(P$tet0)
 
   colnames(z$gt) <- paste("gt[",1:ncol(z$gt),"]", sep = "")
   names(z$lambda) <- paste("Lambda[",1:ncol(z$gt),"]", sep = "")
