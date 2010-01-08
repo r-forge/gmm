@@ -746,7 +746,7 @@ The package also offers an interface which is comparable to the least squares me
 
 \section{Computational Details}
 
-The package \pkg{gmm} is written entirely in \proglang{R} and S3-classes with methods are used. It can be found on the comprehensive \proglang{R} archive network (CRAN,\url{http://CRAN.R-project.org/}). It is also hosted on R-Forge (\url{http://r-forge.r-project.org/projects/gmm}). It is shipped with a NAMESPACE. The version used to produce this paper is 1.1-2. There are no dependencies but the packages \pkg{car} (\cite{car}), \pkg{mvtnorm} (\cite{mvtnorm}), \pkg{fBasics} (\cite{fBasics}), \pkg{MASS} (\cite{MASS}), \pkg{timeDate} (\cite{timeDate}) and \pkg{timeSeries} (\cite{timeSeries}) are suggested in order to reproduce the examples.
+The package \pkg{gmm} is written entirely in \proglang{R} and S3-classes with methods are used. It can be found on the comprehensive \proglang{R} archive network (CRAN,\url{http://CRAN.R-project.org/}). It is also hosted on R-Forge (\url{http://r-forge.r-project.org/projects/gmm}). It is shipped with a NAMESPACE. The version used to produce this paper is 1.1-3. There are no dependencies but the packages \pkg{car} (\cite{car}), \pkg{mvtnorm} (\cite{mvtnorm}), \pkg{fBasics} (\cite{fBasics}), \pkg{MASS} (\cite{MASS}), \pkg{timeDate} (\cite{timeDate}) and \pkg{timeSeries} (\cite{timeSeries}) are suggested in order to reproduce the examples.
 
 \bibliography{empir}
 \end{document} 

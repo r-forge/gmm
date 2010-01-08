@@ -454,15 +454,14 @@ momentEstim.baseGmm.cue <- function(object, ...)
 
   names(z$coefficients) <- paste("Theta[" ,1:k, "]", sep = "")
   z$x <- P$x
-  z$gt <- P$g(z$coefficients, P$x)
   z$gradv <- P$gradv
+  z$gt <- P$g(z$coefficients, P$x)
   z$iid <- P$iid
   z$g <- P$g
  
   class(z) <- paste(P$TypeGmm, ".res", sep = "")	
   return(z)
   }
-
 
 momentEstim.baseGel.modFormula <- function(object, ...)
   {
@@ -493,7 +492,7 @@ momentEstim.baseGel.modFormula <- function(object, ...)
 
   if (P$optlam == "iter")
     {
-    rlamb <- getLamb(P$g, res$par, x, type = P$typel, tol_lam = P$tol_lam, maxiterlam = P$maxiterlam, tol_obj = P$tol_obj)
+    rlamb <- getLamb(P$g, res$par, x, type = P$typel, tol_lam = P$tol_lam, maxiterlam = P$maxiterlam, tol_obj = P$tol_obj, k = P$k1/P$k2)
     z <- list(coefficients = res$par, lambda = rlamb$lam, conv_lambda = rlamb$conv_mes, conv_par = res$convergence)
     z$foc_lambda <- rlamb$obj
     }
@@ -503,19 +502,19 @@ momentEstim.baseGel.modFormula <- function(object, ...)
     gt <- P$g(res$par, x)
     rhofct <- function(lamb)
       {
-      rhof <- -sum(rho(gt, lamb, type = P$typel)$rhomat)
+      rhof <- -sum(rho(gt, lamb, type = P$typel, k = P$k1/P$k2)$rhomat)
       return(rhof)
       }
     rlamb <- optim(rep(0, ncol(gt)), rhofct, control = list(maxit = 1000))
     z <- list(coefficients = res$par, conv_par = res$convergence, lambda = rlamb$par)
     z$conv_lambda = paste("Lambda by optim. Conv. code = ", rlamb$convergence, sep = "")
-    rho1 <- as.numeric(rho(gt, z$lambda, derive = 1, type = P$typel)$rhomat)
+    rho1 <- as.numeric(rho(gt, z$lambda, derive = 1, type = P$typel, k = P$k1/P$k2)$rhomat)
     z$foc_lambda <- crossprod(colMeans(rho1*gt))
     }
   z$type <- P$type
   z$gt <- P$g(z$coefficients, x)
-  rhom <- rho(z$gt, z$lambda, type = P$typet)
-  z$pt <- -rho(z$gt, z$lambda, type = P$typet, derive = 1)$rhomat/n
+  rhom <- rho(z$gt, z$lambda, type = P$typet, k = P$k1/P$k2)
+  z$pt <- -rho(z$gt, z$lambda, type = P$typet, derive = 1, k = P$k1/P$k2)$rhomat/n
   z$conv_moment <- colSums(as.numeric(z$pt)*z$gt)
   z$conv_pt <- sum(as.numeric(z$pt))
   z$objective <- sum(as.numeric(rhom$rhomat) - rho(1, 0, type = P$typet)$rhomat)/n
@@ -543,22 +542,19 @@ momentEstim.baseGel.modFormula <- function(object, ...)
     names(z$badrho) <- "Number_of_bad_rho"
     }
 
-  if (!is.function(P$gradv)) 
-    G <- .Gf(z$coefficients, x, P$g)
-  else
-    G <- P$gradv(z$coefficients, x)
+  G <- P$gradv(z$coefficients, x)
 
-  if (P$vcov == "iid")
-    khat <- crossprod(z$gt)
-  else
-    khat <- HAC(P$g(z$coefficients, x), kernel = P$kernel, bw = P$bw, prewhite = P$prewhite, 
-               ar.method = P$ar.method, approx = P$approx, tol = P$tol_weights)
+  khat <- crossprod(z$gt)/(n*P$k2)*P$bwVal
+  G <- G/P$k1 
 
   kg <- solve(khat, G)
   z$vcov_par <- solve(crossprod(G, kg))/n
-  z$vcov_lambda <- ((solve(khat) - kg%*%z$vcov_par%*%t(kg)))/n
-	
-  if (P$smooth) z$weights <- P$w
+  p_temp <- solve(khat,G)
+  z$vcov_lambda <- solve(khat, ( diag(ncol(khat)) - G %*% (z$vcov_par*n) %*% t(p_temp) ))/n*P$bwVal^2
+
+  z$weights <- P$w
+  z$bwVal <- P$bwVal
+  names(z$bwVal) <- "Bandwidth"
 
   dimnames(z$vcov_par) <- list(names(z$coefficients), names(z$coefficients))
   dimnames(z$vcov_lambda) <- list(names(z$lambda), names(z$lambda))
@@ -575,6 +571,9 @@ momentEstim.baseGel.modFormula <- function(object, ...)
   if(P$X) z$x <- x
   if(P$Y) z$y <- y
   z$call <- P$call
+  z$k1 <- P$k1
+  z$k2 <- P$k2
+  z$khat <- khat
 
   class(z) <- paste(P$TypeGel, ".res", sep = "")
   return(z)
@@ -606,7 +605,7 @@ momentEstim.baseGel.mod <- function(object, ...)
 
   if (P$optlam == "iter")
     {
-    rlamb <- getLamb(P$g, res$par, x, type = P$typel, tol_lam = P$tol_lam, maxiterlam = P$maxiterlam, tol_obj = P$tol_obj)
+    rlamb <- getLamb(P$g, res$par, x, type = P$typel, tol_lam = P$tol_lam, maxiterlam = P$maxiterlam, tol_obj = P$tol_obj, k = P$k1/P$k2)
     z <- list(coefficients = res$par, lambda = rlamb$lam, conv_lambda = rlamb$conv_mes, conv_par = res$convergence)
     z$foc_lambda <- rlamb$obj
     }
@@ -616,22 +615,22 @@ momentEstim.baseGel.mod <- function(object, ...)
     gt <- P$g(res$par, x)
     rhofct <- function(lamb)
       {
-      rhof <- -sum(rho(gt, lamb, type = P$typel)$rhomat)
+      rhof <- -sum(rho(gt, lamb, type = P$typel, k = P$k1/P$k2)$rhomat)
       return(rhof)
       }
     rlamb <- optim(rep(0, ncol(gt)), rhofct, control = list(maxit = 1000))
     z <- list(coefficients = res$par, conv_par = res$convergence, lambda = rlamb$par)
     z$conv_lambda = paste("Lambda by optim. Conv. code = ", rlamb$convergence, sep = "")
-    rho1 <- as.numeric(rho(gt, z$lambda, derive = 1, type = P$typel)$rhomat)
+    rho1 <- as.numeric(rho(gt, z$lambda, derive = 1, type = P$typel, k = P$k1/P$k2)$rhomat)
     z$foc_lambda <- crossprod(colMeans(rho1*gt))
     }
   z$type <- P$type
   z$gt <- P$g(z$coefficients, x)
-  rhom <- rho(z$gt, z$lambda, type = P$typet)
-  z$pt <- -rho(z$gt, z$lambda, type = P$typet, derive = 1)$rhomat/n
+  rhom <- rho(z$gt, z$lambda, type = P$typet, k = P$k1/P$k2)
+  z$pt <- -rho(z$gt, z$lambda, type = P$typet, derive = 1, k = P$k1/P$k2)$rhomat/n
   z$conv_moment <- colSums(as.numeric(z$pt)*z$gt)
   z$conv_pt <- sum(as.numeric(z$pt))
-  z$objective <- sum(as.numeric(rhom$rhomat) - rho(1, 0, type = P$typet)$rhomat)/n
+  z$objective <- sum(as.numeric(rhom$rhomat) - rho(1, 0, type = P$typet, k = P$k1/P$k2)$rhomat)/n
 
   if (P$type == "EL")	 
     {
@@ -639,22 +638,23 @@ momentEstim.baseGel.mod <- function(object, ...)
     names(z$badrho) <- "Number_of_bad_rho"
     }
 
-  if (!is.function(P$gradv)) 
-    G <- .Gf(z$coefficients, x, P$g)
-  else
+  if(P$gradvf)
     G <- P$gradv(z$coefficients, x)
-  if (P$vcov == "iid")
-    khat <- crossprod(z$gt)
   else
-    khat <- HAC(P$g(z$coefficients, x), kernel = P$kernel, bw = P$bw, prewhite = P$prewhite, 
-            ar.method = P$ar.method, approx = P$approx, tol = P$tol_weights)
+    G <- P$gradv(z$coefficients, x, g = P$g)
+  
+  khat <- crossprod(z$gt)/(n*P$k2)*P$bwVal
+  G <- G/P$k1 
 
   kg <- solve(khat, G)
   z$vcov_par <- solve(crossprod(G, kg))/n
-  z$vcov_lambda <- ((solve(khat) - kg%*%z$vcov_par%*%t(kg)))/n
+  p_temp <- solve(khat,G)
+  z$vcov_lambda <- solve(khat, ( diag(ncol(khat)) - G %*% (z$vcov_par*n) %*% t(p_temp) ))/n*P$bwVal^2
 	
-  if (P$smooth) z$weights <- P$w
-
+  z$weights <- P$w
+  z$bwVal <- P$bwVal
+  names(z$bwVal) <- "Bandwidth"
+ 
   names(z$coefficients) <- paste("Theta[",1:P$k,"]", sep = "")
   colnames(z$gt) <- paste("gt[",1:ncol(z$gt),"]", sep = "")
   names(z$lambda) <- paste("Lambda[",1:ncol(z$gt),"]", sep = "")
@@ -662,6 +662,9 @@ momentEstim.baseGel.mod <- function(object, ...)
   dimnames(z$vcov_lambda) <- list(names(z$lambda), names(z$lambda))
   if(P$X) z$x <- x
   z$call <- P$call
+  z$k1 <- P$k1
+  z$k2 <- P$k2
+  z$khat <- khat
 
   class(z) <- paste(P$TypeGel, ".res", sep = "")
   return(z)

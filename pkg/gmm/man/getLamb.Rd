@@ -8,7 +8,7 @@
  It computes the vector of Lagrange multipliers, which maximizes the GEL objective function, using an iterative Newton method.
 }
 \usage{
-getLamb(g, tet, x, type = c('EL','ET','CUE'), tol_lam = 1e-12, maxiterlam = 1000, tol_obj = 1e-7)
+getLamb(g, tet, x, type = c('EL','ET','CUE'), tol_lam = 1e-12, maxiterlam = 1000, tol_obj = 1e-7, k = 1)
 }
 \arguments{
 \item{g}{A function of the form \eqn{g(\theta,x)} and which returns a \eqn{n \times q} matrix with typical element \eqn{g_i(\theta,x_t)} for \eqn{i=1,...q} and \eqn{t=1,...,n}. This matrix is then used to build the q sample moment conditions.}
@@ -25,6 +25,7 @@ getLamb(g, tet, x, type = c('EL','ET','CUE'), tol_lam = 1e-12, maxiterlam = 1000
 
 \item{tol_obj}{Tolerance for the gradiant of the objective function. The algorithm returns a non-convergence message if \eqn{\max(|gradiant|)} does not reach \code{tol_obj}. It helps the \code{gel} algorithm to select the right space to look for \eqn{\theta}}
 
+\item{k}{It represents the ratio k1/k2, where \eqn{k1=\int_{-\infty}^{\infty} k(s)ds} and \eqn{k2=\int_{-\infty}^{\infty} k(s)^2 ds}. See Smith(2004).}
 }
 \details{
 It solves the problem \eqn{\frac{1}{n}\sum_{t=1}^n D\rho(<g(\theta,x_t),\lambda>)g(\theta,x_t)=0}.
@@ -39,6 +40,9 @@ singular: 0 for a normal solution, 1 if the algorithm does not converge and 2 if
 \references{
 Newey, W.K. and Smith, R.J. (2004), Higher Order Properties of GMM and 
 Generalized Empirical Likelihood Estimators. \emph{Econometrica}, \bold{72}, 219-255.
+
+Smith, R.J. (2004), GEL Criteria for Moment Condition Models. \emph{Working paper, CEMMAP}.
+
 }
 
 \examples{

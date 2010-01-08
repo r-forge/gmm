@@ -8,11 +8,12 @@
 Function to estimate a vector of parameters based on moment conditions using the GEL method as presented by Newey-Smith(2004) and Anatolyev(2005).
 }
 \usage{
-gel(g, x, tet0, gradv = NULL, smooth = FALSE, type = c("EL","ET","CUE","ETEL"), vcov = c("HAC","iid"), 
-    kernel = c("Bartlett", "Parzen", "Truncated", "Tukey-Hanning"), bw = bwAndrews2, 
+gel(g, x, tet0, gradv = NULL, smooth = FALSE, type = c("EL","ET","CUE","ETEL"), 
+    kernel = c("Truncated", "Bartlett"), bw = bwAndrews2, 
     approx = c("AR(1)", "ARMA(1,1)"), prewhite = 1, ar.method = "ols", tol_weights = 1e-7, 
-    tol_lam = 1e-9, tol_obj = 1e-9, tol_mom = 1e-9, maxiterlam = 1000, constraint = FALSE,
-    optfct = c("optim", "optimize", "nlminb"), optlam = c("iter","numeric"), model = TRUE, X = FALSE, Y = FALSE, TypeGel = "baseGel",...)
+    tol_lam = 1e-9, tol_obj = 1e-9, tol_mom = 1e-9, maxiterlam = 100, constraint = FALSE,
+    optfct = c("optim", "optimize", "nlminb"), optlam = c("iter","numeric"), model = TRUE, 
+    X = FALSE, Y = FALSE, TypeGel = "baseGel",...)
 }
 \arguments{
 \item{g}{A function of the form \eqn{g(\theta,x)} and which returns a \eqn{n \times q} matrix with typical element \eqn{g_i(\theta,x_t)} for \eqn{i=1,...q} and \eqn{t=1,...,n}. This matrix is then used to build the q sample moment conditions. It can also be a formula if the model is linear (see details below).  }
@@ -27,9 +28,7 @@ gel(g, x, tet0, gradv = NULL, smooth = FALSE, type = c("EL","ET","CUE","ETEL"), 
 
 \item{type}{"EL" for empirical likelihood, "ET" for exponential tilting, "CUE" for continuous updated estimator and "ETEL" for exponentially tilted empirical likelihood of Schennach(2007).}
 
-\item{vcov}{Assumption on the properties of the random vector x. By default, x is a weakly dependant process. The "iid" option will only avoid using the HAC matrix to compute the covariance matrix of the parameter.}
-
-\item{kernel}{type of kernel used to compute the covariance matrix of the vector of sample moment conditions (see \code{\link{HAC}} for more details) and to smooth the moment conditions if "smooth" is set to TRUE.}
+\item{kernel}{type of kernel used to compute the covariance matrix of the vector of sample moment conditions (see \code{\link{HAC}} for more details) and to smooth the moment conditions if "smooth" is set to TRUE. Only two types of kernel are available. The truncated implies a Bartlett kernel for the HAC matrix and the Bartlett implies a Parzen kernel (see Smith 2004).}
 
 \item{bw}{The method to compute the bandwidth parameter. By default it is \code{\link{bwAndrews2}} which is proposed by Andrews (1991). The alternative is \code{\link{bwNeweyWest2}} of Newey-West(1994).}
 
@@ -131,6 +130,8 @@ Kitamura, Yuichi (1997), Empirical Likelihood Methods With Weakly Dependent Proc
 
 Newey, W.K. and Smith, R.J. (2004), Higher Order Properties of GMM and 
 Generalized Empirical Likelihood Estimators. \emph{Econometrica}, \bold{72}, 219-255.
+
+Smith, R.J. (2004), GEL Criteria for Moment Condition Models. \emph{Working paper, CEMMAP}.
 
 Newey WK & West KD (1987), A Simple, Positive Semi-Definite,
 Heteroskedasticity and Autocorrelation Consistent Covariance

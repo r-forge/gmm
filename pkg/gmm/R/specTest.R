@@ -26,11 +26,11 @@ print.specTest <- function(x, digits=5, ...)
 specTest.gel <- function(x, ...)
 	{
 	n <- nrow(x$gt)
-	khat <- crossprod(x$gt)/n
+	khat <- x$khat
 	gbar <- colMeans(x$gt)
-	LR_test <- 2*x$objective*n
-	LM_test <- n*crossprod(x$lambda, crossprod(khat, x$lambda))
-	J_test <- n*crossprod(gbar, solve(khat, gbar))
+	LR_test <- 2*x$objective*n*x$k2/(x$bwVal*x$k1^2)
+	LM_test <- n*crossprod(x$lambda, crossprod(khat, x$lambda))/(x$bwVal^2)
+	J_test <- n*crossprod(gbar, solve(khat, gbar))/(x$k1^2)
 	test <- c(LR_test, LM_test, J_test)
 	df <- (ncol(x$gt) - length(x$par))
 	ntest <- noquote(paste("Over-identifying restrictions tests: degrees of freedom is ", df, sep = ""))

@@ -127,26 +127,55 @@ getModel.baseGel <- function(object, ...)
     {
     clname <- paste(class(P), ".mod", sep = "")
     P$gform <- NULL
+    if (!is.function(object$gradv))
+      { 
+      P$gradv <- .Gf
+      P$gradvf <- FALSE
+      }
+    else
+      {
+      P$gradvf <- TRUE
+      }
+
     }
 
   if (P$smooth)
     {
+    if(P$kernel == "Truncated")
+        {
+        P$wkernel <- "Bartlett"
+        P$k1 <- 2
+        P$k2 <- 2
+        }
+    if(P$kernel == "Bartlett")
+        {
+        P$wkernel <- "Parzen"
+        P$k1 <- 1
+        P$k2 <- 2/3
+        }
     P$g1 <- P$g
     rgmm <- gmm(P$g, x, P$tet0, wmatrix = "ident")
 
-    if (is.function(P$weights))
-      P$w <- P$weights(P$g(rgmm$coefficients, x), kernel = P$kernel, bw = P$bw, prewhite = P$prewhite, 
-               ar.method = P$ar.method, approx = P$approx, tol = P$tol_weights)
-    else
-      P$w <- P$weights
 
-    P$sg <- function(thet, x, g1 = P$g1, w = P$w)
+    P$bwVal <- P$bw(P$g(rgmm$coefficients, x), kernel = P$wkernel, prewhite = P$prewhite, 
+               ar.method = P$ar.method, approx = P$approx)
+    P$w <- P$weights(P$g(rgmm$coefficients, x), kernel = P$kernel, bw = P$bwVal, prewhite = P$prewhite, 
+               ar.method = P$ar.method, approx = P$approx, tol = P$tol_weights)
+
+    P$g <- function(thet, x, g1 = P$g1, w = P$w)
       {
       gf <- g1(thet, x)
-      gt <- smoothG(gf, weights = w)$smoothx 
+      gt <- smoothG(gf, weights = w)$smoothx
       return(gt)
       }
-    }	
+    }
+  else
+   {
+   P$k1 <- 1
+   P$k2 <- 1
+   P$w <- 1
+   P$bwVal <- 1
+   }	
   class(P) <- clname
   return(P)
   }
