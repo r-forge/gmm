@@ -174,7 +174,7 @@ g <- function(theta, x) {
 	return(gmat) }
 
 x <- as.matrix(cbind(rm, r))
-res_black <- gmm(g, x = x, t0 = rep(0, 11))
+res_black <- gmm(g, x = x, t0 = c(zero_beta = 0, beta = rep(0, 10)))
 
 summary(res_black)$coefficients
 
@@ -213,6 +213,6 @@ Dg <- function(tet, x)
         return(jacobian)
         }
 # Now we want to estimate the two parameters using the GMM.
-gmm(g, x, c(0, 0), grad = Dg)
+gmm(g, x, c(mu = 0, sig = 0), grad = Dg)
 }
 

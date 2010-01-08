@@ -79,8 +79,12 @@ momentEstim.baseGmm.twoStep <- function(object, ...)
 
      z = list(coefficients = res2$par, objective = res2$value, k=k, k2=k2, n=n, q=q, df=df)	
     }
+    
+  if(is.null(names(P$t0)))
+    names(z$coefficients) <- paste("Theta[" ,1:k, "]", sep = "")
+  else
+    names(z$coefficients) <- names(P$t0)
 
-  names(z$coefficients) <- paste("Theta[" ,1:k, "]", sep = "")
   z$x <- P$x
   z$gt <- P$g(z$coefficients, P$x)
   z$gradv <- P$gradv
@@ -311,7 +315,11 @@ momentEstim.baseGmm.iterative <- function(object, ...)
     z = list(coefficients = res$par, objective = res$value,k=k, k2=k2, n=n, q=q, df=df)	
     }
 
-  names(z$coefficients) <- paste("Theta[" ,1:k, "]", sep = "")
+  if(is.null(names(P$t0)))
+    names(z$coefficients) <- paste("Theta[" ,1:k, "]", sep = "")
+  else
+    names(z$coefficients) <- names(P$t0)
+
   z$x <- P$x
   z$gt <- P$g(z$coefficients, P$x)
   z$gradv <- P$gradv
@@ -452,7 +460,11 @@ momentEstim.baseGmm.cue <- function(object, ...)
     z = list(coefficients=res2$par,objective=res2$value, k=k, k2=k2, n=n, q=q, df=df)	
     }
 
-  names(z$coefficients) <- paste("Theta[" ,1:k, "]", sep = "")
+  if(is.null(names(P$t0)))
+    names(z$coefficients) <- paste("Theta[" ,1:k, "]", sep = "")
+  else
+    names(z$coefficients) <- names(P$t0)
+  
   z$x <- P$x
   z$gradv <- P$gradv
   z$gt <- P$g(z$coefficients, P$x)
@@ -655,7 +667,11 @@ momentEstim.baseGel.mod <- function(object, ...)
   z$bwVal <- P$bwVal
   names(z$bwVal) <- "Bandwidth"
  
-  names(z$coefficients) <- paste("Theta[",1:P$k,"]", sep = "")
+  if(is.null(names(P$t0)))
+    names(z$coefficients) <- paste("Theta[" ,1:P$k, "]", sep = "")
+  else
+    names(z$coefficients) <- names(P$t0)
+
   colnames(z$gt) <- paste("gt[",1:ncol(z$gt),"]", sep = "")
   names(z$lambda) <- paste("Lambda[",1:ncol(z$gt),"]", sep = "")
   dimnames(z$vcov_par) <- list(names(z$coefficients), names(z$coefficients))
