@@ -47,12 +47,17 @@ FinRes.baseGmm.res <- function(z, object, ...)
     }
   if (P$wmatrix == "optimal")
     {
-    z$vcov <- solve(crossprod(G, solve(v, G)))
+    z$vcov <- try(solve(crossprod(G, solve(v, G))))
+    if(class(z$vcov) == "try-error")
+      z$vcov <- matrix(Inf,length(z$coef),length(z$coef))
     }
   else
     {
-    GGG <- solve(crossprod(G), t(G))
-    z$vcov <- GGG %*% v %*% t(GGG)
+    GGG <- try(solve(crossprod(G), t(G)))
+    if(class(GGG) == "try-error")
+      z$vcov <- matrix(Inf,length(z$coef),length(z$coef))
+    else
+      z$vcov <- GGG %*% v %*% t(GGG)
     }
   dimnames(z$vcov) <- list(names(z$coefficients), names(z$coefficients))
   z$call <- P$call
