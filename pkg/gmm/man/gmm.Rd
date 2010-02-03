@@ -14,7 +14,7 @@ kernel = c("Quadratic Spectral","Truncated", "Bartlett",
 "Parzen", "Tukey-Hanning"), crit = 10e-7, bw = bwAndrews, 
 prewhite = FALSE, ar.method = "ols", approx = "AR(1)", tol = 1e-7, 
 itermax = 100, optfct = c("optim","optimize","nlminb"), model=TRUE, X=FALSE, Y=FALSE, 
-TypeGmm = "baseGmm", centeredVcov = FALSE, weightsMatrix = NULL, ...)
+TypeGmm = "baseGmm", centeredVcov = TRUE, weightsMatrix = NULL, ...)
 }
 \arguments{
 \item{g}{A function of the form \eqn{g(\theta,x)} and which returns a \eqn{n \times q} matrix with typical element \eqn{g_i(\theta,x_t)} for \eqn{i=1,...q} and \eqn{t=1,...,n}. This matrix is then used to build the q sample moment conditions. It can also be a formula if the model is linear (see details below).}

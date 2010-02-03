@@ -14,7 +14,7 @@
 gmm <- function(g,x,t0=NULL,gradv=NULL, type=c("twoStep","cue","iterative"), wmatrix = c("optimal","ident"),  vcov=c("HAC","iid"), 
 	      kernel=c("Quadratic Spectral","Truncated", "Bartlett", "Parzen", "Tukey-Hanning"),crit=10e-7,bw = bwAndrews, 
 	      prewhite = FALSE, ar.method = "ols", approx="AR(1)",tol = 1e-7, itermax=100,optfct=c("optim","optimize","nlminb"),
-	      model=TRUE, X=FALSE, Y=FALSE, TypeGmm = "baseGmm", centeredVcov = FALSE, weightsMatrix = NULL, ...)
+	      model=TRUE, X=FALSE, Y=FALSE, TypeGmm = "baseGmm", centeredVcov = TRUE, weightsMatrix = NULL, ...)
 {
 
 type <- match.arg(type)
