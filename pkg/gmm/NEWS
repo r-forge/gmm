@@ -1,3 +1,12 @@
+Changes in version 1.3-2
+
+ o The functions HAC, weightsAndrews2, bwAndrews2 and all the others to compute the HAC matrix have been removed. The sandwich package is 
+   now used to compute these matrices.
+ o The option centeredVcov has beed added to the gmm function. It allows to compute the covariance matrix using a centered moment function. 
+ o The option weightsMatrix has beed added to the gmm function. It allows to fixe the matrix of weights.
+ o The methods bread() and estfun() are now available for gmm objects. It allows to compute a sandwich covariance matrix which 
+   is required if the weighting matrix is not the optimal one.
+
 Changes in version 1.3-0
 
   o The method "getModel", "momentEstim" is now used also for the gel procedure.
@@ -7,8 +16,6 @@ Changes in version 1.3-0
     For the former, the optimal bandwidth of Andrews(91) for Bartlett is used and for the latter, it is the bandwidth proposed
     for the Parzen. See Smith(2004) for more details. Also, the option vcov as been removed since it is irrelevant for GEL. By setting smooth to
     FALSE, it is implied that the data are iid.     
-  o It is now possible to give names to the parameters when the model is nonlinear. It is done through the starting values. For example
-    res <- gmm(..., t0 = c(mu=0,sig=1) ,...
 
 Changes in version 1.2-0
 
