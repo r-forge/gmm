@@ -53,7 +53,7 @@ getModel.baseGmm <- function(object, ...)
     if(is.null(object$weightsMatrix))
       clname <- paste(class(object), "." ,object$type, sep = "")
     else
-      clnames <- "fixedW"
+      clname <- "fixedW"
     if (!is.function(object$gradv))
       { 
       gradv <- .Gf

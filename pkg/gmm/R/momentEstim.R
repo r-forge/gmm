@@ -806,7 +806,7 @@ momentEstim.fixedW <- function(object, ...)
   k2 <- k
   df <- q - k
   w <- P$weightsMatrix
-  if(!all(dim(w) != c(q,q)))
+  if(!all(dim(w) == c(q,q)))
     stop("The matrix of weights must be qxq")
   if(!is.real(eigen(w)$values))
     stop("The matrix of weights must be strictly positive definite")

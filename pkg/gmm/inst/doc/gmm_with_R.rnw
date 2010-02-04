@@ -1,4 +1,4 @@
-\documentclass[article]{jss}
+\documentclass[article, nojss]{jss}
 
 \newtheorem{theorem}{Theorem}
 \newtheorem{col}{Corollary}
@@ -250,8 +250,8 @@ The following results can be reproduced with $n=50$, $iter=2000$ and by setting 
 \begin{tabular}{|c|c|c|c||c|c|c|} \hline
 &\multicolumn{3}{c||}{$\mu$}&\multicolumn{3}{c}{$\sigma$} \\ \hline
 & Bias & Variance & MSE & Bias & Variance &MSE \\ \hline 
-GMM& -3.99e-05 &0.0927 &  0.0926&  -0,0815 & 0.0465& 0.0531\\ 
-ML& 0.0021  &0.0822  &  0.0822 & -0.0349 & 0.0410& 0.0422 \\ \hline
+GMM& 0.0020 &0.0929 &  0.0928&  -0,0838 & 0.0481& 0.0551\\ 
+ML& 0.0021  &0.0823  &  0.0822 & -0.0349 & 0.0411& 0.0423 \\ \hline
 \end{tabular}
 \end{center}
 
@@ -290,7 +290,7 @@ g2 <- function(theta,x)
 The parameters of a simulated random vector can be estimated as follows (by default, $\gamma$ and $\delta$ are set to $1$ and $0$ respectively in \code{rstable}). For the example, the starting values are the ones of a normal distribution with mean 0 and variance equals to \code{var(x)}:
 <<>>=
 library(fBasics)
-set.seed(333)
+set.seed(345)
 x2 <- rstable(500,1.5,.5,pm=1)
 t0 <- c(alpha = 2, beta = 0, gamma = sd(x2)/sqrt(2), delta = 0)
 print(res <- gmm(g2,x2,t0))
@@ -299,7 +299,7 @@ The result is not very close to the true parameters. But we can see why by looki
 <<>>=
 summary(res)
 @
-The null hypothesis that the moment conditions are satisfied is rejected. For nonlinear models, a significant J-test may indicate that we have not reached the global minimum. We could try different starting values or use \code{nlminb} which allows to put restrictions on the parameter space. The option \code{optfct} can be modified to use this algorithm instead of \code{optim}. In that case, we can specify the upper and lower bounds of $\theta$. 
+The null hypothesis that the moment conditions are satisfied is rejected. For nonlinear models, a significant J-test may indicate that we have not reached the global minimum. Furthermore, the standard deviations of the coefficients indicate that the covariance matrix is singular. We could try different starting values or use \code{nlminb} which allows to put restrictions on the parameter space. The former would work but the latter will allow us to see how to select another optimizer. The option \code{optfct} can be modified to use this algorithm instead of \code{optim}. In that case, we can specify the upper and lower bounds of $\theta$. 
 <<>>= 
 res2 <- gmm(g2,x2,t0,optfct="nlminb",lower=c(0,-1,0,-Inf),upper=c(2,1,Inf,Inf))
 summary(res2)
@@ -425,7 +425,7 @@ g4<-x5t[,1]~x5t[,2]+x5t[,3]
 res<-gmm(g4,x5t[,4:7])
 summary(res)
 @
-The optimal matrix, when moment conditions are based on time series, is an HAC matrix which is defined by equation (\ref{optw_hat}). Several  estimators of this matrix have been proposed in the literature. Given some regularity conditions, they are asymptotically equivalent. However, their impacts on the finite sample properties of GMM estimators may differ. The \pkg{gmm} package uses a modified version of some functions included in the \pkg{sandwich} package to compute these estimators which are well explained by \cite{zeileis06}. We will therefore briefly summarize the available options.
+The optimal matrix, when moment conditions are based on time series, is an HAC matrix which is defined by equation (\ref{optw_hat}). Several  estimators of this matrix have been proposed in the literature. Given some regularity conditions, they are asymptotically equivalent. However, their impacts on the finite sample properties of GMM estimators may differ. The \pkg{gmm} package uses the \pkg{sandwich} package to compute these estimators which are well explained by \cite{zeileis06} and \cite{zeileis04}. We will therefore briefly summarize the available options.
 
 The option \code{kernel} allows to choose between five kernels: Truncated, Bartlett, Parzen, Tukey-Hanning and Quadratic spectral\footnote{The first three have been proposed by \cite{white84}, \cite{newey-west87a} and \cite{gallant87} respectively and the last two, applied to HAC estimation, by \cite{andrews91}. But the latter gives a good review of all five.}. By default, the Quadratic Spectral kernel is used as it was shown to be optimal by \cite{andrews91} with respect to some mean squared error criterion. In most statistical packages, the Bartlett kernel is used for its simplicity. It makes the estimation of large models less computationally intensive. It may also make the \code{gmm} algorithm more stable numerically when dealing with highly nonlinear models, especially with CUE. We can compare the results with different choices of kernel:
 <<>>=
@@ -447,7 +447,7 @@ diag(vcov(res5))^.5
 @
 which shows, for this example, that the Bartlett kernel generates the estimates with the smallest variances. 
 
-The second options is for the bandwidth selection. By default it is the automatic selection proposed by \cite{andrews91}. It is also possible to choose  the automatic selection of \cite{newey-west94} by adding \code{bw=bwNeweyWest2} (without quotes because \code{bwNeweyWest2} is a function). A prewhitened kernel estimator can also be computed using the option \code{prewhite=p}, where $p$ is the order of the vector auto-regressive (VAR) used to compute it.  By default, it is set to \code{FALSE}. \cite{andrews-monahan92} show that a prewhitened kernel estimator improves the properties of hypothesis tests on parameters. 
+The second options is for the bandwidth selection. By default it is the automatic selection proposed by \cite{andrews91}. It is also possible to choose  the automatic selection of \cite{newey-west94} by adding \code{bw=bwNeweyWest} (without quotes because \code{bwNeweyWest} is a function). A prewhitened kernel estimator can also be computed using the option \code{prewhite=p}, where $p$ is the order of the vector auto-regressive (VAR) used to compute it.  By default, it is set to \code{FALSE}. \cite{andrews-monahan92} show that a prewhitened kernel estimator improves the properties of hypothesis tests on parameters. 
 
 Finally, the \code{plot} method can be applied to \code{gmm} objects to do a Q-Q plot of the residuals:
 
@@ -588,7 +588,7 @@ The package \pkg{plm} of \cite{plm} offers several functions to manipulate panel
 
 \subsection{GMM and the sandwich package}
 
-In the \pkg{gmm} package, the estimation of the optimal weighting matrices are obtained using the \pkg{sandwich} package of \cite{zeileis06}. For example, the weighting matrix of the two step GMM defined as:
+In the \pkg{gmm} package, the estimation of the optimal weighting matrices are obtained using the \pkg{sandwich} package of \cite{zeileis06}. For example, the weighting matrix of the two-step GMM defined as:
 \[
 W = \left[\lim_{n\rightarrow \infty} Var{(\sqrt{n}\bar{g})}\right]^{-1}
 \]
@@ -600,17 +600,17 @@ W <- solve(V)
 @
 where $t0$ is any consistent estimate. As long as the optimal matrix is used, the covariance matrix of the coefficients can be estimated as follows:
 \[
-(\hat{G}'\hat{V}\hat{G})^{-1}/n
+(\hat{G}'\hat{V}\hat{G})^{-1}/n,
 \]
-where $\hat{G}=d\bar{g}(\hat{\theta})/d\theta$ and $V$ is obtained using \code{kernHAC()}. It is not a sandwich covariance matrix and is computed using the \code{vcov()} method included in \pkg{gmm}. However, if any other weighting matrix is used, say $W$, the estimated covariance matrix of the coefficients must then be estimated as follows: 
+where $\hat{G}=d\bar{g}(\hat{\theta})/d\theta$ and $\hat{V}$ is obtained using \code{kernHAC()}. It is not a sandwich covariance matrix and is computed using the \code{vcov()} method included in \pkg{gmm}. However, if any other weighting matrix is used, say $W$, the estimated covariance matrix of the coefficients must then be estimated as follows: 
 \[
 (\hat{G}'W\hat{G})^{-1}\hat{G}'W\hat{V}W\hat{G}(\hat{G}'W\hat{G})^{-1}/n.
 \]
-A \code{bread()} and \code{estfun()} methods are available for gmm objects which allows to compute the above matrix using the \pkg{sandwich} package. Let us consider the example of section (\ref{ar}). Suppose we want to use the identity matrix to avoid biases. In that case the covariance matrix is 
+A \code{bread()} and \code{estfun()} methods are available for \code{gmm} objects which allows to compute the above matrix using the \pkg{sandwich} package. The \code{bread()} method computes $(\hat{G}'W\hat{G})^{-1}$ while the \code{estfun()} method returns a $T\times q$ matrix with the $t^{th}$ row equals to $g(\hat{\theta}, x_t) W \hat{G}$. The \code{meatHAC()} method applied to the latter produces the right meat.  Let us consider the example of section (\ref{ar}). Suppose we want to use the identity matrix to eliminate one source of bias, at the cost of lower efficiency. In that case, a consistent estimate of the covariance matrix is 
 \[
 (\hat{G}'\hat{G})^{-1}\hat{G}'\hat{V}\hat{G}(\hat{G}'\hat{G})^{-1}/n,
 \]
-which can be computed as follows:
+which can be computed as:
 <<>>=
 print(res<-gmm(g4,x5t[,4:7],wmatrix="ident"))
 diag(vcovHAC(res))^.5
@@ -619,11 +619,11 @@ which is more robust than using \code{vcov()}:
 <<>>=
 diag(vcov(res))^.5
 @
-Notice that it is possible to fixe $W$. The above results can therefore be obtained as follows:
+Notice that it is possible to fixe $W$. Therefore, the  above results can also be obtained as:
 <<>>=
 print(res<-gmm(g4,x5t[,4:7], weightsMatrix = diag(5)))
 @
-In this case, the choice of the type of GMM is irrelevant since the weighting matrix is fixed.
+In this case, the choice of the type of GMM is irrelevant since the weighting matrix is fixed.  
 
 \section{Generalized empirical likelihood}
 
@@ -793,7 +793,7 @@ The package \pkg{gmm} is written entirely in \proglang{R} and S3-classes with me
 
 \section*{Acknowledgments}
 
-I am grateful to the three anonymous referees of the Journal of Statistical Software for great comments on the paper and the package. I also want to thank Achim Zeileis for helping me integrate the \pkg{sandwich} package.   
+I am grateful to the three anonymous referees of the Journal of Statistical Software for great comments on the paper and the package. I also want to thank Achim Zeileis for his suggestions regarding the way the \pkg{sandwich} package can be used within \code{gmm}.   
 
 \bibliography{empir}
 \end{document} 

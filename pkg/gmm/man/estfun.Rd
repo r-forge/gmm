@@ -21,7 +21,7 @@ It extracts the matrix of empirical moments so that it can be used by the \code{
 \details{
 For \code{estfun.gmmFct}, it returns a \eqn{n \times q} matrix with typical element \eqn{g_i(\theta,y_t)} for \eqn{i=1,...q} and \eqn{t=1,...,n}. It is only used by \code{gmm} to obtain the estimates.
 
-For \code{estfun.gmm}, it returns the matrix of first order conditions of \eqn{\min_\theta \bar{g}'W\bar{g}/2}, which is a \eqn{n \times q} matrix with the \eqn{t^{th}} row being \eqn{g(\theta, y_t)W G}, where \eqn{G} is \eqn{d\bar{g}/d\theta}. It allows to compute the sandwich covariance matrix using \code{link{kernHAC}} or \code{link{vcovHAC}} when \eqn{W} is not the optimal matrix.
+For \code{estfun.gmm}, it returns the matrix of first order conditions of \eqn{\min_\theta \bar{g}'W\bar{g}/2}, which is a \eqn{n \times k} matrix with the \eqn{t^{th}} row being \eqn{g(\theta, y_t)W G}, where \eqn{G} is \eqn{d\bar{g}/d\theta}. It allows to compute the sandwich covariance matrix using \code{\link{kernHAC}} or \code{\link{vcovHAC}} when \eqn{W} is not the optimal matrix.
 
 The method if not yet available for \code{gel} objects.
 }
@@ -36,5 +36,33 @@ A \eqn{n \times q} matrix (see details).
   URL \url{http://www.jstatsoft.org/v16/i09/}.
 
 }
+
+\examples{
+
+n = 500
+phi<-c(.2,.7)
+thet <- 0
+sd <- .2
+x <- matrix(arima.sim(n=n,list(order=c(2,0,1),ar=phi,ma=thet,sd=sd)),ncol=1)
+y <- x[7:n]
+ym1 <- x[6:(n-1)]
+ym2 <- x[5:(n-2)]
+H <- cbind(x[4:(n-3)], x[3:(n-4)], x[2:(n-5)], x[1:(n-6)])
+g <- y ~ ym1 + ym2
+x <- H
+res <- gmm(g, x,weightsMatrix = diag(5))
+
+gt <- res$gt
+G <- res$G
+
+foc <- gt%*%G
+foc2 <- estfun(res)
+
+foc[1:5,]
+foc2[1:5,]
+
+}
+
+
 
 
