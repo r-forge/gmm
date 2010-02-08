@@ -56,7 +56,7 @@ FinRes.baseGmm.res <- function(z, object, ...)
   z$vcov <- try(solve(crossprod(G, solve(v, G))), silent = TRUE)
   if(class(z$vcov) == "try-error")
     {
-    z$vcov <- matrix(Inf,ncol(z$gt),ncol(z$gt))
+    z$vcov <- matrix(Inf,length(z$coef),length(z$coef))
     warning("The covariance matrix of the coefficients is singular")
     }
 
