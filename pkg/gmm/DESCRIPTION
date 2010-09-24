@@ -3,8 +3,8 @@ Version: 1.3-3
 Date: 2010-09-24
 Title: Generalized Method of Moments and Generalized Empirical
         Likelihood
-Author: Pierre Chausse <pierre.chausse@uqam.ca>
-Maintainer: Pierre Chausse <pierre.chausse@uqam.ca>
+Author: Pierre Chausse <pchausse@uwaterloo.ca>
+Maintainer: Pierre Chausse <pchausse@uwaterloo.ca>
 Description: It is a complete suite to estimate models based on moment
         conditions. It includes the two step Generalized method of
         moments (GMM) of Hansen(1982), the iterated GMM and continuous
