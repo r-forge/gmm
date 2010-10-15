@@ -43,17 +43,32 @@ getDat <- function (formula,h)
 	mf[[1L]] <- as.name("model.frame")
 	mf <- eval(mf, parent.frame())
 	mt <- attr(mf, "terms")
-	if (!is.matrix(h))
-		h <- cbind(rep(1,length(h)),h)
-	else	
-		h <- cbind(rep(1,nrow(h)),h)
-	colnames(h) <- c("h.(Intercept)",paste("h",1:(ncol(h)-1),sep=""))
+
+	if (inherits(h,'formula'))
+		{
+		mfh <- eval(model.frame(formula = h, drop.unused.levels = TRUE), parent.frame())
+		mth <- attr(mfh, "terms")
+		h <- as.matrix(model.matrix(mth, mfh, NULL))
+		}
+	else
+		{		
+		if (!is.matrix(h))
+			h <- cbind(rep(1,length(h)),h)
+		else	
+			h <- cbind(rep(1,nrow(h)),h)
+			
+		if(is.null(colnames(h)))
+			colnames(h) <- c("h.(Intercept)",paste("h",1:(ncol(h)-1),sep=""))
+		else
+			attr(h,'dimnames')[[2]][1] <- "h.(Intercept)"
+		if (attr(mt,"intercept")==0)
+			{
+			h <- as.matrix(h[,2:ncol(h)])
+			}
+		}
+		
 	y <- as.matrix(model.response(mf, "numeric"))
 	xt <- as.matrix(model.matrix(mt, mf, NULL))
-	if (attr(mt,"intercept")==0)
-		{
-		h <- as.matrix(h[,2:ncol(h)])
-		}
 	ny <- ncol(y)
 	k <- ncol(xt)
 	nh <- ncol(h)
