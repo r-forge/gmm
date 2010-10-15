@@ -14,7 +14,7 @@
 gmm <- function(g,x,t0=NULL,gradv=NULL, type=c("twoStep","cue","iterative"), wmatrix = c("optimal","ident"),  vcov=c("HAC","iid"), 
 	      kernel=c("Quadratic Spectral","Truncated", "Bartlett", "Parzen", "Tukey-Hanning"),crit=10e-7,bw = bwAndrews, 
 	      prewhite = FALSE, ar.method = "ols", approx="AR(1)",tol = 1e-7, itermax=100,optfct=c("optim","optimize","nlminb"),
-	      model=TRUE, X=FALSE, Y=FALSE, TypeGmm = "baseGmm", centeredVcov = TRUE, weightsMatrix = NULL, ...)
+	      model=TRUE, X=FALSE, Y=FALSE, TypeGmm = "baseGmm", centeredVcov = TRUE, weightsMatrix = NULL, data, ...)
 {
 
 type <- match.arg(type)
@@ -22,18 +22,21 @@ kernel <- match.arg(kernel)
 vcov <- match.arg(vcov)
 wmatrix <- match.arg(wmatrix)
 optfct <- match.arg(optfct)
-all_args<-list(g = g, x = x, t0 = t0, gradv = gradv, type = type, wmatrix = wmatrix, vcov = vcov, kernel = kernel,
+if(missing(data))
+	data<-NULL
+all_args<-list(data = data, g = g, x = x, t0 = t0, gradv = gradv, type = type, wmatrix = wmatrix, vcov = vcov, kernel = kernel,
                    crit = crit, bw = bw, prewhite = prewhite, ar.method = ar.method, approx = approx, 
                    weightsMatrix = weightsMatrix, centeredVcov = centeredVcov,
                    tol = tol, itermax = itermax, optfct = optfct, model = model, X = X, Y = Y, call = match.call())
 class(all_args)<-TypeGmm
 Model_info<-getModel(all_args)
 z <- momentEstim(Model_info, ...)
+
 z <- FinRes(z, Model_info)
 z
 }
 
-getDat <- function (formula,h) 
+getDat <- function (formula, h, data) 
 {
 	cl <- match.call()
 	mf <- match.call(expand.dots = FALSE)
@@ -46,7 +49,14 @@ getDat <- function (formula,h)
 
 	if (inherits(h,'formula'))
 		{
-		mfh <- eval(model.frame(formula = h, drop.unused.levels = TRUE), parent.frame())
+		mfh <- match.call(expand.dots = FALSE)
+		mh <- match(c("h", "data"), names(mfh), 0L)
+		mfh <- mfh[c(1L, mh)]
+		mfh$formula <- mfh$h
+		mfh$h <- NULL
+		mfh$drop.unused.levels <- TRUE
+		mfh[[1L]] <- as.name("model.frame")
+		mfh <- eval(mfh, parent.frame())
 		mth <- attr(mfh, "terms")
 		h <- as.matrix(model.matrix(mth, mfh, NULL))
 		}
@@ -66,7 +76,6 @@ getDat <- function (formula,h)
 			h <- as.matrix(h[,2:ncol(h)])
 			}
 		}
-		
 	y <- as.matrix(model.response(mf, "numeric"))
 	xt <- as.matrix(model.matrix(mt, mf, NULL))
 	ny <- ncol(y)

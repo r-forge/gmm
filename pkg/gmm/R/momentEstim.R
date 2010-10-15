@@ -109,14 +109,18 @@ momentEstim.baseGmm.twoStep.formula <- function(object, ...)
   {
   P <- object
   g <- P$g
-  dat <- getDat(P$gform, P$x)
+  if (is.null(P$data))
+    	dat <- getDat(P$gform, P$x)
+    else
+    	dat <- getDat(P$gform, P$x, P$data)
+  
   x <- dat$x
   k <- dat$k
   k2 <- k*dat$ny
   n <- nrow(x)
   q <- dat$ny*dat$nh
   df <- q-k*dat$ny
-  
+    
   if (q == k2 | P$wmatrix == "ident")
     {
     w <- diag(q)
@@ -186,7 +190,11 @@ momentEstim.baseGmm.iterative.formula <- function(object, ...)
   {
   P <- object
   g <- P$g
-  dat <- getDat(P$gform, P$x)
+  if (is.null(P$data))
+    	dat <- getDat(P$gform, P$x)
+    else
+    	dat <- getDat(P$gform, P$x, P$data)
+  
   x <- dat$x
   k <- dat$k
   k2 <- k*dat$ny
@@ -373,7 +381,11 @@ momentEstim.baseGmm.cue.formula <- function(object, ...)
   {
   P <- object
   g <- P$g
-  dat <- getDat(P$gform, P$x)
+  if (is.null(P$data))
+    	dat <- getDat(P$gform, P$x)
+    else
+    	dat <- getDat(P$gform, P$x, P$data)
+  
   x <- dat$x
   k <- dat$k
   k2 <- k*dat$ny
@@ -729,7 +741,11 @@ momentEstim.fixedW.formula <- function(object, ...)
   {
   P <- object
   g <- P$g
-  dat <- getDat(P$gform, P$x)
+  if (is.null(P$data))
+    	dat <- getDat(P$gform, P$x)
+    else
+    	dat <- getDat(P$gform, P$x, P$data)
+
   x <- dat$x
   k <- dat$k
   k2 <- k*dat$ny

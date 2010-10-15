@@ -21,7 +21,11 @@ getModel.baseGmm <- function(object, ...)
   if(is(object$g, "formula"))
     {
     object$gradvf <- FALSE
-    dat <- getDat(object$g, object$x)
+    if (is.null(object$data))
+    	dat <- getDat(object$g, object$x)
+    else
+    	dat <- getDat(object$g, object$x, object$data)
+    
     if(is.null(object$weightsMatrix))
       clname <- paste(class(object), ".", object$type, ".formula", sep = "")
     else

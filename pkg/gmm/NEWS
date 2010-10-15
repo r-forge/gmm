@@ -2,6 +2,9 @@ Changes in version 1.3-4
 
  o It is now possible to enter the instruments in x either as a matrix 
    (like before) or as a formula. See details and examples in gmm help  
+o  A data argument is added to the gmm function. Therefore, it is no longer required 
+   that the variables in data.frames be attached before using gmm(). You just need to add the option data=your_data.frame.   
+
 
 
 Changes in version 1.3-3
