@@ -4,7 +4,7 @@ Changes in version 1.3-4
    (like before) or as a formula. See details and examples in gmm help  
 o  A data argument is added to the gmm function. Therefore, it is no longer required 
    that the variables in data.frames be attached before using gmm(). You just need to add the option data=your_data.frame.   
-
+o  2SLS is now implemented in a more efficient way for linear models. Just add the option vcov="iid". An example as been included for that case 
 
 
 Changes in version 1.3-3

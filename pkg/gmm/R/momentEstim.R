@@ -129,12 +129,14 @@ momentEstim.baseGmm.twoStep.formula <- function(object, ...)
     }
   else
     {
-    w=diag(rep(1, q))
-    res1 <- .tetlin(x, w, dat$ny, dat$nh, dat$k, P$gradv, P$g)
     if (P$vcov == "iid")
-      w <- P$iid(res1$par, x, g, P$centeredVcov)
+    	{
+      res2 <- .tetlin(x, diag(q), dat$ny, dat$nh, dat$k, P$gradv, P$g, type="2sls")
+      }
     if (P$vcov == "HAC")
       {
+      w=diag(q)
+      res1 <- .tetlin(x, w, dat$ny, dat$nh, dat$k, P$gradv, P$g)
       if(P$centeredVcov) 
        	 gmat <- lm(g(res1$par, x)~1)
       else
@@ -144,9 +146,9 @@ momentEstim.baseGmm.twoStep.formula <- function(object, ...)
         }
       w <- kernHAC(gmat, kernel = P$kernel, bw = P$bw, prewhite = P$prewhite, 
 		ar.method = P$ar.method, approx = P$approx, tol = P$tol, sandwich = FALSE)
-
+	 res2 <- .tetlin(x, w, dat$ny, dat$nh, dat$k, P$gradv, g)
       }
-    res2 <- .tetlin(x, w, dat$ny, dat$nh, dat$k, P$gradv, g)
+    
     z = list(coefficients = res2$par, objective = res2$value, dat=dat, k=k, k2=k2, n=n, q=q, df=df)	
     }
   z$gt <- g(z$coefficients, x) 

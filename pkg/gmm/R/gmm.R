@@ -98,19 +98,45 @@ getDat <- function (formula, h, data)
 }
 
 
-.tetlin <- function(x, w, ny, nh, k, gradv, g)
+.tetlin <- function(x, w, ny, nh, k, gradv, g, type=NULL)
   {
   n <- nrow(x)
   ym <- as.matrix(x[,1:ny])
   xm <- as.matrix(x[,(ny+1):(ny+k)])
   hm <- as.matrix(x[,(ny+k+1):(ny+k+nh)])
-  whx <- solve(w, (crossprod(hm, xm) %x% diag(ny)))
-  wvecyh <- solve(w, matrix(crossprod(ym, hm), ncol = 1))
-  dg <- gradv(NULL,x, ny, nh, k)
-  xx <- crossprod(dg, whx)
-  par <- solve(xx, crossprod(dg, wvecyh))
-  gb <- matrix(colSums(g(par, x, ny, nh, k))/n, ncol = 1)
-  value <- crossprod(gb, solve(w, gb)) 
+  if (!is.null(type))
+  	{
+  	if(type=="2sls")
+	  	{
+  		fsls <- lm(xm~hm-1)$fitted
+  	     par <- lm(ym~fsls-1)$coef
+		if (ny == 1)
+		{
+  	     	e2sls <- ym-xm%*%par
+ 	     	v2sls <- lm(e2sls~hm-1)$fitted
+  	     	value <- sum(v2sls^2)/sum(e2sls^2)
+  	     }
+  	     else
+  	     {
+  	     	par <- c(t(par))	
+  	     	g2sls <- g(par, x, ny, nh, k)
+  	     	w <- crossprod(g2sls)/n
+  	     	gb <- matrix(colMeans(g2sls), ncol = 1)
+   			value <- crossprod(gb, solve(w, gb)) 
+  	     }
+	  	}
+  	}
+  else
+  	{
+     whx <- solve(w, (crossprod(hm, xm) %x% diag(ny)))
+     wvecyh <- solve(w, matrix(crossprod(ym, hm), ncol = 1))
+     dg <- gradv(NULL,x, ny, nh, k)
+     xx <- crossprod(dg, whx)
+     par <- solve(xx, crossprod(dg, wvecyh))
+     gb <- matrix(colSums(g(par, x, ny, nh, k))/n, ncol = 1)
+     value <- crossprod(gb, solve(w, gb)) 
+  	}
+  
   res <- list(par = par, value = value)
   return(res)
   }
