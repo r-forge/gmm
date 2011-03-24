@@ -128,15 +128,26 @@ getDat <- function (formula, h, data)
   	}
   else
   	{
+  if (ny>1)
+  	{
      whx <- solve(w, (crossprod(hm, xm) %x% diag(ny)))
      wvecyh <- solve(w, matrix(crossprod(ym, hm), ncol = 1))
      dg <- gradv(NULL,x, ny, nh, k)
      xx <- crossprod(dg, whx)
      par <- solve(xx, crossprod(dg, wvecyh))
-     gb <- matrix(colSums(g(par, x, ny, nh, k))/n, ncol = 1)
-     value <- crossprod(gb, solve(w, gb)) 
-  	}
-  
+     }
+  else
+  	{   
+     if (nh>k)
+     	{
+     	xzwz <- crossprod(xm,hm)%*%w%*%t(hm)
+     	par <- solve(xzwz%*%xm,xzwz%*%ym)	
+	     }
+	else
+		par <- solve(crossprod(hm,xm),crossprod(hm,ym))  	}
+	}
+  gb <- matrix(colSums(g(par, x, ny, nh, k))/n, ncol = 1)
+  value <- crossprod(gb, solve(w, gb)) 
   res <- list(par = par, value = value)
   return(res)
   }
