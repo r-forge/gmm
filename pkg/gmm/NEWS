@@ -1,3 +1,12 @@
+Changes in version 1.3-7
+
+o Until now there was no way to know whether optim or nlminb has converged in case of nonlinear GMM. The convergence code
+  is now printed by print.gmm and pring.summary.gmm  
+o For cases in which the weighting matrix is provided, you have the choice of assuming that it is just a fixed matrix
+  not necessary equal to the inverse of the covariance matrix of the moment conditions (the default) or setting 
+  vcov="TrueFixed" if it is the inverse of the estimated covariance matrix.
+
+
 Changes in version 1.3-6
 
 o Bug fixed when estimating model with timeSeries objects

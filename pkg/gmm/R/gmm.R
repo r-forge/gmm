@@ -11,7 +11,7 @@
 #  A copy of the GNU General Public License is available at
 #  http://www.r-project.org/Licenses/
 
-gmm <- function(g,x,t0=NULL,gradv=NULL, type=c("twoStep","cue","iterative"), wmatrix = c("optimal","ident"),  vcov=c("HAC","iid"), 
+gmm <- function(g,x,t0=NULL,gradv=NULL, type=c("twoStep","cue","iterative"), wmatrix = c("optimal","ident"),  vcov=c("HAC","iid","TrueFixed"), 
 	      kernel=c("Quadratic Spectral","Truncated", "Bartlett", "Parzen", "Tukey-Hanning"),crit=10e-7,bw = bwAndrews, 
 	      prewhite = FALSE, ar.method = "ols", approx="AR(1)",tol = 1e-7, itermax=100,optfct=c("optim","optimize","nlminb"),
 	      model=TRUE, X=FALSE, Y=FALSE, TypeGmm = "baseGmm", centeredVcov = TRUE, weightsMatrix = NULL, data, ...)
@@ -22,6 +22,12 @@ kernel <- match.arg(kernel)
 vcov <- match.arg(vcov)
 wmatrix <- match.arg(wmatrix)
 optfct <- match.arg(optfct)
+
+if(vcov=="TrueFixed" & is.null(weightsMatrix))
+	stop("TrueFixed vcov only for fixed weighting matrix")
+if(!is.null(weightsMatrix))
+	wmatrix <- "optimal"
+
 if(missing(data))
 	data<-NULL
 all_args<-list(data = data, g = g, x = x, t0 = t0, gradv = gradv, type = type, wmatrix = wmatrix, vcov = vcov, kernel = kernel,
@@ -165,11 +171,14 @@ getDat <- function (formula, h, data)
   }
 
 
-.obj1 <- function(thet, x, w, gf)
+.obj1 <- function(thet, x, w, gf, INV = TRUE)
   {
   gt <- gf(thet, x)
   gbar <- as.vector(colMeans(gt))
-  obj <- crossprod(gbar, solve(w, gbar))
+  if (INV)		
+  	obj <- crossprod(gbar, solve(w, gbar))
+  else
+	obj <- crossprod(gbar,w)%*%gbar
   return(obj)
   }
 
@@ -209,4 +218,5 @@ getDat <- function (formula, h, data)
   obj <- crossprod(gbar,solve(w2,gbar))
   return(obj)
 }	
+
 

@@ -9,7 +9,7 @@
 }
 \usage{
 gmm(g, x, t0 = NULL, gradv = NULL, type = c("twoStep","cue","iterative"), 
-wmatrix = c("optimal","ident"), vcov = c("HAC","iid"), 
+wmatrix = c("optimal","ident"), vcov = c("HAC","iid","TrueFixed"), 
 kernel = c("Quadratic Spectral","Truncated", "Bartlett", 
 "Parzen", "Tukey-Hanning"), crit = 10e-7, bw = bwAndrews, 
 prewhite = FALSE, ar.method = "ols", approx = "AR(1)", tol = 1e-7, 
@@ -29,7 +29,7 @@ TypeGmm = "baseGmm", centeredVcov = TRUE, weightsMatrix = NULL, data,  ...)
 
 \item{wmatrix}{Which weighting matrix should be used in the objective function. By default, it is the inverse of the covariance matrix of \eqn{g(\theta,x)}. The other choice is the identity matrix which is usually used to obtain a first step estimate of \eqn{\theta} }
 
-\item{vcov}{Assumption on the properties of the random vector x. By default, x is a weakly dependant process. The "iid" option will avoid using the HAC matrix which will accelerate the estimation if one is ready to make that assumption.}
+\item{vcov}{Assumption on the properties of the random vector x. By default, x is a weakly dependant process. The "iid" option will avoid using the HAC matrix which will accelerate the estimation if one is ready to make that assumption. The option "TrueFixed" is used only when the matrix of weights is provided and it is the optimal one.}
 
 \item{kernel}{type of kernel used to compute the covariance matrix of the vector of sample moment conditions (see \code{\link{kernHAC}} for more details)}
 

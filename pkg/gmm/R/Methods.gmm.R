@@ -26,7 +26,7 @@ summary.gmm <- function(object, ...)
     	dimnames(ans$coefficients) <- list(names(z$coefficients), 
         c("Estimate", "Std. Error", "t value", "Pr(>|t|)"))
 	ans$stest <- specTest(z)
-
+        ans$convergence <- z$convergence
 	class(ans) <- "summary.gmm"
 	ans
 	}
@@ -45,6 +45,8 @@ print.summary.gmm <- function(x, digits = 5, ...)
 	print.default(format(x$stest$test, digits=digits),
                       print.gap = 2, quote = FALSE)
 	cat("\n")
+	if(!is.null(x$convergence))
+		cat("Convergence code = ", x$convergence,"\n")
 	invisible(x)
 	}
 
@@ -71,8 +73,6 @@ confint.gmm <- function(object, parm, level=0.95, ...)
 			ans <- ans[parm,]
 		ans
 		}
-
-
 		
 residuals.gmm <- function(object,...) 
 	{
@@ -95,6 +95,8 @@ print.gmm <- function(x, digits=5, ...)
 	print.default(format(coef(x), digits=digits),
                       print.gap = 2, quote = FALSE)
 	cat("\n")
+	if(!is.null(x$convergence))
+		cat("Convergence code = ", x$convergence,"\n")
 	invisible(x)
 	}
 
