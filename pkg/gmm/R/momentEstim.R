@@ -911,7 +911,7 @@ momentEstim.fixedW.formula <- function(object, ...)
       warning("The matrix of weights is not strictly positive definite")
     }
   
-  res2 <- .tetlin(x, w, dat$ny, dat$nh, dat$k, P$gradv, g)
+  res2 <- .tetlin(x, w, dat$ny, dat$nh, dat$k, P$gradv, g, inv=FALSE)
   z = list(coefficients = res2$par, objective = res2$value, dat=dat, k=k, k2=k2, n=n, q=q, df=df)	
 
   z$gt <- g(z$coefficients, x) 

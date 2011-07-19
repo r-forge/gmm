@@ -1,3 +1,7 @@
+Changes in version 1.3-8
+
+o A bug was found in the computation of linear GMM. The weighting matrix was not use properly. It is now fixed.
+
 Changes in version 1.3-7
 
 o Until now there was no way to know whether optim or nlminb has converged in case of nonlinear GMM. The convergence code
