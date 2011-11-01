@@ -283,8 +283,11 @@ momentEstim.baseGmm.iterative.formula <- function(object, ...)
           gmat <- g(tet, x)
           class(gmat) <- "gmmFct"
           }
-        w <- kernHAC(gmat, kernel = P$kernel, bw = P$bw, prewhite = P$prewhite, ar.method = P$ar.method, 
-                 approx = P$approx, tol = P$tol, sandwich = FALSE)
+	if (j==1)
+		fixedKernW <-  weightsAndrews(gmat, prewhite=P$prewhite,
+	 			   bw = P$bw, kernel = P$kernel, approx = P$approx, 
+ 			   	   ar.method = P$ar.method, tol = P$tol) 
+        w <- vcovHAC(gmat, weights = fixedKernW, sandwich = FALSE)
         }
       res <- .tetlin(x, w, dat$ny, dat$nh, dat$k, P$gradv, g)
       ch <- crossprod(abs(tet- res$par)/tet)^.5
@@ -416,8 +419,12 @@ momentEstim.baseGmm.iterative <- function(object, ...)
           gmat <- P$g(tet, P$x)
           class(gmat) <- "gmmFct"
           }
-        w <- kernHAC(gmat, kernel = P$kernel, bw = P$bw, prewhite = P$prewhite, ar.method = P$ar.method, 
-                 approx = P$approx, tol = P$tol, sandwich = FALSE)
+	if (j==1)
+		fixedKernW <-  weightsAndrews(gmat, prewhite=P$prewhite,
+	 			   bw = P$bw, kernel = P$kernel, approx = P$approx, 
+ 			   	   ar.method = P$ar.method, tol = P$tol) 
+        w <- vcovHAC(gmat, weights = fixedKernW, sandwich = FALSE)
+
         }
 
       if (P$optfct == "optim")
@@ -457,12 +464,14 @@ momentEstim.baseGmm.iterative <- function(object, ...)
         res$par <- res$minimum
         res$value <- res$objective
         }	
-        ch <- crossprod(abs(tet-res$par)/tet)^.5	
+        ch <- crossprod(tet-res$par)^.5/(1+crossprod(tet)^.5)
         if (j>P$itermax)
           {
           cat("No convergence after ", P$itermax, " iterations")
           ch <- P$crit
           }
+	if(P$traceIter)
+		print(c(iter=j,Objective=res$value,res$par))
         j <- j+1	
       }
     z = list(coefficients = res$par, objective = res$value,k=k, k2=k2, n=n, q=q, df=df)	
@@ -509,11 +518,25 @@ momentEstim.baseGmm.cue.formula <- function(object, ...)
     w <- diag(q)
     res <- .tetlin(x, w, dat$ny, dat$nh, dat$k, P$gradv, g)
     z = list(coefficients = res$par, objective = res$value, dat = dat, k = k, k2 = k2, n = n, q = q, df = df)
+    P$weightMessage <- "No CUE needed because the model if just identified"
     }
   else
     {
     if (is.null(P$t0))
-      P$t0 <- .tetlin(x,diag(q), dat$ny, dat$nh, dat$k, P$gradv, g)$par
+	{
+	P$t0 <- .tetlin(x,diag(q), dat$ny, dat$nh, dat$k, P$gradv, g)$par
+	P$weightMessage <- "Weights for kernel estimate of the covariance are fixed and based on the first step estimate of Theta"	
+	}
+    else
+	P$weightMessage <- "Weights for kernel estimate of the covariance are fixed and based on the initial value of Theta provided by the user"	
+
+    gt0 <- g(P$t0,x)
+    gt0 <- lm(gt0~1)
+    P$fixedKernW <-  weightsAndrews(gt0, prewhite=P$prewhite,
+ 			   bw = P$bw, kernel = P$kernel, approx = P$approx, 
+ 			   ar.method = P$ar.method, tol = P$tol) 
+
+
     if (P$optfct == "optim")
       res2 <- optim(P$t0,.objCue, x = x, P = P, ...)
     if (P$optfct == "nlminb")
@@ -528,8 +551,10 @@ momentEstim.baseGmm.cue.formula <- function(object, ...)
       res2$value <- res2$objective
       }
     z = list(coefficients = res2$par, objective = res2$value, dat = dat, k = k, k2 = k2, n = n, q = q, df = df)
-    if (P$optfct != "optimize")
-	z$convergence = res2$convergence
+    if (P$optfct == "optim")
+	z$algoInfo <- list(convergence = res2$convergence, counts = res2$counts, message = res2$message)
+    else if(P$optfct == "nlminb")
+	z$algoInfo <- list(convergence = res2$convergence, counts = res2$evaluations, message = res2$message)
     }
 
   z$gt <- g(z$coefficients, x) 
@@ -549,6 +574,7 @@ momentEstim.baseGmm.cue.formula <- function(object, ...)
   z$gradv <- P$gradv
   z$iid <- P$iid
   z$g <- P$g
+  z$cue <- list(weights=P$fixedKernW,message=P$weightMessage)
   
   namex <- colnames(dat$x[,(dat$ny+1):(dat$ny+dat$k)])
   nameh <- colnames(dat$x[,(dat$ny+dat$k+1):(dat$ny+dat$k+dat$nh)])
@@ -573,75 +599,43 @@ momentEstim.baseGmm.cue <- function(object, ...)
   {
   P <- object
   x <- P$x
+
+  res <- try(gmm(P$g,P$x,P$t0,wmatrix="ident",optfct=P$optfct, ...))
+  if(class(res)=="try-error")
+	stop("Cannot get a first step estimate to compute the weights for the Kernel estimate of the covariance matrix; try different starting values")
+
+  n <- nrow(res$gt)
+  q <- ncol(res$gt)
+
   if (P$optfct == "optimize")
-    {
-    n = nrow(P$g(P$t0[1], x))
-    q = ncol(P$g(P$t0[1], x))
     k = 1
-    }
   else
-    {
-    n = nrow(P$g(P$t0, x))
-    q = ncol(P$g(P$t0, x))
     k = length(P$t0)
-    }
+
   k2 <- k
   df <- q - k
-  w=diag(q)
-  if (P$optfct == "optim")
-   {
-   if (P$gradvf)
-      {
-      gradvOptim <- P$gradv
-      gr2 <- function(thet, x,  w, gf, INV)
-		{
-		gt <- gf(thet, x)
-		Gbar <- gradvOptim(thet, x) 
-		gbar <- as.vector(colMeans(gt))
-		if (INV)		
-		  	obj <- crossprod(Gbar, solve(w, gbar))
-		else
-			obj <- crossprod(Gbar,w)%*%gbar
-		return(obj*2)
-		}
-      argDots <- list(...)
-      allArgOptim <- list(par = P$t0, fn = .obj1, gr = gr2, x = P$x, w = w, gf = P$g, INV = TRUE)
-      argDots$gr <- NULL
-      allArgOptim <- c(allArgOptim,argDots)
-      res <- do.call(optim,allArgOptim)
-      }
-    else
-      res <- optim(P$t0, .obj1, x = P$x, w = w, gf = P$g, ...)
-    }
-  if (P$optfct == "nlminb")
-    {
-    res <- nlminb(P$t0, .obj1, x = P$x, w = w, gf = P$g, ...)
-    res$value <- res$objective
-    }
-  if (P$optfct == "optimize")
-    {
-    res <- optimize(.obj1, P$t0, x = P$x, w = w, gf = P$g, ...)
-    res$par <- res$minimum
-    res$value <- res$objective
-    }	
 
   if (q == k2 | P$wmatrix == "ident")
     {
-    z <- list(coefficients = res$par, objective = res$value, k=k, k2=k2, n=n, q=q, df=df)
-    if (P$optfct == "optim")
-	z$algoInfo <- list(convergence = res$convergence, counts = res$counts, message = res$message)
-    else if(P$optfct == "nlminb")
-	z$algoInfo <- list(convergence = res$convergence, counts = res$evaluations, message = res$message)
+    z <- list(coefficients = res$coef, objective = res$objective, algoInfo = res$algoInfo, k=k, k2=k2, n=n, q=q, df=df)
+    P$weightMessage <- "No CUE needed because the model if just identified or you set wmatrix=identity"
     }	
   else
     {
+    gt0 <- P$g(res$coef,x)
+    gt0 <- lm(gt0~1)
+    P$fixedKernW <-  weightsAndrews(gt0, prewhite=P$prewhite,
+ 			   bw = P$bw, kernel = P$kernel, approx = P$approx, 
+ 			   ar.method = P$ar.method, tol = P$tol) 
+    P$weightMessage <- "Weights for kernel estimate of the covariance are fixed and based on the first step estimate of Theta"
+
     if (P$optfct == "optim")
       {
-      res2 <- optim(res$par, .objCue, x = x, P = P, ...)
+      res2 <- optim(res$coef, .objCue, x = x, P = P, ...)
       }
     if (P$optfct == "nlminb")
       {
-      res2 <- nlminb(res$par, .objCue, x = x, P = P, ...)
+      res2 <- nlminb(res$coef, .objCue, x = x, P = P, ...)
       res2$value <- res2$objective
       }
     if (P$optfct == "optimize")
@@ -668,6 +662,8 @@ momentEstim.baseGmm.cue <- function(object, ...)
   z$gt <- P$g(z$coefficients, P$x)
   z$iid <- P$iid
   z$g <- P$g
+  z$cue <- list(weights=P$fixedKernW,message=P$weightMessage)
+
  
   class(z) <- paste(P$TypeGmm, ".res", sep = "")	
   return(z)

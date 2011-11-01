@@ -1,3 +1,12 @@
+Changes in version 1.3-9
+
+o The method for GMM-CUE has been modified. Before, the weights for the kernel estimation of the weighting matrix
+  were flexible inside the optimizer which was making the algorithm long and unstable. It is now fixed using either the starting 
+  values provided by the user (for linear cases) or the first step GMM. 
+o You can now trace the convergence of the iterative GMM with the option traceIter=T
+o The weights for the kernel are also fixed for iter-GMM. It is faster and I don't think it should change at each iteration. I am open to comments on that.
+s
+
 Changes in version 1.3-8
 
 o A bug was found in the computation of linear GMM. The weighting matrix was not use properly. It is now fixed.

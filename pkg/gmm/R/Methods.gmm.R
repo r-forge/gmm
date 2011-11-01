@@ -27,6 +27,8 @@ summary.gmm <- function(object, ...)
         c("Estimate", "Std. Error", "t value", "Pr(>|t|)"))
 	ans$stest <- specTest(z)
         ans$algoInfo <- z$algoInfo
+	if(z$met=="cue")
+		ans$cue <- object$cue
 	class(ans) <- "summary.gmm"
 	ans
 	}
@@ -35,7 +37,11 @@ print.summary.gmm <- function(x, digits = 5, ...)
 	{
 	cat("\nCall:\n")
 	cat(paste(deparse(x$call), sep="\n", collapse = "\n"), "\n\n", sep="")
-	cat("\nMethod: ", x$met,"\n\n")
+	cat("\nMethod: ", x$met,"\n")
+	if (x$met=="cue")
+		cat("         (",x$cue$message,")\n\n")
+	else
+		cat("\n")
 	cat("Kernel: ", x$kernel,"\n\n")
 	cat("Coefficients:\n")
 	print.default(format(x$coefficients, digits=digits),
