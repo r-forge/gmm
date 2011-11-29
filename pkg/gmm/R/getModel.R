@@ -28,7 +28,7 @@ getModel.baseGmm <- function(object, ...)
     
     if(is.null(object$weightsMatrix))
       {
-      if (object$vcov == "iid")
+      if (object$vcov == "iid" & object$wmatrix != "ident")
       	{
           clname <- "baseGmm.twoStep.formula"
           object$type <- "Linear model with iid errors: Regular IV or 2SLS"
@@ -182,15 +182,14 @@ getModel.baseGel <- function(object, ...)
     rgmm <- gmm(P$g, x, P$tet0, wmatrix = "ident")
 
 
-    P$bwVal <- P$bw(lm(P$g(rgmm$coefficients, x)~1), kernel = P$wkernel, prewhite = P$prewhite, 
+    P$bwVal <- P$bw(centeredGt <- lm(P$g(rgmm$coefficients, x)~1), kernel = P$wkernel, prewhite = P$prewhite, 
                ar.method = P$ar.method, approx = P$approx)
-    P$w <- P$weights(lm(P$g(rgmm$coefficients, x)~1), kernel = P$kernel, bw = P$bwVal, prewhite = P$prewhite, 
-               ar.method = P$ar.method, approx = P$approx, tol = P$tol_weights)
+    P$w <- smoothG(residuals(centeredGt), bw = P$bwVal)$kern_weights
 
-    P$g <- function(thet, x, g1 = P$g1, w = P$w)
+    P$g <- function(thet, x, g1 = P$g1, bw = P$bwVal)
       {
       gf <- g1(thet, x)
-      gt <- smoothG(gf, weights = w)$smoothx
+      gt <- smoothG(gf, bw = bw)$smoothx
       return(gt)
       }
     }
@@ -198,7 +197,7 @@ getModel.baseGel <- function(object, ...)
    {
    P$k1 <- 1
    P$k2 <- 1
-   P$w <- 1
+   P$w <- kernel(1)
    P$bwVal <- 1
    }	
   class(P) <- clname

@@ -161,16 +161,22 @@ smoothG <- function (x, bw = bwAndrews, prewhite = 1, ar.method = "ols", weights
 	rt <- length(w)
 	if (rt >= 2)
 		{
-		w <- c(w[rt:2], w)
-		w <- w / sum(w)
-		rt <- rt - 1
-		sgt <- function(t) crossprod(x[(t-rt):(t+rt),], w)
-		x[(rt+1):(n-rt),] <- t(sapply((rt + 1):(n - rt), sgt))
+		rt <- length(w)
+		if (rt>1)
+			{
+			w <- c(w[rt:2], w)
+			w <- w / sum(w)
+			w <- kernel(w[rt:length(w)])
+			}
+		else
+			w <- kernel(1)
+
+		x <- kernapply(x,w)		
 		sx <- list("smoothx" = x, "kern_weights" = w)
 		return(sx)		
 		}
 	else
-		sx <- list("smoothx" = x,"kern_weights" = 1)
+		sx <- list("smoothx" = x,"kern_weights" = kernel(1))
 		return(sx)		
 	}
 
@@ -237,7 +243,7 @@ gel <- function(g, x, tet0, gradv = NULL, smooth = FALSE, type = c("EL", "ET", "
         return(rhof)
         }
       if (ncol(gt) > 1)
-        rlamb <- optim(rep(0, ncol(gt)), rhofct, control = list(maxit = 1000))
+        rlamb <- optim(rep(0, ncol(gt)), rhofct, control = list(maxit = 1000,parscale=rep(.01,ncol(gt))),method="B")
       else
         {
         rlamb <- optimize(rhofct, c(-1,1))

@@ -42,6 +42,15 @@ z <- FinRes(z, Model_info)
 z
 }
 
+tsls <- function(g,x,data)
+{
+if(class(g) != "formula")
+	stop("2SLS is for linear models expressed as formula only")
+ans <- gmm(g,x,data=data,vcov="iid")
+class(ans) <- c("tsls","gmm")
+return(ans)
+}
+
 getDat <- function (formula, h, data) 
 {
 	cl <- match.call()
@@ -126,8 +135,9 @@ getDat <- function (formula, h, data)
   	{
   	if(type=="2sls")
 	  	{
-  		fsls <- lm(xm~hm-1)$fitted
-  	     par <- lm(ym~fsls-1)$coef
+		restsls <- lm(xm~hm-1)
+  		fsls <- restsls$fitted
+  	     	par <- lm(ym~fsls-1)$coef
 		if (ny == 1)
 		{
   	     	e2sls <- ym-xm%*%par
@@ -182,6 +192,11 @@ getDat <- function (formula, h, data)
 	  value <- crossprod(gb, w%*%gb) 
 
   res <- list(par = par, value = value)
+  if (!is.null(type))
+     {    
+     if (type == "2sls")
+     res$fsRes <- summary(restsls)
+     }
   return(res)
   }
 
@@ -215,6 +230,13 @@ getDat <- function (formula, h, data)
 .objCue <- function(thet, x, P)
   {
   gt <- P$g(thet,x)
+  if (is.null(P$fixedKernW))
+	w <-  weightsAndrews(lm(gt~1), prewhite=P$prewhite,
+ 			   bw = P$bw, kernel = P$kernel, approx = P$approx, 
+ 			   ar.method = P$ar.method, tol = P$tol) 
+  else
+	w <- P$fixedKernW
+
   gbar <- as.vector(colMeans(gt))
   if (P$vcov == "iid")
     w2 <- P$iid(thet, x, P$g, P$centeredVcov)
@@ -227,7 +249,7 @@ getDat <- function (formula, h, data)
         gmat <- P$g(thet,x)
         class(gmat) <- "gmmFct"
       }
-    w2 <- vcovHAC(gmat, weights=P$fixedKernW, sandwich = FALSE)
+    w2 <- vcovHAC(gmat, weights=w, sandwich = FALSE)
    }
   obj <- crossprod(gbar,solve(w2,gbar))
   return(obj)

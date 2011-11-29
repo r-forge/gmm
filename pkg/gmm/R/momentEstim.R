@@ -115,17 +115,17 @@ momentEstim.baseGmm.twoStep <- function(object, ...)
 		return(obj*2)
 		}
 	argDots <- list(...)
-        allArgOptim <- list(par = res$par, fn = .obj1, gr = gr2, x = P$x, w = w, gf = P$g, INV = TRUE)
+        allArgOptim <- list(par = P$t0, fn = .obj1, gr = gr2, x = P$x, w = w, gf = P$g, INV = TRUE)
         allArgOptim <- c(allArgOptim,argDots)
         res2 <- do.call(optim,allArgOptim)
         }
       else
-        res2 <- optim(res$par, .obj1, x = P$x, w = w, gf = P$g, ...)
+        res2 <- optim(P$t0, .obj1, x = P$x, w = w, gf = P$g, ...)
       }
 
     if (P$optfct == "nlminb")
       {
-      res2 <- nlminb(res$par, .obj1, x = P$x, w = w, gf = P$g, ...)
+      res2 <- nlminb(P$t0, .obj1, x = P$x, w = w, gf = P$g, ...)
       res2$value <- res2$objective
       }
 
@@ -136,7 +136,7 @@ momentEstim.baseGmm.twoStep <- function(object, ...)
       res2$value <- res2$objective
       }	
 
-    z = list(coefficients = res2$par, objective = res2$value, k=k, k2=k2, n=n, q=q, df=df)	
+    z = list(coefficients = res2$par, objective = res2$value, k=k, k2=k2, n=n, q=q, df=df, initTheta = res$par)	
     if (P$optfct == "optim")
 	z$algoInfo <- list(convergence = res2$convergence, counts = res2$counts, message = res2$message)
     else if(P$optfct == "nlminb")
@@ -185,11 +185,12 @@ momentEstim.baseGmm.twoStep.formula <- function(object, ...)
     if (P$vcov == "iid")
     	{
       res2 <- .tetlin(x, diag(q), dat$ny, dat$nh, dat$k, P$gradv, P$g, type="2sls")
+      initTheta <- NULL
       }
     if (P$vcov == "HAC")
       {
-      w=diag(q)
-      res1 <- .tetlin(x, w, dat$ny, dat$nh, dat$k, P$gradv, P$g)
+      res1 <- .tetlin(x, diag(q), dat$ny, dat$nh, dat$k, P$gradv, P$g, type="2sls")
+      initTheta <- res1$par
       if(P$centeredVcov) 
        	 gmat <- lm(g(res1$par, x)~1)
       else
@@ -202,7 +203,7 @@ momentEstim.baseGmm.twoStep.formula <- function(object, ...)
 	 res2 <- .tetlin(x, w, dat$ny, dat$nh, dat$k, P$gradv, g)
       }
     
-    z = list(coefficients = res2$par, objective = res2$value, dat=dat, k=k, k2=k2, n=n, q=q, df=df)	
+    z = list(coefficients = res2$par, objective = res2$value, dat=dat, k=k, k2=k2, n=n, q=q, df=df, initTheta = initTheta)	
     }
   z$gt <- g(z$coefficients, x) 
   b <- z$coefficients
@@ -237,6 +238,9 @@ momentEstim.baseGmm.twoStep.formula <- function(object, ...)
     names(z$coefficients) <- namex
     colnames(z$gt) <- nameh
     }
+  if (P$vcov == "iid" & P$wmatrix != "ident")
+	z$fsRes <- res2$fsRes
+
   class(z) <- paste(P$TypeGmm,".res",sep="")
   return(z)	
   }
@@ -265,15 +269,14 @@ momentEstim.baseGmm.iterative.formula <- function(object, ...)
     }
   else
     {
-    w=diag(rep(1, q))
-    res <- .tetlin(x, w, dat$ny, dat$nh, dat$k, P$gradv, g)
+    w <- diag(q)
+    res <- .tetlin(x, w, dat$ny, dat$nh, dat$k, P$gradv, g, type="2sls")
+    initTheta <- res$par
     ch <- 100000
     j <- 1
     while(ch > P$crit)
       {
       tet <- res$par
-      if (P$vcov == "iid")
-        w <- P$iid(tet, x, g, P$centeredVcov)
       if (P$vcov == "HAC")
 	{
         if (P$centeredVcov)
@@ -296,9 +299,11 @@ momentEstim.baseGmm.iterative.formula <- function(object, ...)
         cat("No convergence after ", P$itermax, " iterations")
         ch <- P$crit
         }
+	if(P$traceIter)
+		cat("Iter :",j,": value=",res$value,", Coef = ", res$par,"\n") 
         j <- j+1	
       }
-    z = list(coefficients = res$par, objective = res$value, dat=dat, k=k, k2=k2, n=n, q=q, df=df)	
+    z = list(coefficients = res$par, objective = res$value, dat=dat, k=k, k2=k2, n=n, q=q, df=df, initTheta=initTheta)	
    }
   z$gt <- g(z$coefficients, x) 
   b <- z$coefficients
@@ -403,6 +408,7 @@ momentEstim.baseGmm.iterative <- function(object, ...)
     }	
   else
     {
+    initTheta = res$par
     ch <- 100000
     j <- 1
     while(ch > P$crit)
@@ -471,10 +477,10 @@ momentEstim.baseGmm.iterative <- function(object, ...)
           ch <- P$crit
           }
 	if(P$traceIter)
-		print(c(iter=j,Objective=res$value,res$par))
+		cat("Iter :",j,": value=",res$value,", Coef = ", res$par,"\n") 
         j <- j+1	
       }
-    z = list(coefficients = res$par, objective = res$value,k=k, k2=k2, n=n, q=q, df=df)	
+    z = list(coefficients = res$par, objective = res$value,k=k, k2=k2, n=n, q=q, df=df, initTheta=initTheta)	
     if (P$optfct == "optim")
 	z$algoInfo <- list(convergence = res$convergence, counts = res$counts, message = res$message)
     else if(P$optfct == "nlminb")
@@ -499,6 +505,8 @@ momentEstim.baseGmm.iterative <- function(object, ...)
 
 momentEstim.baseGmm.cue.formula <- function(object, ...)
   {
+
+  fixedKernWeights <- TRUE # to be changed or included as an option in gmm() in future version
   P <- object
   g <- P$g
   if (is.null(P$data))
@@ -524,17 +532,30 @@ momentEstim.baseGmm.cue.formula <- function(object, ...)
     {
     if (is.null(P$t0))
 	{
-	P$t0 <- .tetlin(x,diag(q), dat$ny, dat$nh, dat$k, P$gradv, g)$par
-	P$weightMessage <- "Weights for kernel estimate of the covariance are fixed and based on the first step estimate of Theta"	
+	P$t0 <- .tetlin(x,diag(q), dat$ny, dat$nh, dat$k, P$gradv, g, type="2sls")$par
+	initTheta <- P$t0
+	if (fixedKernWeights)
+		P$weightMessage <- "Weights for kernel estimate of the covariance are fixed and based on the first step estimate of Theta"	
+	else
+		P$weightMessage <- "Weights for kernel estimate are variable inside the objective"
 	}
     else
-	P$weightMessage <- "Weights for kernel estimate of the covariance are fixed and based on the initial value of Theta provided by the user"	
+	{
+	initTheta <- P$t0
+	if (fixedKernWeights)
+		P$weightMessage <- "Weights for kernel estimate of the covariance are fixed and based on the initial value of Theta provided by the user"	
+	else
+		P$weightMessage <- "Weights for kernel estimate are variable inside the objective"
+	}
 
-    gt0 <- g(P$t0,x)
-    gt0 <- lm(gt0~1)
-    P$fixedKernW <-  weightsAndrews(gt0, prewhite=P$prewhite,
+    if (fixedKernWeights)
+	    {
+	    gt0 <- g(P$t0,x)
+	    gt0 <- lm(gt0~1)
+            P$fixedKernW <-  weightsAndrews(gt0, prewhite=P$prewhite,
  			   bw = P$bw, kernel = P$kernel, approx = P$approx, 
  			   ar.method = P$ar.method, tol = P$tol) 
+	    }
 
 
     if (P$optfct == "optim")
@@ -550,7 +571,7 @@ momentEstim.baseGmm.cue.formula <- function(object, ...)
       res2$par <- res2$minimum
       res2$value <- res2$objective
       }
-    z = list(coefficients = res2$par, objective = res2$value, dat = dat, k = k, k2 = k2, n = n, q = q, df = df)
+    z = list(coefficients = res2$par, objective = res2$value, dat = dat, k = k, k2 = k2, n = n, q = q, df = df, initTheta=initTheta)
     if (P$optfct == "optim")
 	z$algoInfo <- list(convergence = res2$convergence, counts = res2$counts, message = res2$message)
     else if(P$optfct == "nlminb")
@@ -604,6 +625,7 @@ momentEstim.baseGmm.cue <- function(object, ...)
   if(class(res)=="try-error")
 	stop("Cannot get a first step estimate to compute the weights for the Kernel estimate of the covariance matrix; try different starting values")
 
+  initTheta <- res$coef
   n <- nrow(res$gt)
   q <- ncol(res$gt)
 
@@ -622,7 +644,7 @@ momentEstim.baseGmm.cue <- function(object, ...)
     }	
   else
     {
-    gt0 <- P$g(res$coef,x)
+    gt0 <- P$g(res$coef,x) #Should we compute the weigths with the initial value provided?
     gt0 <- lm(gt0~1)
     P$fixedKernW <-  weightsAndrews(gt0, prewhite=P$prewhite,
  			   bw = P$bw, kernel = P$kernel, approx = P$approx, 
@@ -631,11 +653,11 @@ momentEstim.baseGmm.cue <- function(object, ...)
 
     if (P$optfct == "optim")
       {
-      res2 <- optim(res$coef, .objCue, x = x, P = P, ...)
+      res2 <- optim(P$t0, .objCue, x = x, P = P, ...)
       }
     if (P$optfct == "nlminb")
       {
-      res2 <- nlminb(res$coef, .objCue, x = x, P = P, ...)
+      res2 <- nlminb(P$t0, .objCue, x = x, P = P, ...)
       res2$value <- res2$objective
       }
     if (P$optfct == "optimize")
@@ -644,7 +666,7 @@ momentEstim.baseGmm.cue <- function(object, ...)
       res2$par <- res2$minimum
       res2$value <- res2$objective
       }
-    z = list(coefficients=res2$par,objective=res2$value, k=k, k2=k2, n=n, q=q, df=df)	
+    z = list(coefficients=res2$par,objective=res2$value, k=k, k2=k2, n=n, q=q, df=df, initTheta=initTheta)	
     if (P$optfct == "optim")
 	z$algoInfo <- list(convergence = res2$convergence, counts = res2$counts, message = res2$message)
     else if(P$optfct == "nlminb")
@@ -711,7 +733,7 @@ momentEstim.baseGel.modFormula <- function(object, ...)
       rhof <- -sum(rho(gt, lamb, type = P$typel, k = P$k1/P$k2)$rhomat)
       return(rhof)
       }
-    rlamb <- optim(rep(0, ncol(gt)), rhofct, control = list(maxit = 1000))
+    rlamb <- optim(rep(0, ncol(gt)), rhofct, control = list(maxit = 1000,parscale=rep(.01,ncol(gt))), method="B")
     z <- list(coefficients = res$par, conv_par = res$convergence, lambda = rlamb$par)
     z$conv_lambda = paste("Lambda by optim. Conv. code = ", rlamb$convergence, sep = "")
     rho1 <- as.numeric(rho(gt, z$lambda, derive = 1, type = P$typel, k = P$k1/P$k2)$rhomat)
