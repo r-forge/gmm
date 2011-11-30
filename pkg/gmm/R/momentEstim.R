@@ -695,10 +695,7 @@ momentEstim.baseGel.modFormula <- function(object, ...)
   {
   P <- object
   g <- P$g
-  dat <- getDat(P$gform, P$x)
-  x <- dat$x
-  n <- nrow(x)
-
+  n <- nrow(P$dat$x)
   if (!P$constraint)
     {
     if (P$optfct == "optim")
@@ -713,66 +710,68 @@ momentEstim.baseGel.modFormula <- function(object, ...)
       res$convergence <- "There is no convergence code for optimize"
       }
     }
-
   if(P$constraint)
     res <- constrOptim(P$tet0, .thetf, grad = NULL, P = P, ...)
 
+  gt <- P$g(res$par, P$dat)
+   
 
-  if (P$optlam == "iter")
-    {
-    rlamb <- getLamb(P$g, res$par, x, type = P$typel, tol_lam = P$tol_lam, maxiterlam = P$maxiterlam, tol_obj = P$tol_obj, k = P$k1/P$k2)
-    z <- list(coefficients = res$par, lambda = rlamb$lam, conv_lambda = rlamb$conv_mes, conv_par = res$convergence)
-    z$foc_lambda <- rlamb$obj
-    }
+  if (P$optlam != "optim" & P$type == "EL") 
+	    {
+	    rlamb <- try(getLamb(gt, type = P$typel, tol_lam = P$tol_lam, maxiterlam = P$maxiterlam, tol_obj = P$tol_obj, k = P$k1/P$k2, 
+		control = P$controlLam, method = P$optlam), silent = TRUE)
+	    if(class(rlamb) == "try-error")
+		    rlamb <- getLamb(gt, type = P$typel, tol_lam = P$tol_lam, maxiterlam = P$maxiterlam, tol_obj = P$tol_obj, k = P$k1/P$k2, 
+			control = P$controlLam, method = "optim")
+	    }
+    else
+	    rlamb <- getLamb(gt, type = P$typel, tol_lam = P$tol_lam, maxiterlam = P$maxiterlam, tol_obj = P$tol_obj, k = P$k1/P$k2, 
+		control = P$controlLam, method = P$optlam)
 
-  if (P$optlam == "numeric")
-    {
-    gt <- P$g(res$par, x)
-    rhofct <- function(lamb)
-      {
-      rhof <- -sum(rho(gt, lamb, type = P$typel, k = P$k1/P$k2)$rhomat)
-      return(rhof)
-      }
-    rlamb <- optim(rep(0, ncol(gt)), rhofct, control = list(maxit = 1000,parscale=rep(.01,ncol(gt))), method="B")
-    z <- list(coefficients = res$par, conv_par = res$convergence, lambda = rlamb$par)
-    z$conv_lambda = paste("Lambda by optim. Conv. code = ", rlamb$convergence, sep = "")
-    rho1 <- as.numeric(rho(gt, z$lambda, derive = 1, type = P$typel, k = P$k1/P$k2)$rhomat)
-    z$foc_lambda <- crossprod(colMeans(rho1*gt))
-    }
+
+  z <- list(coefficients = res$par, lambda = rlamb$lambda, conv_lambda = rlamb$conv, conv_par = res$convergence, dat=P$dat)
+  rho1 <- .rho(gt, z$lambda, derive = 1, type = P$typel, k = P$k1/P$k2)
+  z$foc_lambda <- crossprod(colMeans(rho1*gt))
+
   z$type <- P$type
-  z$gt <- P$g(z$coefficients, x)
-  rhom <- rho(z$gt, z$lambda, type = P$typet, k = P$k1/P$k2)
-  z$pt <- -rho(z$gt, z$lambda, type = P$typet, derive = 1, k = P$k1/P$k2)$rhomat/n
-  z$conv_moment <- colSums(as.numeric(z$pt)*z$gt)
+  z$gt <- gt
+  rhom <- .rho(z$gt, z$lambda, type = P$typet, k = P$k1/P$k2)
+  z$pt <- -.rho(z$gt, z$lambda, type = P$typet, derive = 1, k = P$k1/P$k2)/n
+
+
+
+  # Making sure pt>0
+  if (P$type=="CUE")
+	{
+	eps <- -length(z$pt)*min(min(z$pt),0)
+	z$pt <- (z$pt+eps/length(z$pt))/(1+eps)
+	}
+  ###################
+
+  z$conv_moment <- colSums(z$pt*z$gt)
   z$conv_pt <- sum(as.numeric(z$pt))
-  z$objective <- sum(as.numeric(rhom$rhomat) - rho(1, 0, type = P$typet)$rhomat)/n
+  z$objective <- sum(rhom - .rho(1, 0, type = P$typet))/n
 
-  namex <- colnames(dat$x[, (dat$ny+1):(dat$ny+dat$k)])
-  nameh <- colnames(dat$x[, (dat$ny+dat$k+1):(dat$ny+dat$k+dat$nh)])
+  namex <- colnames(P$dat$x[, (P$dat$ny+1):(P$dat$ny+P$dat$k)])
+  nameh <- colnames(P$dat$x[, (P$dat$ny+P$dat$k+1):(P$dat$ny+P$dat$k+P$dat$nh)])
 
-  if (dat$ny > 1)
+
+  if (P$dat$ny > 1)
     {
-    namey <- colnames(dat$x[, 1:dat$ny])
-    names(z$coefficients) <- paste(rep(namey, dat$k), "_", rep(namex, rep(dat$ny, dat$k)), sep = "")
-    colnames(z$gt) <- paste(rep(namey, dat$nh), "_", rep(nameh, rep(dat$ny,dat$nh)), sep = "")
-    names(z$lambda) <- paste("Lam(",rep(namey,dat$nh), "_", rep(nameh, rep(dat$ny,dat$nh)), ")", sep = "")
+    namey <- colnames(P$dat$x[, 1:P$dat$ny])
+    names(z$coefficients) <- paste(rep(namey, P$dat$k), "_", rep(namex, rep(P$dat$ny, P$dat$k)), sep = "")
+    colnames(z$gt) <- paste(rep(namey, P$dat$nh), "_", rep(nameh, rep(P$dat$ny,P$dat$nh)), sep = "")
+    names(z$lambda) <- paste("Lam(",rep(namey,P$dat$nh), "_", rep(nameh, rep(P$dat$ny,P$dat$nh)), ")", sep = "")
     }
-  if (dat$ny == 1)
+  if (P$dat$ny == 1)
     {
     names(z$coefficients) <- namex
     colnames(z$gt) <- nameh
     names(z$lambda) <- nameh
     }
 
-  if (P$type == "EL")	
-    {
-    z$badrho <- rhom$ch
-    names(z$badrho) <- "Number_of_bad_rho"
-    }
-
-  G <- P$gradv(z$coefficients, x)
-
-  khat <- crossprod(z$gt)/(n*P$k2)*P$bwVal
+  G <- P$gradv(z$coefficients, P$dat, z$pt)
+  khat <- crossprod(c(z$pt)*z$gt,z$gt)/(P$k2)*P$bwVal
   G <- G/P$k1 
 
   kg <- solve(khat, G)
@@ -783,19 +782,18 @@ momentEstim.baseGel.modFormula <- function(object, ...)
   z$weights <- P$w
   z$bwVal <- P$bwVal
   names(z$bwVal) <- "Bandwidth"
-
   dimnames(z$vcov_par) <- list(names(z$coefficients), names(z$coefficients))
   dimnames(z$vcov_lambda) <- list(names(z$lambda), names(z$lambda))
   b <- z$coefficients
-  y <- as.matrix(model.response(dat$mf, "numeric"))
-  ny <- dat$ny
+  y <- as.matrix(model.response(P$dat$mf, "numeric"))
+  ny <- P$dat$ny
   b <- t(matrix(b, nrow = ny))
-  x <- as.matrix(model.matrix(dat$mt, dat$mf, NULL))
+  x <- as.matrix(model.matrix(P$dat$mt, P$dat$mf, NULL))
   yhat <- x%*%b
   z$fitted.values <- yhat	
   z$residuals <- y - yhat	
-  z$terms <- dat$mt
-  if(P$model) z$model <- dat$mf
+  z$terms <- P$dat$mt
+  if(P$model) z$model <- P$dat$mf
   if(P$X) z$x <- x
   if(P$Y) z$y <- y
   z$call <- P$call
@@ -830,48 +828,37 @@ momentEstim.baseGel.mod <- function(object, ...)
   if(P$constraint)
     res <- constrOptim(P$tet0, .thetf, grad = NULL, P = P, ...)
 
+  gt <- P$g(res$par, x)
+  rlamb <- getLamb(gt, type = P$typel, tol_lam = P$tol_lam, maxiterlam = P$maxiterlam, tol_obj = P$tol_obj, 
+		method = P$optlam, k = P$k1/P$k2, control = P$controlLam)
 
-  if (P$optlam == "iter")
-    {
-    rlamb <- getLamb(P$g, res$par, x, type = P$typel, tol_lam = P$tol_lam, maxiterlam = P$maxiterlam, tol_obj = P$tol_obj, k = P$k1/P$k2)
-    z <- list(coefficients = res$par, lambda = rlamb$lam, conv_lambda = rlamb$conv_mes, conv_par = res$convergence)
-    z$foc_lambda <- rlamb$obj
-    }
+  z <- list(coefficients = res$par, lambda = rlamb$lambda, conv_lambda = rlamb$conv, conv_par = res$convergence, dat=P$dat)
+  rho1 <- .rho(gt, z$lambda, derive = 1, type = P$typel, k = P$k1/P$k2)
+  z$foc_lambda <- crossprod(colMeans(rho1*gt))
 
-  if (P$optlam == "numeric")
-    {
-    gt <- P$g(res$par, x)
-    rhofct <- function(lamb)
-      {
-      rhof <- -sum(rho(gt, lamb, type = P$typel, k = P$k1/P$k2)$rhomat)
-      return(rhof)
-      }
-    rlamb <- optim(rep(0, ncol(gt)), rhofct, control = list(maxit = 1000))
-    z <- list(coefficients = res$par, conv_par = res$convergence, lambda = rlamb$par)
-    z$conv_lambda = paste("Lambda by optim. Conv. code = ", rlamb$convergence, sep = "")
-    rho1 <- as.numeric(rho(gt, z$lambda, derive = 1, type = P$typel, k = P$k1/P$k2)$rhomat)
-    z$foc_lambda <- crossprod(colMeans(rho1*gt))
-    }
   z$type <- P$type
-  z$gt <- P$g(z$coefficients, x)
-  rhom <- rho(z$gt, z$lambda, type = P$typet, k = P$k1/P$k2)
-  z$pt <- -rho(z$gt, z$lambda, type = P$typet, derive = 1, k = P$k1/P$k2)$rhomat/n
+  z$gt <- gt
+  rhom <- .rho(z$gt, z$lambda, type = P$typet, k = P$k1/P$k2)
+  z$pt <- -.rho(z$gt, z$lambda, type = P$typet, derive = 1, k = P$k1/P$k2)/n
+
+# making sure pt>0
+  if (P$type=="CUE")
+	{
+	eps <- -length(z$pt)*min(min(z$pt),0)
+	z$pt <- (z$pt+eps/length(pt))/(1+eps)
+	}
+##################
+
   z$conv_moment <- colSums(as.numeric(z$pt)*z$gt)
   z$conv_pt <- sum(as.numeric(z$pt))
-  z$objective <- sum(as.numeric(rhom$rhomat) - rho(1, 0, type = P$typet, k = P$k1/P$k2)$rhomat)/n
-
-  if (P$type == "EL")	 
-    {
-    z$badrho <- rhom$ch
-    names(z$badrho) <- "Number_of_bad_rho"
-    }
+  z$objective <- sum(as.numeric(rhom) - .rho(1, 0, type = P$typet, k = P$k1/P$k2))/n
 
   if(P$gradvf)
     G <- P$gradv(z$coefficients, x)
   else
-    G <- P$gradv(z$coefficients, x, g = P$g)
+    G <- P$gradv(z$coefficients, x, g = P$g, pt)
   
-  khat <- crossprod(z$gt)/(n*P$k2)*P$bwVal
+  khat <- crossprod(c(z$pt)*z$gt, z$gt)/(P$k2)*P$bwVal
   G <- G/P$k1 
 
   kg <- solve(khat, G)

@@ -212,7 +212,7 @@ getDat <- function (formula, h, data)
   return(obj)
   }
 
-.Gf <- function(thet, x, g)
+.Gf <- function(thet, x, g, pt = NULL)
   {
   myenv <- new.env()
   assign('x', x, envir = myenv)
@@ -220,7 +220,11 @@ getDat <- function (formula, h, data)
   barg <- function(x, thet)
     {
     gt <- g(thet, x)
-    gbar <- as.vector(colMeans(gt))
+    if (is.null(pt))
+	    gbar <- as.vector(colMeans(gt))
+    else
+	    gbar <- as.vector(colSums(c(pt)*gt))
+
     return(gbar)
     }
   G <- attr(numericDeriv(quote(barg(x, thet)), "thet", myenv), "gradient")

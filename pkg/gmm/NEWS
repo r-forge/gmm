@@ -1,4 +1,4 @@
-Changes in version 1.3-9
+Changes in version 1.4-0
 
 o The method for GMM-CUE has been modified. Before, the weights for the kernel estimation of the weighting matrix
   were flexible inside the optimizer which was making the algorithm long and unstable. It is now fixed using either the starting 
@@ -11,6 +11,7 @@ o SmoothG for GEL uses now the kernapply() function which is more efficient.
 o Something the GMM converge to weird values which is sometimes caused by bad first step estimates used to compute the weighting matrix. 
   Summary() prints the initial values to have more infortmation when convergence fails.
 o There was a bug in specTest() for GEL.  The degrees of freedom for the J-test were wrong. It is fixed.
+o For GEL type CUE the implied probabilities are computed according to Antoine, Bonnal, and Renault (2007) which solves the problem of negative probabilities.
 
 Changes in version 1.3-8
 

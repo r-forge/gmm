@@ -82,7 +82,7 @@ summary(res)
 
 # GEL #
 
-t0 <- c(0,.5,.5)
+t0 <- res$coef
 res <- gel(g, x, t0)
 summary(res)
 

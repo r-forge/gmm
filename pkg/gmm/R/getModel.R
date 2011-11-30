@@ -120,10 +120,13 @@ getModel.baseGel <- function(object, ...)
     {
     clname <- paste(class(P), ".modFormula", sep = "")
     dat <- getDat(P$g, P$x)
-    x <- dat$x
 
-    g <- function(tet, x, ny = dat$ny, nh = dat$nh, k = dat$k)
+    g <- function(tet, dat)
       {
+      x <- dat$x
+      ny <- dat$ny
+      nh  <- dat$nh
+      k <- dat$k
       tet <- matrix(tet, ncol = k)
       e <- x[,1:ny] -  x[, (ny+1):(ny+k)]%*%t(tet)
       gt <- e*x[, ny+k+1]
@@ -137,10 +140,18 @@ getModel.baseGel <- function(object, ...)
       return(gt)
       }
 
-    gradv <- function(tet, x, ny = dat$ny, nh = dat$nh, k = dat$k)
+    gradv <- function(tet, dat, pt = NULL)
       {
+      x <- dat$x
+      ny <- dat$ny
+      nh  <- dat$nh
+      k <- dat$k
       tet <- matrix(tet, ncol = k)
-      dgb <- -(t(x[,(ny+k+1):(ny+k+nh)])%*%x[,(ny+1):(ny+k)])%x%diag(rep(1, ny))/nrow(x)
+      if (is.null(pt))
+	      dgb <- -(t(x[,(ny+k+1):(ny+k+nh)])%*%x[,(ny+1):(ny+k)])%x%diag(rep(1, ny))/nrow(x)
+      else
+	      dgb <- -(t(c(pt)*x[,(ny+k+1):(ny+k+nh)])%*%x[,(ny+1):(ny+k)])%x%diag(rep(1, ny))
+
       return(dgb)
       }
     P$dat <- dat
@@ -150,7 +161,7 @@ getModel.baseGel <- function(object, ...)
     }	
   else
     {
-    x <- P$x
+    P$dat <- P$x
     clname <- paste(class(P), ".mod", sep = "")
     P$gform <- NULL
     if (!is.function(object$gradv))
@@ -179,8 +190,7 @@ getModel.baseGel <- function(object, ...)
         P$k2 <- 2/3
         }
     P$g1 <- P$g
-    rgmm <- gmm(P$g, x, P$tet0, wmatrix = "ident")
-
+    rgmm <- gmm(P$g, P$dat, P$tet0, wmatrix = "ident")
 
     P$bwVal <- P$bw(centeredGt <- lm(P$g(rgmm$coefficients, x)~1), kernel = P$wkernel, prewhite = P$prewhite, 
                ar.method = P$ar.method, approx = P$approx)

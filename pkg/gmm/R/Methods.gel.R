@@ -68,6 +68,9 @@ print.gel <- function(x, digits = 5, ...)
 	cat("Lambdas:\n")
 	print.default(format(coef(x, lambda = TRUE), digits = digits),
                       print.gap = 2, quote = FALSE)
+	cat("\n")
+	cat("Convergence code for the coefficients: ", x$conv_par,"\n")
+	cat("Convergence code for Lambda: ", x$conv_lambda$convergence,"\n")
 	invisible(x)
 	}
 
@@ -90,7 +93,7 @@ print.summary.gel <- function(x, digits = 5, ...)
                       print.gap = 2, quote = FALSE)
 
 	cat("\nConvergence code for the coefficients: ", x$conv_par, "\n")
-	cat("\nConvergence code for the lambdas: ", x$conv_lambda, "\n")
+	cat("\nConvergence code for the lambdas: ", x$conv_lambda$convergence, "\n")
 	
 	invisible(x)
 	}
