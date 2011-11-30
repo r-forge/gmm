@@ -150,6 +150,7 @@ getModel.baseGel <- function(object, ...)
     }	
   else
     {
+    x <- P$x
     clname <- paste(class(P), ".mod", sep = "")
     P$gform <- NULL
     if (!is.function(object$gradv))
@@ -163,7 +164,6 @@ getModel.baseGel <- function(object, ...)
       }
 
     }
-
   if (P$smooth)
     {
     if(P$kernel == "Truncated")
