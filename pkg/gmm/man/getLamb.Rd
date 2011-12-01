@@ -8,13 +8,13 @@
  It computes the vector of Lagrange multipliers, which maximizes the GEL objective function, using an iterative Newton method.
 }
 \usage{
-getLamb(gt, type = c('EL','ET','CUE'), tol_lam = 1e-7, maxiterlam = 100, tol_obj = 1e-7, k = 1, method = c("nlminb", "optim", "iter"), 
-			control = list())
+getLamb(gt, type = c("EL","ET","CUE", "ETEL"), tol_lam = 1e-7, maxiterlam = 100, tol_obj = 1e-7, k = 1, 
+	method = c("nlminb", "optim", "iter"), control = list())
 }
 \arguments{
 \item{gt}{A \eqn{n \times q} matrix with typical element \eqn{g_i(\theta,x_t)}}
 
-\item{type}{"EL" for empirical likelihood, "ET" for exponential tilting and "CUE" for continuous updated estimator.}
+\item{type}{"EL" for empirical likelihood, "ET" for exponential tilting and "CUE" for continuous updated estimator. See details for "ETEL".}
 
 \item{tol_lam}{Tolerance for \eqn{\lambda} between two iterations. The algorithm stops when \eqn{\|\lambda_i -\lambda_{i-1}\|} reaches \code{tol_lam} }
 
@@ -29,7 +29,7 @@ getLamb(gt, type = c('EL','ET','CUE'), tol_lam = 1e-7, maxiterlam = 100, tol_obj
 \item{control}{Controls to send to \code{\link{optim}}, \code{\link{nlminb}} or \code{\link{constrOptim}}}
 }
 \details{
-It solves the problem \eqn{\max_{\lambda} - \frac{1}{n}\sum_{t=1}^n \rho(gt'\lambda)}.
+It solves the problem \eqn{\max_{\lambda} \frac{1}{n}\sum_{t=1}^n \rho(gt'\lambda)}. For the type "ETEL", it is only used by \code{\link{gel}}. In that case \eqn{\lambda} is obtained by maximizing \eqn{\frac{1}{n}\sum_{t=1}^n \rho(gt'\lambda)}, using \eqn{\rho(v)=-\exp{v}} (so ET) and \eqn{\theta} by minimizing the same equation but with \eqn{\rho(v)-\log{(1-v)}}. To avoid NA's, \code{\ling{constrOptim}} is used with the restriction \eqn{\lambda'g_t < 1}.
 }
 
 \value{

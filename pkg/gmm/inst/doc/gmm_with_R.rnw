@@ -723,9 +723,11 @@ coef(res_cue)
 @
 A fourth method is available which is called the exponentially tilted empirical likelihood (ETEL) and was proposed by \cite{schennach07}. However, it does not belong to the family of GEL estimators. It solves the problem of misspecified models. In such models there may not exist any pseudo value to which $\hat{\theta}$ converges as the sample size increases. ETEL uses the $\rho()$ of ET to solve for $\lambda$ and the $\rho()$ of EL to solve for $\theta$. \cite{schennach07} shows that ETEL shares the same asymptotic properties of EL without having to impose restrictions on the domain of $\rho(v)$ when solving for $\lambda$. 
 <<>>=
-res <- gel(g1,x1,tet0,type="ETEL")
-coef(res)
+res_etel <- gel(g1,x1,c(mu=1,sig=1),type="ETEL")
+coef(res_etel)
 @
+The type ETEL is experimental for now. Although it is supposed to be more stable because no restrictions are required to solve for $\lambda$, once we substitute $\lambda(\theta)$ in the EL objective function to estimate $\theta$, we still need to restrict $\lambda'g_t$ to avoid having NA's. The solution used in gel() is to obtain $\lambda(\theta)$ with \code{constrOptim} with the restriction $\lambda'gt > 1$ even if it is not required by ET ($\rho(v)=-\exp{(v)}$). It is however sensitive to starting values. That's the reason why we used different ones above.    
+
 \subsection{Estimating the AR coefficients of an ARMA process}
 
 Because the moment conditions are weakly dependent, we need to set the option \code{smooth=TRUE}. Before going to the estimation procedure, we need to understand the relationship between the smoothing kernel and the HAC estimator. The reason why we need to smooth the moment function is that GEL estimates the covariance matrix of $\bar{g}(\theta,x_t)$, as if we had iid observations, using the expression $(1/T)\sum_{t=1}^T(g_tg_t')$. We can show that substituting $g_t$ by $g^w_t$ in this expression results in an HAC estimator. However, the relationship between the smoothing kernel and the kernel that appears in the HAC estimator is not obvious. For example, we can show that if the smoothing kernel is Truncated, then the kernel in the HAC estimator is the Bartlett. Let us consider the truncated kernel with a bandwidth of 2. This implies that $w(s)=1/5$ for $|s|\leq 2$ and 0 otherwise. Then, the expression for the covariance matrix becomes:

@@ -713,21 +713,9 @@ momentEstim.baseGel.modFormula <- function(object, ...)
   if(P$constraint)
     res <- constrOptim(P$tet0, .thetf, grad = NULL, P = P, ...)
 
-  gt <- P$g(res$par, P$dat)
-   
-
-  if (P$optlam != "optim" & P$type == "EL") 
-	    {
-	    rlamb <- try(getLamb(gt, type = P$typel, tol_lam = P$tol_lam, maxiterlam = P$maxiterlam, tol_obj = P$tol_obj, k = P$k1/P$k2, 
-		control = P$controlLam, method = P$optlam), silent = TRUE)
-	    if(class(rlamb) == "try-error")
-		    rlamb <- getLamb(gt, type = P$typel, tol_lam = P$tol_lam, maxiterlam = P$maxiterlam, tol_obj = P$tol_obj, k = P$k1/P$k2, 
-			control = P$controlLam, method = "optim")
-	    }
-    else
-	    rlamb <- getLamb(gt, type = P$typel, tol_lam = P$tol_lam, maxiterlam = P$maxiterlam, tol_obj = P$tol_obj, k = P$k1/P$k2, 
-		control = P$controlLam, method = P$optlam)
-
+  All <- .thetf(res$par, P, "all")
+  gt <- All$gt
+  rlamb <- All$lambda
 
   z <- list(coefficients = res$par, lambda = rlamb$lambda, conv_lambda = rlamb$conv, conv_par = res$convergence, dat=P$dat)
   rho1 <- .rho(gt, z$lambda, derive = 1, type = P$typel, k = P$k1/P$k2)
@@ -737,7 +725,7 @@ momentEstim.baseGel.modFormula <- function(object, ...)
   z$gt <- gt
   rhom <- .rho(z$gt, z$lambda, type = P$typet, k = P$k1/P$k2)
   z$pt <- -.rho(z$gt, z$lambda, type = P$typet, derive = 1, k = P$k1/P$k2)/n
-
+print("hello")
 
 
   # Making sure pt>0
@@ -828,9 +816,9 @@ momentEstim.baseGel.mod <- function(object, ...)
   if(P$constraint)
     res <- constrOptim(P$tet0, .thetf, grad = NULL, P = P, ...)
 
-  gt <- P$g(res$par, x)
-  rlamb <- getLamb(gt, type = P$typel, tol_lam = P$tol_lam, maxiterlam = P$maxiterlam, tol_obj = P$tol_obj, 
-		method = P$optlam, k = P$k1/P$k2, control = P$controlLam)
+  All <- .thetf(res$par, P, "all")
+  gt <- All$gt
+  rlamb <- All$lambda
 
   z <- list(coefficients = res$par, lambda = rlamb$lambda, conv_lambda = rlamb$conv, conv_par = res$convergence, dat=P$dat)
   rho1 <- .rho(gt, z$lambda, derive = 1, type = P$typel, k = P$k1/P$k2)
@@ -848,15 +836,14 @@ momentEstim.baseGel.mod <- function(object, ...)
 	z$pt <- (z$pt+eps/length(pt))/(1+eps)
 	}
 ##################
-
   z$conv_moment <- colSums(as.numeric(z$pt)*z$gt)
   z$conv_pt <- sum(as.numeric(z$pt))
   z$objective <- sum(as.numeric(rhom) - .rho(1, 0, type = P$typet, k = P$k1/P$k2))/n
-
   if(P$gradvf)
     G <- P$gradv(z$coefficients, x)
   else
-    G <- P$gradv(z$coefficients, x, g = P$g, pt)
+    G <- P$gradv(z$coefficients, x, g = P$g, z$pt)
+
   
   khat <- crossprod(c(z$pt)*z$gt, z$gt)/(P$k2)*P$bwVal
   G <- G/P$k1 

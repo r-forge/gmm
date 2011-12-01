@@ -11,7 +11,20 @@ o SmoothG for GEL uses now the kernapply() function which is more efficient.
 o Something the GMM converge to weird values which is sometimes caused by bad first step estimates used to compute the weighting matrix. 
   Summary() prints the initial values to have more infortmation when convergence fails.
 o There was a bug in specTest() for GEL.  The degrees of freedom for the J-test were wrong. It is fixed.
-o For GEL type CUE the implied probabilities are computed according to Antoine, Bonnal, and Renault (2007) which solves the problem of negative probabilities.
+o For GEL type CUE the implied probabilities are computed according to Antoine, Bonnal, and Renault (2007) which solves the 
+  problem of negative probabilities.
+o The data file Finance has been resaved which implies that the package depends now on R version ­2.10.0 and higher
+o The function rho() had been changed to .rho() because it is not useful outside the gel() function
+o The function getLamb() has been modified. It is now more efficient. The default for the gel() option optlam is now nlminb.
+  The gradient and the hessian is provided which makes it much faster to solve for lambda. The argument of the function also changed.
+  Instead of providing the function g() and the vector of coefficients, we provide the matrix gt. I may be useful to call the function
+  sometimes to solve for lambda and it is easier that way.
+o The choice "iter" from the option optlam is kept for cases in which the optimizer fails to solve for lambda. It is often the case 
+  when type="ETEL" is chosen which tends to produce NA's.
+o For GEL of type "EL" and optfct="optim", the algorith constrOptim() is launched to make sure lambda'gt is always greater than 1
+  and avoid NA's when computing log(1-lambda'gt).
+o Sometimes, problems happen in GMM estimation because of the bad first step estimates used to compute the weighting matrix.
+  The first step estimates are usually computed using the identity matrix. The vector is now printed for better control. 
 
 Changes in version 1.3-8
 

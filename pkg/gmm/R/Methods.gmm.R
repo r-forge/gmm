@@ -30,7 +30,10 @@ summary.gmm <- function(object, ...)
 	if(z$met=="cue")
 		ans$cue <- object$cue
 	if (!is.null(object$initTheta))
+		{
 		ans$initTheta <- object$initTheta
+		names(ans$initTheta) <- names(z$coefficients)
+		}
 	class(ans) <- "summary.gmm"
 	ans
 	}

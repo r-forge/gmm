@@ -100,6 +100,7 @@ getModel.baseGmm <- function(object, ...)
 
 getModel.baseGel <- function(object, ...)
   {
+
   P <- object
   if (P$type == "ETEL")
     {
@@ -190,9 +191,9 @@ getModel.baseGel <- function(object, ...)
         P$k2 <- 2/3
         }
     P$g1 <- P$g
-    rgmm <- gmm(P$g, P$dat, P$tet0, wmatrix = "ident")
 
-    P$bwVal <- P$bw(centeredGt <- lm(P$g(rgmm$coefficients, x)~1), kernel = P$wkernel, prewhite = P$prewhite, 
+    rgmm <- gmm(P$g, P$dat, P$tet0, wmatrix = "ident")
+    P$bwVal <- P$bw(centeredGt <- lm(P$g(rgmm$coefficients, P$dat)~1), kernel = P$wkernel, prewhite = P$prewhite, 
                ar.method = P$ar.method, approx = P$approx)
     P$w <- smoothG(residuals(centeredGt), bw = P$bwVal)$kern_weights
 

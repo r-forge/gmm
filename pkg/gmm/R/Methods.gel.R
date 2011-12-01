@@ -133,9 +133,7 @@ summary.gel <- function(object, ...)
 	ans$conv_pt <- z$conv_pt
 	ans$conv_moment <- cbind(z$conv_moment)
 	ans$conv_lambda <- z$conv_lambda
-	names(ans$conv_par) <- "Convergence_code_theta"
 	names(ans$conv_pt) <- "Sum_of_pt"
-	names(ans$conv_lambda) <- "Convergence_code_for_lambda"
 	dimnames(ans$conv_moment) <- list(names(z$gt), "Sample_moment_with_pt")
 	class(ans) <- "summary.gel"
 	ans	

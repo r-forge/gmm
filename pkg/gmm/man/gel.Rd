@@ -12,7 +12,7 @@ gel(g, x, tet0, gradv = NULL, smooth = FALSE, type = c("EL","ET","CUE","ETEL"),
     kernel = c("Truncated", "Bartlett"), bw = bwAndrews, 
     approx = c("AR(1)", "ARMA(1,1)"), prewhite = 1, ar.method = "ols", tol_weights = 1e-7, 
     tol_lam = 1e-9, tol_obj = 1e-9, tol_mom = 1e-9, maxiterlam = 100, constraint = FALSE,
-    optfct = c("optim", "optimize", "nlminb"), optlam = c("nlminb", "optim", "iter"), controlLam = list(), model = TRUE, 
+    optfct = c("optim", "optimize", "nlminb"), optlam = c("nlminb", "optim", "iter"), Lambdacontrol = list(), model = TRUE, 
     X = FALSE, Y = FALSE, TypeGel = "baseGel",...)
 }
 \arguments{
@@ -54,7 +54,7 @@ gel(g, x, tet0, gradv = NULL, smooth = FALSE, type = c("EL","ET","CUE","ETEL"),
 
 \item{optlam}{The default is "iter" which solves for \eqn{\lambda} using the Newton iterative method \code{\link{getLamb}}. If set to "numeric", the algorithm \code{\link{optim}} is used to compute \eqn{\lambda} instead.}
 
-\item{controlLam}{Controls for the optimization of the vector of Lagrange multipliers used by either \code{\link{optim}}, \code{\link{nlminb}} or \code{\link{constrOptim}}}
+\item{Lambdacontrol}{Controls for the optimization of the vector of Lagrange multipliers used by either \code{\link{optim}}, \code{\link{nlminb}} or \code{\link{constrOptim}}}
 
 \item{model, X, Y}{logicals.  If \code{TRUE} the corresponding components of the fit (the model frame, the model matrix, the response) are returned if g is a formula.}
 
