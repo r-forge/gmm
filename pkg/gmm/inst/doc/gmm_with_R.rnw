@@ -12,23 +12,24 @@
 \usepackage{ucs}
 \usepackage[utf8x]{inputenc}
 %% need no \usepackage{Sweave.sty}
+\SweaveOpts{keep.source=TRUE} 
 
-\author{Pierre Chaussé}
+\author{Pierre Chauss\'e}
 \title{Computing Generalized Method of Moments and Generalized Empirical Likelihood with \proglang{R}}
-\Plainauthor{Pierre Chaussé}
+\Plainauthor{Pierre Chauss\'e}
 \Plaintitle{Computing Generalized Method of Moments and Generalized Empirical Likelihood with R} 
 \Shorttitle{GMM and GEL with R} 
 
-\Abstract{This paper shows how to estimate models by the generalized method of moments and the generalized empirical likelihood using the \proglang{R} package \pkg{gmm}. A brief discussion is offered on the theoretical aspects of both methods and the functionality of the package is presented through several examples in economics and finance. It is a slightly modified version of \cite{chausse10} published in the Journal of Statistical Software.  
+\Abstract{This paper shows how to estimate models by the generalized method of moments and the generalized empirical likelihood using the \proglang{R} package \pkg{gmm}. A brief discussion is offered on the theoretical aspects of both methods and the functionality of the package is presented through several examples in economics and finance. It is a modified version of \cite{chausse10} published in the Journal of Statistical Software. It has been adapted to the version 1.4-0.  
 }
 \Keywords{generalized empirical likelihood, generalized method of moments, empirical likelihood, continuous updated estimator, exponential tilting, exponentially tilted empirical likelihood, \proglang{R}}
 \Plainkeywords{generalized empirical likelihood, generalized method of moments, empirical likelihood, continuous updated estimator, exponential tilting, exponentially tilted empirical likelihood, R}
 
 \Address{
-  Pierre Chaussé\\
-  Département des sciences économiques\\
-  Université du Québec à Montréal\\
-  315, Ste-Catherine Est, Montréal, (Québec), Canada\\
+  Pierre Chaus\'e\\
+  Department of Economics\\
+  University of Waterloo\\
+  Waterloo (Ontario), Canada\\
   E-mail: \email{pierre.chausse@uqam.ca}\\
   URL: \url{http://www.er.uqam.ca/nobel/k34115/}
 }
@@ -771,15 +772,19 @@ ci <- -1
 @
 and rerun the estimation as
 <<eval=false>>=
-res <- gel(g4,x=dat5[,4:7],tet0,smooth=TRUE,kernel="Truncated",constraint=TRUE, ui=ui,ci=ci)
+res <- gel(g4,x=dat5[,4:7],tet0,smooth=TRUE,kernel="Truncated",
+constraint=TRUE, ui=ui,ci=ci)
 @
 The result, which is not shown, is identical. 
 
-If we want to compare the results with the method in which $\lambda$ is solved using \code{optim}, we proceed as follows:
+They are also many option to compute the $\lambda$'s. From version 1.4-0, the default algorithm is \code{nlminb} because the gradient and Hessian matrix are well defined analytically which speed up convergence. The other choices are \code{optim} or "iter" which uses a Newton method to solve the first order condition. If the option optlam is set to "optim" and the type is EL, \code{contrOptim} is selected automatically to restrict $\lambda'g_t$ to be less than 1. It is also possible to change the default values in the control list of the optimizer with the option LambdaControl (see \code{?nlminb} or \code{?optim}). Here are some examples:  
 <<eval=false>>=
-res <- gel(g4,x=dat5[,4:7],tet0,smooth=TRUE,kernel="Truncated",optlam="numeric")
+res <- gel(g4,x=dat5[,4:7],tet0,smooth=TRUE, optlam="optim")
+res <- gel(g4,x=dat5[,4:7],tet0,smooth=TRUE, optlam="optim",
+LambdaControl=list(trace=TRUE, parscale=rep(.1,5)))
 @
-which produce in this case almost identical results. However, it takes much more time than using the iterative method. 
+
+
 
 \subsection{Comments}
 
@@ -793,7 +798,7 @@ The package also offers an interface which is comparable to the least squares me
 
 \section{Computational Details}
 
-The package \pkg{gmm} is written entirely in \proglang{R} and S3-classes with methods are used. It can be found on the comprehensive \proglang{R} archive network (CRAN,\url{http://CRAN.R-project.org/}). It is also hosted on R-Forge (\url{http://r-forge.r-project.org/projects/gmm}). It is shipped with a NAMESPACE. The version used to produce this paper is 1.3-2. It depends on the \pkg{sandwich} package of \cite{zeileis06}, which is used to compute de HAC matrices. The packages \pkg{car} (\cite{car}), \pkg{mvtnorm} (\cite{mvtnorm}), \pkg{fBasics} (\cite{fBasics}), \pkg{MASS} (\cite{MASS}), \pkg{timeDate} (\cite{timeDate}) and \pkg{timeSeries} (\cite{timeSeries}) are suggested in order to reproduce the examples.
+The package \pkg{gmm} is written entirely in \proglang{R} and S3-classes with methods are used. It can be found on the comprehensive \proglang{R} archive network (CRAN,\url{http://CRAN.R-project.org/}). It is also hosted on R-Forge (\url{http://r-forge.r-project.org/projects/gmm}). It is shipped with a NAMESPACE. The version used to produce this paper is 1.4-0. It depends on the \pkg{sandwich} package of \cite{zeileis06}, which is used to compute de HAC matrices. The packages \pkg{car} (\cite{car}), \pkg{mvtnorm} (\cite{mvtnorm}), \pkg{fBasics} (\cite{fBasics}), \pkg{MASS} (\cite{MASS}), \pkg{timeDate} (\cite{timeDate}) and \pkg{timeSeries} (\cite{timeSeries}) are suggested in order to reproduce the examples.
 
 \section*{Acknowledgments}
 

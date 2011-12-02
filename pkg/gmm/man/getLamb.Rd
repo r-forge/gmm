@@ -29,7 +29,7 @@ getLamb(gt, type = c("EL","ET","CUE", "ETEL"), tol_lam = 1e-7, maxiterlam = 100,
 \item{control}{Controls to send to \code{\link{optim}}, \code{\link{nlminb}} or \code{\link{constrOptim}}}
 }
 \details{
-It solves the problem \eqn{\max_{\lambda} \frac{1}{n}\sum_{t=1}^n \rho(gt'\lambda)}. For the type "ETEL", it is only used by \code{\link{gel}}. In that case \eqn{\lambda} is obtained by maximizing \eqn{\frac{1}{n}\sum_{t=1}^n \rho(gt'\lambda)}, using \eqn{\rho(v)=-\exp{v}} (so ET) and \eqn{\theta} by minimizing the same equation but with \eqn{\rho(v)-\log{(1-v)}}. To avoid NA's, \code{\ling{constrOptim}} is used with the restriction \eqn{\lambda'g_t < 1}.
+It solves the problem \eqn{\max_{\lambda} \frac{1}{n}\sum_{t=1}^n \rho(gt'\lambda)}. For the type "ETEL", it is only used by \code{\link{gel}}. In that case \eqn{\lambda} is obtained by maximizing \eqn{\frac{1}{n}\sum_{t=1}^n \rho(gt'\lambda)}, using \eqn{\rho(v)=-\exp{v}} (so ET) and \eqn{\theta} by minimizing the same equation but with \eqn{\rho(v)-\log{(1-v)}}. To avoid NA's, \code{\link{constrOptim}} is used with the restriction \eqn{\lambda'g_t < 1}.
 }
 
 \value{
