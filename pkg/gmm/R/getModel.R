@@ -42,8 +42,12 @@ getModel.baseGmm <- function(object, ...)
       object$type <- "One step GMM with fixed W"
       }
     object$gform<-object$g
-    g <- function(tet, x, ny = dat$ny, nh = dat$nh, k = dat$k)
+    g <- function(tet, dat)
       {
+      x <- dat$x
+      ny <- dat$ny
+      nh <- dat$nh
+      k <- dat$k
       tet <- matrix(tet, ncol = k)
       e <- x[,1:ny] - x[,(ny+1):(ny+k)] %*% t(tet)
       gt <- e * x[, ny+k+1]
@@ -51,14 +55,17 @@ getModel.baseGmm <- function(object, ...)
 	for (i in 2:nh)	  gt <- cbind(gt, e*x[, (ny+k+i)])
       return(gt)
       }
-    gradv <- function(tet, x, ny = dat$ny, nh = dat$nh, k = dat$k, g = NULL)
+    gradv <- function(dat)
       {
-      a <- g
-      tet <- NULL
+      x <- dat$x
+      ny <- dat$ny
+      nh <- dat$nh
+      k <- dat$k
       dgb <- -(t(x[,(ny+k+1):(ny+k+nh)]) %*% x[,(ny+1):(ny+k)]) %x% diag(rep(1,ny))/nrow(x)
       return(dgb)
       }
     object$g <- g
+    object$x <- dat
     }
   else
     {
@@ -85,7 +92,7 @@ getModel.baseGmm <- function(object, ...)
     {
     gt <- g(thet,x)
     if(centeredVcov) gt <- residuals(lm(gt~1))
-    n <- ifelse(is.null(nrow(x)), length(x), nrow(x))
+    n <- ifelse(is.null(nrow(gt)), length(gt), nrow(gt))
     v <- crossprod(gt,gt)/n
     return(v)
     }

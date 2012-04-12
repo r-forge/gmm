@@ -170,7 +170,7 @@ estfun.gmmFct <- function(x, y = NULL, theta = NULL, ...)
 	{
 	if (is(x, "function"))
 		{
-		gmat <- x(y, theta)
+		gmat <- x(theta, y)
 		return(gmat)
 		}
 	else

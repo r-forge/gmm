@@ -148,12 +148,17 @@ momentEstim.baseGmm.twoStep <- function(object, ...)
   else
     names(z$coefficients) <- names(P$t0)
 
-  z$x <- P$x
+  if(P$gradvf)
+    z$G <- P$gradv(z$coefficients, P$x)
+  else
+    z$G <- P$gradv(z$coefficients, P$x, g = P$g)
+
+  z$dat <- P$x
   z$gt <- P$g(z$coefficients, P$x)
   z$gradv <- P$gradv
   z$iid <- P$iid
   z$g <- P$g
- 
+
   class(z) <- paste(P$TypeGmm,".res",sep="")	
   return(z)
   }
@@ -162,10 +167,7 @@ momentEstim.baseGmm.twoStep.formula <- function(object, ...)
   {
   P <- object
   g <- P$g
-  if (is.null(P$data))
-    	dat <- getDat(P$gform, P$x)
-    else
-    	dat <- getDat(P$gform, P$x, P$data)
+  dat <- P$x
   
   x <- dat$x
   k <- dat$k
@@ -177,42 +179,40 @@ momentEstim.baseGmm.twoStep.formula <- function(object, ...)
   if (q == k2 | P$wmatrix == "ident")
     {
     w <- diag(q)
-    res <- .tetlin(x, w, dat$ny, dat$nh, dat$k, P$gradv, P$g)
+    res <- .tetlin(dat, w, P$gradv, P$g)
     z = list(coefficients = res$par, objective = res$value, dat = dat, k = k, k2 = k2, n = n, q = q, df = df)
     }
   else
     {
     if (P$vcov == "iid")
     	{
-      res2 <- .tetlin(x, diag(q), dat$ny, dat$nh, dat$k, P$gradv, P$g, type="2sls")
+      res2 <- .tetlin(dat, diag(q), P$gradv, P$g, type="2sls")
       initTheta <- NULL
       }
     if (P$vcov == "HAC")
       {
-      res1 <- .tetlin(x, diag(q), dat$ny, dat$nh, dat$k, P$gradv, P$g, type="2sls")
+      res1 <- .tetlin(dat, diag(q), P$gradv, P$g, type="2sls")
       initTheta <- res1$par
       if(P$centeredVcov) 
-       	 gmat <- lm(g(res1$par, x)~1)
+       	 gmat <- lm(g(res1$par, dat)~1)
       else
         {
-        gmat <- g(res1$par, x)
+        gmat <- g(res1$par, dat)
         class(gmat) <- "gmmFct"
         }
       w <- kernHAC(gmat, kernel = P$kernel, bw = P$bw, prewhite = P$prewhite, 
 		ar.method = P$ar.method, approx = P$approx, tol = P$tol, sandwich = FALSE)
-	 res2 <- .tetlin(x, w, dat$ny, dat$nh, dat$k, P$gradv, g)
+	 res2 <- .tetlin(dat, w, P$gradv, g)
       }
-    
     z = list(coefficients = res2$par, objective = res2$value, dat=dat, k=k, k2=k2, n=n, q=q, df=df, initTheta = initTheta)	
     }
-  z$gt <- g(z$coefficients, x) 
+  z$gt <- g(z$coefficients, dat) 
   b <- z$coefficients
   y <- as.matrix(model.response(dat$mf, "numeric"))
   ny <- dat$ny
   b <- t(matrix(b, nrow = dat$ny))
   x <- as.matrix(model.matrix(dat$mt, dat$mf, NULL))
   yhat <- x %*% b
-  z$dat <- dat 
   z$fitted.values <- yhat	
   z$residuals <- y - yhat	
   z$terms <- dat$mt
@@ -222,6 +222,8 @@ momentEstim.baseGmm.twoStep.formula <- function(object, ...)
   z$gradv <- P$gradv
   z$iid <- P$iid
   z$g <- P$g
+  z$G <- P$gradv(dat) 
+
   
   namex <- colnames(dat$x[,(dat$ny+1):(dat$ny+dat$k)])
   nameh <- colnames(dat$x[,(dat$ny+dat$k+1):(dat$ny+dat$k+dat$nh)])
@@ -249,11 +251,8 @@ momentEstim.baseGmm.iterative.formula <- function(object, ...)
   {
   P <- object
   g <- P$g
-  if (is.null(P$data))
-    	dat <- getDat(P$gform, P$x)
-    else
-    	dat <- getDat(P$gform, P$x, P$data)
   
+  dat <- P$x
   x <- dat$x
   k <- dat$k
   k2 <- k*dat$ny
@@ -264,13 +263,13 @@ momentEstim.baseGmm.iterative.formula <- function(object, ...)
   if (q == k2 | P$wmatrix == "ident")
     {
     w <- diag(q)
-    res <- .tetlin(x, w, dat$ny, dat$nh, dat$k, P$gradv, g)
+    res <- .tetlin(dat, w, P$gradv, g)
     z = list(coefficients = res$par, objective = res$value, dat = dat, k = k, k2 = k2, n = n, q = q, df = df)
     }
   else
     {
     w <- diag(q)
-    res <- .tetlin(x, w, dat$ny, dat$nh, dat$k, P$gradv, g, type="2sls")
+    res <- .tetlin(dat, w, P$gradv, g, type="2sls")
     initTheta <- res$par
     ch <- 100000
     j <- 1
@@ -280,10 +279,10 @@ momentEstim.baseGmm.iterative.formula <- function(object, ...)
       if (P$vcov == "HAC")
 	{
         if (P$centeredVcov)
-          gmat <- lm(g(tet, x)~1)
+          gmat <- lm(g(tet, dat)~1)
         else
           {
-          gmat <- g(tet, x)
+          gmat <- g(tet, dat)
           class(gmat) <- "gmmFct"
           }
 	if (j==1)
@@ -292,7 +291,7 @@ momentEstim.baseGmm.iterative.formula <- function(object, ...)
  			   	   ar.method = P$ar.method, tol = P$tol) 
         w <- vcovHAC(gmat, weights = fixedKernW, sandwich = FALSE)
         }
-      res <- .tetlin(x, w, dat$ny, dat$nh, dat$k, P$gradv, g)
+      res <- .tetlin(dat, w, P$gradv, g)
       ch <- crossprod(abs(tet- res$par)/tet)^.5
       if (j>P$itermax)
         {
@@ -305,14 +304,13 @@ momentEstim.baseGmm.iterative.formula <- function(object, ...)
       }
     z = list(coefficients = res$par, objective = res$value, dat=dat, k=k, k2=k2, n=n, q=q, df=df, initTheta=initTheta)	
    }
-  z$gt <- g(z$coefficients, x) 
+  z$gt <- g(z$coefficients, dat) 
   b <- z$coefficients
   y <- as.matrix(model.response(dat$mf, "numeric"))
   ny <- dat$ny
   b <- t(matrix(b, nrow = dat$ny))
   x <- as.matrix(model.matrix(dat$mt, dat$mf, NULL))
   yhat <- x %*% b
-  z$dat <- dat 
   z$fitted.values <- yhat	
   z$residuals <- y - yhat	
   z$terms <- dat$mt
@@ -322,7 +320,8 @@ momentEstim.baseGmm.iterative.formula <- function(object, ...)
   z$gradv <- P$gradv
   z$iid <- P$iid
   z$g <- P$g
-  
+  z$G <- P$gradv(dat) 
+
   namex <- colnames(dat$x[,(dat$ny+1):(dat$ny+dat$k)])
   nameh <- colnames(dat$x[,(dat$ny+dat$k+1):(dat$ny+dat$k+dat$nh)])
  
@@ -493,7 +492,12 @@ momentEstim.baseGmm.iterative <- function(object, ...)
   else
     names(z$coefficients) <- names(P$t0)
 
-  z$x <- P$x
+  if(P$gradvf)
+    z$G <- P$gradv(z$coefficients, P$x)
+  else
+    z$G <- P$gradv(z$coefficients, P$x, g = P$g)
+
+  z$dat <- P$x
   z$gt <- P$g(z$coefficients, P$x)
   z$gradv <- P$gradv
   z$iid <- P$iid
@@ -509,11 +513,8 @@ momentEstim.baseGmm.cue.formula <- function(object, ...)
   fixedKernWeights <- TRUE # to be changed or included as an option in gmm() in future version
   P <- object
   g <- P$g
-  if (is.null(P$data))
-    	dat <- getDat(P$gform, P$x)
-    else
-    	dat <- getDat(P$gform, P$x, P$data)
   
+  dat <- P$x
   x <- dat$x
   k <- dat$k
   k2 <- k*dat$ny
@@ -524,15 +525,15 @@ momentEstim.baseGmm.cue.formula <- function(object, ...)
   if (q == k2 | P$wmatrix == "ident")
     {
     w <- diag(q)
-    res <- .tetlin(x, w, dat$ny, dat$nh, dat$k, P$gradv, g)
+    res <- .tetlin(dat, w, P$gradv, g)
     z = list(coefficients = res$par, objective = res$value, dat = dat, k = k, k2 = k2, n = n, q = q, df = df)
-    P$weightMessage <- "No CUE needed because the model if just identified"
+    P$weightMessage <- "No CUE needed because the model is just identified"
     }
   else
     {
     if (is.null(P$t0))
 	{
-	P$t0 <- .tetlin(x,diag(q), dat$ny, dat$nh, dat$k, P$gradv, g, type="2sls")$par
+	P$t0 <- .tetlin(dat,diag(q), P$gradv, g, type="2sls")$par
 	initTheta <- P$t0
 	if (fixedKernWeights)
 		P$weightMessage <- "Weights for kernel estimate of the covariance are fixed and based on the first step estimate of Theta"	
@@ -550,7 +551,7 @@ momentEstim.baseGmm.cue.formula <- function(object, ...)
 
     if (fixedKernWeights)
 	    {
-	    gt0 <- g(P$t0,x)
+	    gt0 <- g(P$t0,dat)
 	    gt0 <- lm(gt0~1)
             P$fixedKernW <-  weightsAndrews(gt0, prewhite=P$prewhite,
  			   bw = P$bw, kernel = P$kernel, approx = P$approx, 
@@ -559,15 +560,15 @@ momentEstim.baseGmm.cue.formula <- function(object, ...)
 
 
     if (P$optfct == "optim")
-      res2 <- optim(P$t0,.objCue, x = x, P = P, ...)
+      res2 <- optim(P$t0,.objCue, x = dat, P = P, ...)
     if (P$optfct == "nlminb")
       {
-      res2 <- nlminb(P$t0,.objCue, x = x, P = P, ...)
+      res2 <- nlminb(P$t0,.objCue, x = dat, P = P, ...)
       res2$value <- res2$objective
       }
     if (P$optfct == "optimize")
       {
-      res2 <- optimize(.objCue,P$t0, x = x, P = P, ...)
+      res2 <- optimize(.objCue,P$t0, x = dat, P = P, ...)
       res2$par <- res2$minimum
       res2$value <- res2$objective
       }
@@ -578,7 +579,7 @@ momentEstim.baseGmm.cue.formula <- function(object, ...)
 	z$algoInfo <- list(convergence = res2$convergence, counts = res2$evaluations, message = res2$message)
     }
 
-  z$gt <- g(z$coefficients, x) 
+  z$gt <- g(z$coefficients, dat) 
   b <- z$coefficients
   y <- as.matrix(model.response(dat$mf, "numeric"))
   ny <- dat$ny
@@ -595,6 +596,8 @@ momentEstim.baseGmm.cue.formula <- function(object, ...)
   z$gradv <- P$gradv
   z$iid <- P$iid
   z$g <- P$g
+  z$G <- P$gradv(dat) 
+
   z$cue <- list(weights=P$fixedKernW,message=P$weightMessage)
   
   namex <- colnames(dat$x[,(dat$ny+1):(dat$ny+dat$k)])
@@ -679,7 +682,12 @@ momentEstim.baseGmm.cue <- function(object, ...)
   else
     names(z$coefficients) <- names(P$t0)
 
-  z$x <- P$x
+  if(P$gradvf)
+    z$G <- P$gradv(z$coefficients, P$x)
+  else
+    z$G <- P$gradv(z$coefficients, P$x, g = P$g)
+
+  z$dat <- P$x
   z$gradv <- P$gradv
   z$gt <- P$g(z$coefficients, P$x)
   z$iid <- P$iid
@@ -878,11 +886,8 @@ momentEstim.fixedW.formula <- function(object, ...)
   {
   P <- object
   g <- P$g
-  if (is.null(P$data))
-    	dat <- getDat(P$gform, P$x)
-    else
-    	dat <- getDat(P$gform, P$x, P$data)
 
+  dat <- P$x
   x <- dat$x
   k <- dat$k
   k2 <- k*dat$ny
@@ -901,10 +906,10 @@ momentEstim.fixedW.formula <- function(object, ...)
       warning("The matrix of weights is not strictly positive definite")
     }
   
-  res2 <- .tetlin(x, w, dat$ny, dat$nh, dat$k, P$gradv, g, inv=FALSE)
+  res2 <- .tetlin(dat, w, P$gradv, g, inv=FALSE)
   z = list(coefficients = res2$par, objective = res2$value, dat=dat, k=k, k2=k2, n=n, q=q, df=df)	
 
-  z$gt <- g(z$coefficients, x) 
+  z$gt <- g(z$coefficients, dat) 
   b <- z$coefficients
   y <- as.matrix(model.response(dat$mf, "numeric"))
   ny <- dat$ny
@@ -921,7 +926,8 @@ momentEstim.fixedW.formula <- function(object, ...)
   z$gradv <- P$gradv
   z$iid <- P$iid
   z$g <- P$g
-  
+  z$G <- P$gradv(dat) 
+
   namex <- colnames(dat$x[,(dat$ny+1):(dat$ny+dat$k)])
   nameh <- colnames(dat$x[,(dat$ny+dat$k+1):(dat$ny+dat$k+dat$nh)])
  
@@ -1020,7 +1026,12 @@ momentEstim.fixedW <- function(object, ...)
   else
     names(z$coefficients) <- names(P$t0)
 
-  z$x <- P$x
+  if(P$gradvf)
+    z$G <- P$gradv(z$coefficients, P$x)
+  else
+    z$G <- P$gradv(z$coefficients, P$x, g = P$g)
+
+  z$dat <- P$x
   z$gt <- P$g(z$coefficients, P$x)
   z$gradv <- P$gradv
   z$iid <- P$iid

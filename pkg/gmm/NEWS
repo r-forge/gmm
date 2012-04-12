@@ -25,6 +25,8 @@ o For GEL of type "EL" and optfct="optim", the algorith constrOptim() is launche
   and avoid NA's when computing log(1-lambda'gt).
 o Sometimes, problems happen in GMM estimation because of the bad first step estimates used to compute the weighting matrix.
   The first step estimates are usually computed using the identity matrix. The vector is now printed for better control. 
+o Cleaned the codes. The data are in object$dat and we can get the moment matrix by calling gt <- object$g(object$coef,object$dat) for linear and 
+  non-linear models, where object is of class gmm.
 
 Changes in version 1.3-8
 

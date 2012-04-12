@@ -125,8 +125,12 @@ getDat <- function (formula, h, data)
 }
 
 
-.tetlin <- function(x, w, ny, nh, k, gradv, g, type=NULL, inv=TRUE)
+.tetlin <- function(dat, w, gradv, g, type=NULL, inv=TRUE)
   {
+  x <- dat$x
+  ny <- dat$ny
+  nh <- dat$nh
+  k <- dat$k
   n <- nrow(x)
   ym <- as.matrix(x[,1:ny])
   xm <- as.matrix(x[,(ny+1):(ny+k)])
@@ -147,7 +151,7 @@ getDat <- function (formula, h, data)
   	     else
   	     {
   	     	par <- c(t(par))	
-  	     	g2sls <- g(par, x, ny, nh, k)
+  	     	g2sls <- g(par, dat)
   	     	w <- crossprod(g2sls)/n
   	     	gb <- matrix(colMeans(g2sls), ncol = 1)
    			value <- crossprod(gb, solve(w, gb)) 
@@ -168,7 +172,7 @@ getDat <- function (formula, h, data)
 	whx <- w%*% (crossprod(hm, xm) %x% diag(ny))
 	wvecyh <- w%*%matrix(crossprod(ym, hm), ncol = 1)
         }
-     dg <- gradv(NULL,x, ny, nh, k)
+     dg <- gradv(dat)
      xx <- crossprod(dg, whx)
      par <- solve(xx, crossprod(dg, wvecyh))
      }
@@ -185,7 +189,7 @@ getDat <- function (formula, h, data)
 	else
 		par <- solve(crossprod(hm,xm),crossprod(hm,ym))  	}
 	}
-  gb <- matrix(colSums(g(par, x, ny, nh, k))/n, ncol = 1)
+  gb <- matrix(colSums(g(par, dat))/n, ncol = 1)
   if(inv)
 	  value <- crossprod(gb, solve(w, gb)) 
   else
