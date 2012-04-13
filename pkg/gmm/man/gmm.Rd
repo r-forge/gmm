@@ -286,5 +286,11 @@ z <- z[,1]
 res2 <- gmm(z ~ f1 + f2 + f3, ~ f1 + f2 + f3, eqConst = matrix(c(1,2,0,1),2,2))
 res2
 
+# CUE with starting t0 requires eqConst to be a vector
+
+res3 <- gmm(z ~ f1 + f2 + f3, ~ f1 + f2 + f3, t0=c(0,1,.5,.5), type="cue", eqConst = c(1,2))
+res3
+
+
 }
 
