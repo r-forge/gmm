@@ -34,6 +34,7 @@ summary.gmm <- function(object, ...)
 		ans$initTheta <- object$initTheta
 		names(ans$initTheta) <- names(z$coefficients)
 		}
+        ans$specMod <- object$specMod
 	class(ans) <- "summary.gmm"
 	ans
 	}
@@ -51,6 +52,7 @@ summary.tsls <- function(object, ...)
 	pvfstat <- 1-pf(fstat,df1, df2)
 	names(fstat) <- colnames(object$dat$x)[(object$dat$ny+1):(object$dat$ny+k)]
 	ans$fstatistic <- list(fstat = fstat, pvfstat = pvfstat, df1 = df1, df2 = df2)
+        ans$specMod <- object$specMod
 	class(ans) <- "summary.tsls"
 	return(ans)
 	}
@@ -95,6 +97,7 @@ print.summary.gmm <- function(x, digits = 5, ...)
 		print(x$initTheta)
 		cat("\n")
 		}
+        cat(x$specMod)
 	if(!is.null(x$algoInfo))
 		{	
 		cat("#############\n")
@@ -159,6 +162,7 @@ print.gmm <- function(x, digits=5, ...)
 	cat("\n")
 	if(!is.null(x$algoInfo$convergence))
 		cat("Convergence code = ", x$algoInfo$convergence,"\n")
+	cat(x$specMod)
 	invisible(x)
 	}
 

@@ -14,7 +14,7 @@
 gmm <- function(g,x,t0=NULL,gradv=NULL, type=c("twoStep","cue","iterative"), wmatrix = c("optimal","ident"),  vcov=c("HAC","iid","TrueFixed"), 
 	      kernel=c("Quadratic Spectral","Truncated", "Bartlett", "Parzen", "Tukey-Hanning"),crit=10e-7,bw = bwAndrews, 
 	      prewhite = FALSE, ar.method = "ols", approx="AR(1)",tol = 1e-7, itermax=100,optfct=c("optim","optimize","nlminb"),
-	      model=TRUE, X=FALSE, Y=FALSE, TypeGmm = "baseGmm", centeredVcov = TRUE, weightsMatrix = NULL, traceIter = FALSE, data, ...)
+	      model=TRUE, X=FALSE, Y=FALSE, TypeGmm = "baseGmm", centeredVcov = TRUE, weightsMatrix = NULL, traceIter = FALSE, data, eqConst = NULL, ...)
 {
 
 type <- match.arg(type)
@@ -22,6 +22,9 @@ kernel <- match.arg(kernel)
 vcov <- match.arg(vcov)
 wmatrix <- match.arg(wmatrix)
 optfct <- match.arg(optfct)
+
+if (!is.null(eqConst))
+	TypeGmm <- "constGmm"
 
 if(vcov=="TrueFixed" & is.null(weightsMatrix))
 	stop("TrueFixed vcov only for fixed weighting matrix")
@@ -33,9 +36,9 @@ if(missing(data))
 all_args<-list(data = data, g = g, x = x, t0 = t0, gradv = gradv, type = type, wmatrix = wmatrix, vcov = vcov, kernel = kernel,
                    crit = crit, bw = bw, prewhite = prewhite, ar.method = ar.method, approx = approx, 
                    weightsMatrix = weightsMatrix, centeredVcov = centeredVcov,
-                   tol = tol, itermax = itermax, optfct = optfct, model = model, X = X, Y = Y, call = match.call(), traceIter = traceIter)
+                   tol = tol, itermax = itermax, optfct = optfct, model = model, X = X, Y = Y, call = match.call(), traceIter = traceIter, eqConst = eqConst)
 class(all_args)<-TypeGmm
-Model_info<-getModel(all_args)
+Model_info<-getModel(all_args, ...)
 z <- momentEstim(Model_info, ...)
 
 z <- FinRes(z, Model_info)

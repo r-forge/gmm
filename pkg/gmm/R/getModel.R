@@ -16,6 +16,72 @@ getModel <- function(object, ...)
   UseMethod("getModel")
   }
 
+getModel.constGmm <- function(object, ...)
+  {
+  class(object) <- "baseGmm"
+  obj <- getModel(object)
+	
+  if (!is.null(object$t0))
+	{
+	if (!is.null(dim(object$eqConst)))
+		stop("When t0 is provided, eqConst must be a vector")
+	if (length(object$eqConst)>=length(object$t0))
+		stop("Too many constraints")
+        if (is.character(object$eqConst))
+		{
+		if (is.null(names(object$t0)))
+		   stop("t0 must be a named vector if you want eqConst to be names")
+		if (any(!(object$eqConst %in% names(object$t0))))
+		   stop("Wrong coefficient names in eqConst")
+		object$eqConst <- sort(match(object$eqConst,names(object$t0)))
+		}
+	restTet <- object$t0[object$eqConst]
+	obj$t0 <- object$t0[-object$eqConst]
+	object$eqConst <- cbind(object$eqConst,restTet)	
+	}  else {
+	if (is.null(dim(object$eqConst)))
+		stop("When t0 is not provided, eqConst must be a 2xq matrix")
+	}
+  rownames(object$eqConst) <- obj$namesCoef[object$eqConst[,1]]
+  if(is(object$g, "formula"))
+	{
+	if (obj$x$ny>1)
+	  stop("Constrained GMM not implemented yet for system of equations")
+	x <- as.matrix(obj$x$x[,1+(object$eqConst[,1])])%*%object$eqConst[,2]
+	obj$x$x <- obj$x$x[,-(1+(object$eqConst[,1]))]
+	obj$x$x[,1] <- obj$x$x[,1]-x
+	obj$x$k <- obj$x$k-nrow(object$eqConst)
+	if (obj$x$k<=0)
+		stop("Nothing to estimate")
+	attr(obj$x,"eqConst") <- list(eqConst = object$eqConst)
+	} else {
+	attr(obj$x,"eqConst") <- list(unConstg = obj$g, unConstgradv = obj$gradv, eqConst = object$eqConst)   	   	
+	obj$g <- function(tet, dat)
+		{
+		resTet <- attr(dat,"eqConst")$eqConst
+		tet2 <- vector(length=length(tet)+length(resTet))
+		tet2[resTet[,1]] <- resTet[,2]
+		tet2[-resTet[,1]] <- tet
+		attr(dat,"eqConst")$unConstg(tet2, dat)
+		}
+	obj$gradv <- function(tet, dat)
+		{
+		resTet <- attr(dat,"eqConst")$eqConst
+		tet2 <- vector(length=length(tet)+length(resTet))
+		tet2[resTet[,1]] <- resTet[,2]
+		tet2[-resTet[,1]] <- tet
+		attr(dat,"eqConst")$unConstgradv(tet2, dat)[,-resTet[,1]]
+		}
+	}
+  obj$namesCoef <- obj$namesCoef[-object$eqConst[,1]]
+  obj$type <- paste(obj$type,"(with equality constraints)",sep=" ")	
+  clname <-  strsplit(class(obj),"constGmm")
+  mess <- paste(rownames(object$eqConst), " = " , object$eqConst[,2], "\n",collapse="")
+  mess <- paste("#### Equality constraints ####\n",mess,"##############################\n\n",sep="")
+  obj$specMod <- mess                                         
+  return(obj)
+  }
+
 getModel.baseGmm <- function(object, ...)
   {
   if(is(object$g, "formula"))
@@ -64,11 +130,30 @@ getModel.baseGmm <- function(object, ...)
       dgb <- -(t(x[,(ny+k+1):(ny+k+nh)]) %*% x[,(ny+1):(ny+k)]) %x% diag(rep(1,ny))/nrow(x)
       return(dgb)
       }
+
+    namex <- colnames(dat$x[,(dat$ny+1):(dat$ny+dat$k)])
+    nameh <- colnames(dat$x[,(dat$ny+dat$k+1):(dat$ny+dat$k+dat$nh)])
+ 
+    if (dat$ny > 1)
+      {
+      namey <- colnames(dat$x[,1:dat$ny])
+      object$namesCoef <- paste(rep(namey, dat$k), "_", rep(namex, rep(dat$ny, dat$k)), sep = "")
+      object$namesgt <- paste(rep(namey, dat$nh), "_", rep(nameh, rep(dat$ny, dat$nh)), sep = "")
+      } else {
+      object$namesCoef <- namex
+      object$namesgt <- nameh
+      }
     object$g <- g
     object$x <- dat
     }
   else
     {
+    k <- length(object$t0)
+    if(is.null(names(object$t0)))
+       object$namesCoef <- paste("Theta[" ,1:k, "]", sep = "")
+    else
+       object$namesCoef <- names(object$t0)
+
     if(is.null(object$weightsMatrix))
       clname <- paste(class(object), "." ,object$type, sep = "")
     else

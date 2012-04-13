@@ -143,11 +143,6 @@ momentEstim.baseGmm.twoStep <- function(object, ...)
 	z$algoInfo <- list(convergence = res2$convergence, counts = res2$evaluations, message = res2$message)
     }
 
-  if(is.null(names(P$t0)))
-    names(z$coefficients) <- paste("Theta[" ,1:k, "]", sep = "")
-  else
-    names(z$coefficients) <- names(P$t0)
-
   if(P$gradvf)
     z$G <- P$gradv(z$coefficients, P$x)
   else
@@ -159,7 +154,11 @@ momentEstim.baseGmm.twoStep <- function(object, ...)
   z$iid <- P$iid
   z$g <- P$g
 
+  names(z$coefficients) <- P$namesCoef
+  if (is.null(colnames(z$gt)))
+	colnames(z$gt) <- paste("gt",1:ncol(z$gt),sep="")
   class(z) <- paste(P$TypeGmm,".res",sep="")	
+  z$specMod <- P$specMod 
   return(z)
   }
 
@@ -208,10 +207,9 @@ momentEstim.baseGmm.twoStep.formula <- function(object, ...)
     }
   z$gt <- g(z$coefficients, dat) 
   b <- z$coefficients
-  y <- as.matrix(model.response(dat$mf, "numeric"))
-  ny <- dat$ny
+  y <- as.matrix(dat$x[,1:dat$ny])
   b <- t(matrix(b, nrow = dat$ny))
-  x <- as.matrix(model.matrix(dat$mt, dat$mf, NULL))
+  x <- as.matrix(dat$x[,(dat$ny+1):(dat$ny+dat$k)])
   yhat <- x %*% b
   z$fitted.values <- yhat	
   z$residuals <- y - yhat	
@@ -223,27 +221,15 @@ momentEstim.baseGmm.twoStep.formula <- function(object, ...)
   z$iid <- P$iid
   z$g <- P$g
   z$G <- P$gradv(dat) 
-
   
-  namex <- colnames(dat$x[,(dat$ny+1):(dat$ny+dat$k)])
-  nameh <- colnames(dat$x[,(dat$ny+dat$k+1):(dat$ny+dat$k+dat$nh)])
+  names(z$coefficients) <- P$namesCoef
+  colnames(z$gt) <- P$namesgt
  
-  if (dat$ny > 1)
-    {
-    namey <- colnames(dat$x[,1:dat$ny])
-    names(z$coefficients) <- paste(rep(namey, dat$k), "_", rep(namex, rep(dat$ny, dat$k)), sep = "")
-    colnames(z$gt) <- paste(rep(namey, dat$nh), "_", rep(nameh, rep(dat$ny, dat$nh)), sep = "")
-    }
- 
-  if (dat$ny == 1)
-    {
-    names(z$coefficients) <- namex
-    colnames(z$gt) <- nameh
-    }
   if (P$vcov == "iid" & P$wmatrix != "ident")
 	z$fsRes <- res2$fsRes
 
   class(z) <- paste(P$TypeGmm,".res",sep="")
+  z$specMod <- P$specMod
   return(z)	
   }
 
@@ -306,10 +292,9 @@ momentEstim.baseGmm.iterative.formula <- function(object, ...)
    }
   z$gt <- g(z$coefficients, dat) 
   b <- z$coefficients
-  y <- as.matrix(model.response(dat$mf, "numeric"))
-  ny <- dat$ny
+  y <- as.matrix(dat$x[,1:dat$ny])
   b <- t(matrix(b, nrow = dat$ny))
-  x <- as.matrix(model.matrix(dat$mt, dat$mf, NULL))
+  x <- as.matrix(dat$x[,(dat$ny+1):(dat$ny+dat$k)])
   yhat <- x %*% b
   z$fitted.values <- yhat	
   z$residuals <- y - yhat	
@@ -322,22 +307,11 @@ momentEstim.baseGmm.iterative.formula <- function(object, ...)
   z$g <- P$g
   z$G <- P$gradv(dat) 
 
-  namex <- colnames(dat$x[,(dat$ny+1):(dat$ny+dat$k)])
-  nameh <- colnames(dat$x[,(dat$ny+dat$k+1):(dat$ny+dat$k+dat$nh)])
- 
-  if (dat$ny > 1)
-    {
-    namey <- colnames(dat$x[,1:dat$ny])
-    names(z$coefficients) <- paste(rep(namey, dat$k), "_", rep(namex, rep(dat$ny, dat$k)), sep = "")
-    colnames(z$gt) <- paste(rep(namey, dat$nh), "_", rep(nameh, rep(dat$ny, dat$nh)), sep = "")
-    }
- 
-  if (dat$ny == 1)
-    {
-    names(z$coefficients) <- namex
-    colnames(z$gt) <- nameh
-    }
+  names(z$coefficients) <- P$namesCoef
+  colnames(z$gt) <- P$namesgt
+
   class(z) <- paste(P$TypeGmm,".res",sep="")
+  z$specMod <- P$specMod
   return(z)	
   }
 
@@ -487,10 +461,7 @@ momentEstim.baseGmm.iterative <- function(object, ...)
 
     }
 
-  if(is.null(names(P$t0)))
-    names(z$coefficients) <- paste("Theta[" ,1:k, "]", sep = "")
-  else
-    names(z$coefficients) <- names(P$t0)
+  
 
   if(P$gradvf)
     z$G <- P$gradv(z$coefficients, P$x)
@@ -503,6 +474,10 @@ momentEstim.baseGmm.iterative <- function(object, ...)
   z$iid <- P$iid
   z$g <- P$g
  
+  names(z$coefficients) <- P$namesCoef
+  if (is.null(colnames(z$gt)))
+	colnames(z$gt) <- paste("gt",1:ncol(z$gt),sep="")
+  z$specMod <- P$specMod
   class(z) <- paste(P$TypeGmm,".res",sep="")	
   return(z)
   }
@@ -581,10 +556,9 @@ momentEstim.baseGmm.cue.formula <- function(object, ...)
 
   z$gt <- g(z$coefficients, dat) 
   b <- z$coefficients
-  y <- as.matrix(model.response(dat$mf, "numeric"))
-  ny <- dat$ny
+  y <- as.matrix(dat$x[,1:dat$ny])
   b <- t(matrix(b, nrow = dat$ny))
-  x <- as.matrix(model.matrix(dat$mt, dat$mf, NULL))
+  x <- as.matrix(dat$x[,(dat$ny+1):(dat$ny+dat$k)])
   yhat <- x %*% b
   z$dat <- dat 
   z$fitted.values <- yhat	
@@ -597,24 +571,12 @@ momentEstim.baseGmm.cue.formula <- function(object, ...)
   z$iid <- P$iid
   z$g <- P$g
   z$G <- P$gradv(dat) 
-
+  z$specMod <- P$specMod
   z$cue <- list(weights=P$fixedKernW,message=P$weightMessage)
   
-  namex <- colnames(dat$x[,(dat$ny+1):(dat$ny+dat$k)])
-  nameh <- colnames(dat$x[,(dat$ny+dat$k+1):(dat$ny+dat$k+dat$nh)])
- 
-  if (dat$ny > 1)
-    {
-    namey <- colnames(dat$x[,1:dat$ny])
-    names(z$coefficients) <- paste(rep(namey, dat$k), "_", rep(namex, rep(dat$ny, dat$k)), sep = "")
-    colnames(z$gt) <- paste(rep(namey, dat$nh), "_", rep(nameh, rep(dat$ny, dat$nh)), sep = "")
-    }
- 
-  if (dat$ny == 1)
-    {
-    names(z$coefficients) <- namex
-    colnames(z$gt) <- nameh
-    }
+  names(z$coefficients) <- P$namesCoef
+  colnames(z$gt) <- P$namesgt
+
   class(z) <- paste(P$TypeGmm,".res",sep="")
   return(z)	
   }
@@ -677,11 +639,6 @@ momentEstim.baseGmm.cue <- function(object, ...)
 
     }
 
-  if(is.null(names(P$t0)))
-    names(z$coefficients) <- paste("Theta[" ,1:k, "]", sep = "")
-  else
-    names(z$coefficients) <- names(P$t0)
-
   if(P$gradvf)
     z$G <- P$gradv(z$coefficients, P$x)
   else
@@ -693,8 +650,11 @@ momentEstim.baseGmm.cue <- function(object, ...)
   z$iid <- P$iid
   z$g <- P$g
   z$cue <- list(weights=P$fixedKernW,message=P$weightMessage)
+  names(z$coefficients) <- P$namesCoef
+  if (is.null(colnames(z$gt)))
+	colnames(z$gt) <- paste("gt",1:ncol(z$gt),sep="")
 
- 
+  z$specMod <- P$specMod
   class(z) <- paste(P$TypeGmm, ".res", sep = "")	
   return(z)
   }
@@ -911,10 +871,9 @@ momentEstim.fixedW.formula <- function(object, ...)
 
   z$gt <- g(z$coefficients, dat) 
   b <- z$coefficients
-  y <- as.matrix(model.response(dat$mf, "numeric"))
-  ny <- dat$ny
+  y <- as.matrix(dat$x[,1:dat$ny])
   b <- t(matrix(b, nrow = dat$ny))
-  x <- as.matrix(model.matrix(dat$mt, dat$mf, NULL))
+  x <- as.matrix(dat$x[,(dat$ny+1):(dat$ny+dat$k)])
   yhat <- x %*% b
   z$dat <- dat 
   z$fitted.values <- yhat	
@@ -928,21 +887,10 @@ momentEstim.fixedW.formula <- function(object, ...)
   z$g <- P$g
   z$G <- P$gradv(dat) 
 
-  namex <- colnames(dat$x[,(dat$ny+1):(dat$ny+dat$k)])
-  nameh <- colnames(dat$x[,(dat$ny+dat$k+1):(dat$ny+dat$k+dat$nh)])
- 
-  if (dat$ny > 1)
-    {
-    namey <- colnames(dat$x[,1:dat$ny])
-    names(z$coefficients) <- paste(rep(namey, dat$k), "_", rep(namex, rep(dat$ny, dat$k)), sep = "")
-    colnames(z$gt) <- paste(rep(namey, dat$nh), "_", rep(nameh, rep(dat$ny, dat$nh)), sep = "")
-    }
- 
-  if (dat$ny == 1)
-    {
-    names(z$coefficients) <- namex
-    colnames(z$gt) <- nameh
-    }
+  names(z$coefficients) <- P$namesCoef
+  colnames(z$gt) <- P$namesgt
+
+  z$specMod <- P$specMod
   class(z) <- paste(P$TypeGmm,".res",sep="")
   return(z)	
   }
@@ -1020,12 +968,6 @@ momentEstim.fixedW <- function(object, ...)
   else if(P$optfct == "nlminb")
      z$algoInfo <- list(convergence = res2$convergence, counts = res2$evaluations, message = res2$message)
 
-
-  if(is.null(names(P$t0)))
-    names(z$coefficients) <- paste("Theta[" ,1:k, "]", sep = "")
-  else
-    names(z$coefficients) <- names(P$t0)
-
   if(P$gradvf)
     z$G <- P$gradv(z$coefficients, P$x)
   else
@@ -1036,7 +978,10 @@ momentEstim.fixedW <- function(object, ...)
   z$gradv <- P$gradv
   z$iid <- P$iid
   z$g <- P$g
- 
+  names(z$coefficients) <- P$namesCoef
+  if (is.null(colnames(z$gt)))
+	colnames(z$gt) <- paste("gt",1:ncol(z$gt),sep="") 
+  z$specMod <- P$specMod
   class(z) <- paste(P$TypeGmm,".res",sep="")	
   return(z)
   }
