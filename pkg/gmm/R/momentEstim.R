@@ -153,6 +153,7 @@ momentEstim.baseGmm.twoStep <- function(object, ...)
   z$gradv <- P$gradv
   z$iid <- P$iid
   z$g <- P$g
+  z$WSpec <- P$WSpec
 
   names(z$coefficients) <- P$namesCoef
   if (is.null(colnames(z$gt)))
@@ -221,7 +222,8 @@ momentEstim.baseGmm.twoStep.formula <- function(object, ...)
   z$iid <- P$iid
   z$g <- P$g
   z$G <- P$gradv(dat) 
-  
+  z$WSpec <- P$WSpec
+
   names(z$coefficients) <- P$namesCoef
   colnames(z$gt) <- P$namesgt
  
@@ -306,6 +308,7 @@ momentEstim.baseGmm.iterative.formula <- function(object, ...)
   z$iid <- P$iid
   z$g <- P$g
   z$G <- P$gradv(dat) 
+  z$WSpec <- P$WSpec
 
   names(z$coefficients) <- P$namesCoef
   colnames(z$gt) <- P$namesgt
@@ -473,7 +476,8 @@ momentEstim.baseGmm.iterative <- function(object, ...)
   z$gradv <- P$gradv
   z$iid <- P$iid
   z$g <- P$g
- 
+  z$WSpec <- P$WSpec
+
   names(z$coefficients) <- P$namesCoef
   if (is.null(colnames(z$gt)))
 	colnames(z$gt) <- paste("gt",1:ncol(z$gt),sep="")
@@ -573,7 +577,8 @@ momentEstim.baseGmm.cue.formula <- function(object, ...)
   z$G <- P$gradv(dat) 
   z$specMod <- P$specMod
   z$cue <- list(weights=P$fixedKernW,message=P$weightMessage)
-  
+  z$WSpec <- P$WSpec
+
   names(z$coefficients) <- P$namesCoef
   colnames(z$gt) <- P$namesgt
 
@@ -653,6 +658,7 @@ momentEstim.baseGmm.cue <- function(object, ...)
   names(z$coefficients) <- P$namesCoef
   if (is.null(colnames(z$gt)))
 	colnames(z$gt) <- paste("gt",1:ncol(z$gt),sep="")
+  z$WSpec <- P$WSpec
 
   z$specMod <- P$specMod
   class(z) <- paste(P$TypeGmm, ".res", sep = "")	
@@ -886,6 +892,7 @@ momentEstim.fixedW.formula <- function(object, ...)
   z$iid <- P$iid
   z$g <- P$g
   z$G <- P$gradv(dat) 
+  z$WSpec <- P$WSpec
 
   names(z$coefficients) <- P$namesCoef
   colnames(z$gt) <- P$namesgt
@@ -978,6 +985,8 @@ momentEstim.fixedW <- function(object, ...)
   z$gradv <- P$gradv
   z$iid <- P$iid
   z$g <- P$g
+  z$WSpec <- P$WSpec
+
   names(z$coefficients) <- P$namesCoef
   if (is.null(colnames(z$gt)))
 	colnames(z$gt) <- paste("gt",1:ncol(z$gt),sep="") 

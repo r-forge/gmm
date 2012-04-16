@@ -59,7 +59,7 @@ getModel.constGmm <- function(object, ...)
 	obj$g <- function(tet, dat)
 		{
 		resTet <- attr(dat,"eqConst")$eqConst
-		tet2 <- vector(length=length(tet)+length(resTet))
+		tet2 <- vector(length=length(tet)+nrow(resTet))
 		tet2[resTet[,1]] <- resTet[,2]
 		tet2[-resTet[,1]] <- tet
 		attr(dat,"eqConst")$unConstg(tet2, dat)
@@ -67,7 +67,7 @@ getModel.constGmm <- function(object, ...)
 	obj$gradv <- function(tet, dat)
 		{
 		resTet <- attr(dat,"eqConst")$eqConst
-		tet2 <- vector(length=length(tet)+length(resTet))
+		tet2 <- vector(length=length(tet)+nrow(resTet))
 		tet2[resTet[,1]] <- resTet[,2]
 		tet2[-resTet[,1]] <- tet
 		attr(dat,"eqConst")$unConstgradv(tet2, dat)[,-resTet[,1]]
@@ -185,7 +185,8 @@ getModel.baseGmm <- function(object, ...)
   object$iid<-iid
   object$TypeGmm <- class(object)
   object$gradv <- gradv	
- 
+  object$WSpec <- list(vcov = object$vcov, sandwich = list(kernel = object$kernel, bw = object$bw, prewhite = object$prewhite, 
+			ar.method = object$ar.method, approx = object$approx, tol = object$tol))
   class(object)  <- clname
   return(object)
   }
