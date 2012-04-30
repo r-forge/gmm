@@ -85,16 +85,8 @@ momentEstim.baseGmm.twoStep <- function(object, ...)
 
     if (P$vcov == "HAC")
      {
-     if(P$centeredVcov) 
-      	gmat <- lm(P$g(res$par, P$x)~1)
-     else
-       {
-       gmat <- P$g(res$par, P$x)
-       class(gmat) <- "gmmFct"
-       }
-      w <- kernHAC(gmat, kernel = P$kernel, bw = P$bw, prewhite = P$prewhite, 
-		ar.method = P$ar.method, approx = P$approx, tol = P$tol, sandwich = FALSE)
-
+     gmat <- P$g(res$par, P$x)
+     w <- .myKernHAC(gmat, P)
      }
 
     if (P$optfct == "optim")
@@ -143,10 +135,10 @@ momentEstim.baseGmm.twoStep <- function(object, ...)
 	z$algoInfo <- list(convergence = res2$convergence, counts = res2$evaluations, message = res2$message)
     }
 
-  if(P$gradvf)
-    z$G <- P$gradv(z$coefficients, P$x)
-  else
-    z$G <- P$gradv(z$coefficients, P$x, g = P$g)
+ if (length(as.list(args(P$gradv))) == 3)
+	    z$G <- P$gradv(z$coefficients, P$x)
+ else
+	    z$G <- P$gradv(z$coefficients, P$x, g = P$g)
 
   z$dat <- P$x
   z$gt <- P$g(z$coefficients, P$x)
@@ -160,6 +152,7 @@ momentEstim.baseGmm.twoStep <- function(object, ...)
 	colnames(z$gt) <- paste("gt",1:ncol(z$gt),sep="")
   class(z) <- paste(P$TypeGmm,".res",sep="")	
   z$specMod <- P$specMod 
+  z$w0 <- w
   return(z)
   }
 
@@ -175,10 +168,10 @@ momentEstim.baseGmm.twoStep.formula <- function(object, ...)
   n <- nrow(x)
   q <- dat$ny*dat$nh
   df <- q-k*dat$ny
-    
+  w <- diag(q)
+
   if (q == k2 | P$wmatrix == "ident")
     {
-    w <- diag(q)
     res <- .tetlin(dat, w, P$gradv, P$g)
     z = list(coefficients = res$par, objective = res$value, dat = dat, k = k, k2 = k2, n = n, q = q, df = df)
     }
@@ -186,23 +179,16 @@ momentEstim.baseGmm.twoStep.formula <- function(object, ...)
     {
     if (P$vcov == "iid")
     	{
-      res2 <- .tetlin(dat, diag(q), P$gradv, P$g, type="2sls")
+      res2 <- .tetlin(dat, w, P$gradv, P$g, type="2sls")
       initTheta <- NULL
       }
     if (P$vcov == "HAC")
       {
-      res1 <- .tetlin(dat, diag(q), P$gradv, P$g, type="2sls")
+      res1 <- .tetlin(dat, w, P$gradv, P$g, type="2sls")
       initTheta <- res1$par
-      if(P$centeredVcov) 
-       	 gmat <- lm(g(res1$par, dat)~1)
-      else
-        {
-        gmat <- g(res1$par, dat)
-        class(gmat) <- "gmmFct"
-        }
-      w <- kernHAC(gmat, kernel = P$kernel, bw = P$bw, prewhite = P$prewhite, 
-		ar.method = P$ar.method, approx = P$approx, tol = P$tol, sandwich = FALSE)
-	 res2 <- .tetlin(dat, w, P$gradv, g)
+      gmat <- g(res1$par, dat)
+      w <- .myKernHAC(gmat, P)
+      res2 <- .tetlin(dat, w, P$gradv, g)
       }
     z = list(coefficients = res2$par, objective = res2$value, dat=dat, k=k, k2=k2, n=n, q=q, df=df, initTheta = initTheta)	
     }
@@ -223,6 +209,7 @@ momentEstim.baseGmm.twoStep.formula <- function(object, ...)
   z$g <- P$g
   z$G <- P$gradv(dat) 
   z$WSpec <- P$WSpec
+  z$w0 <- w
 
   names(z$coefficients) <- P$namesCoef
   colnames(z$gt) <- P$namesgt
@@ -239,7 +226,6 @@ momentEstim.baseGmm.iterative.formula <- function(object, ...)
   {
   P <- object
   g <- P$g
-  
   dat <- P$x
   x <- dat$x
   k <- dat$k
@@ -247,16 +233,15 @@ momentEstim.baseGmm.iterative.formula <- function(object, ...)
   n <- nrow(x)
   q <- dat$ny*dat$nh
   df <- q-k*dat$ny
+  w <- diag(q)
   
   if (q == k2 | P$wmatrix == "ident")
     {
-    w <- diag(q)
     res <- .tetlin(dat, w, P$gradv, g)
     z = list(coefficients = res$par, objective = res$value, dat = dat, k = k, k2 = k2, n = n, q = q, df = df)
     }
   else
     {
-    w <- diag(q)
     res <- .tetlin(dat, w, P$gradv, g, type="2sls")
     initTheta <- res$par
     ch <- 100000
@@ -266,18 +251,10 @@ momentEstim.baseGmm.iterative.formula <- function(object, ...)
       tet <- res$par
       if (P$vcov == "HAC")
 	{
-        if (P$centeredVcov)
-          gmat <- lm(g(tet, dat)~1)
-        else
-          {
-          gmat <- g(tet, dat)
-          class(gmat) <- "gmmFct"
-          }
-	if (j==1)
-		fixedKernW <-  weightsAndrews(gmat, prewhite=P$prewhite,
-	 			   bw = P$bw, kernel = P$kernel, approx = P$approx, 
- 			   	   ar.method = P$ar.method, tol = P$tol) 
-        w <- vcovHAC(gmat, weights = fixedKernW, sandwich = FALSE)
+        gmat <- g(tet, dat)
+	if (!is.null(attr(w,"Spec")))
+		P$WSpec$sandwich$bw <- attr(w,"Spec")$bw
+	w <- .myKernHAC(gmat, P)
         }
       res <- .tetlin(dat, w, P$gradv, g)
       ch <- crossprod(abs(tet- res$par)/tet)^.5
@@ -309,6 +286,7 @@ momentEstim.baseGmm.iterative.formula <- function(object, ...)
   z$g <- P$g
   z$G <- P$gradv(dat) 
   z$WSpec <- P$WSpec
+  z$w0 <- w
 
   names(z$coefficients) <- P$namesCoef
   colnames(z$gt) <- P$namesgt
@@ -394,19 +372,10 @@ momentEstim.baseGmm.iterative <- function(object, ...)
         w <- P$iid(tet, P$x, P$g, P$centeredVcov)
       if (P$vcov == "HAC")
 	{
-        if (P$centeredVcov)
-          gmat <- lm(P$g(tet, P$x)~1)
-        else
-          {
-          gmat <- P$g(tet, P$x)
-          class(gmat) <- "gmmFct"
-          }
-	if (j==1)
-		fixedKernW <-  weightsAndrews(gmat, prewhite=P$prewhite,
-	 			   bw = P$bw, kernel = P$kernel, approx = P$approx, 
- 			   	   ar.method = P$ar.method, tol = P$tol) 
-        w <- vcovHAC(gmat, weights = fixedKernW, sandwich = FALSE)
-
+	gmat <- P$g(tet, P$x)
+	if (!is.null(attr(w,"Spec")))
+		P$WSpec$sandwich$bw <- attr(w,"Spec")$bw
+	w <- .myKernHAC(gmat, P)
         }
 
       if (P$optfct == "optim")
@@ -465,11 +434,10 @@ momentEstim.baseGmm.iterative <- function(object, ...)
     }
 
   
-
-  if(P$gradvf)
-    z$G <- P$gradv(z$coefficients, P$x)
-  else
-    z$G <- P$gradv(z$coefficients, P$x, g = P$g)
+ if (length(as.list(args(P$gradv))) == 3)
+	    z$G <- P$gradv(z$coefficients, P$x)
+ else
+	    z$G <- P$gradv(z$coefficients, P$x, g = P$g)
 
   z$dat <- P$x
   z$gt <- P$g(z$coefficients, P$x)
@@ -477,6 +445,7 @@ momentEstim.baseGmm.iterative <- function(object, ...)
   z$iid <- P$iid
   z$g <- P$g
   z$WSpec <- P$WSpec
+  z$w0 <- w
 
   names(z$coefficients) <- P$namesCoef
   if (is.null(colnames(z$gt)))
@@ -489,7 +458,6 @@ momentEstim.baseGmm.iterative <- function(object, ...)
 momentEstim.baseGmm.cue.formula <- function(object, ...)
   {
 
-  fixedKernWeights <- TRUE # to be changed or included as an option in gmm() in future version
   P <- object
   g <- P$g
   
@@ -500,10 +468,11 @@ momentEstim.baseGmm.cue.formula <- function(object, ...)
   n <- nrow(x)
   q <- dat$ny*dat$nh
   df <- q-k*dat$ny
-  
+  w <- diag(q)
+  P$weightMessage <- "Weights for kernel estimate of the covariance are fixed and based on the first step estimate of Theta"	
+
   if (q == k2 | P$wmatrix == "ident")
     {
-    w <- diag(q)
     res <- .tetlin(dat, w, P$gradv, g)
     z = list(coefficients = res$par, objective = res$value, dat = dat, k = k, k2 = k2, n = n, q = q, df = df)
     P$weightMessage <- "No CUE needed because the model is just identified"
@@ -512,31 +481,17 @@ momentEstim.baseGmm.cue.formula <- function(object, ...)
     {
     if (is.null(P$t0))
 	{
-	P$t0 <- .tetlin(dat,diag(q), P$gradv, g, type="2sls")$par
+	P$t0 <- .tetlin(dat, w, P$gradv, g, type="2sls")$par
 	initTheta <- P$t0
-	if (fixedKernWeights)
-		P$weightMessage <- "Weights for kernel estimate of the covariance are fixed and based on the first step estimate of Theta"	
-	else
-		P$weightMessage <- "Weights for kernel estimate are variable inside the objective"
 	}
     else
 	{
 	initTheta <- P$t0
-	if (fixedKernWeights)
-		P$weightMessage <- "Weights for kernel estimate of the covariance are fixed and based on the initial value of Theta provided by the user"	
-	else
-		P$weightMessage <- "Weights for kernel estimate are variable inside the objective"
 	}
 
-    if (fixedKernWeights)
-	    {
-	    gt0 <- g(P$t0,dat)
-	    gt0 <- lm(gt0~1)
-            P$fixedKernW <-  weightsAndrews(gt0, prewhite=P$prewhite,
- 			   bw = P$bw, kernel = P$kernel, approx = P$approx, 
- 			   ar.method = P$ar.method, tol = P$tol) 
-	    }
-
+    gt0 <- g(P$t0,dat)
+    w <- .myKernHAC(gt0, P)
+    P$WSpec$sandwich$bw <- attr(w,"Spec")$bw
 
     if (P$optfct == "optim")
       res2 <- optim(P$t0,.objCue, x = dat, P = P, ...)
@@ -578,7 +533,7 @@ momentEstim.baseGmm.cue.formula <- function(object, ...)
   z$specMod <- P$specMod
   z$cue <- list(weights=P$fixedKernW,message=P$weightMessage)
   z$WSpec <- P$WSpec
-
+  z$w0 <- w
   names(z$coefficients) <- P$namesCoef
   colnames(z$gt) <- P$namesgt
 
@@ -598,6 +553,7 @@ momentEstim.baseGmm.cue <- function(object, ...)
   initTheta <- res$coef
   n <- nrow(res$gt)
   q <- ncol(res$gt)
+  w <- diag(q)
 
   if (P$optfct == "optimize")
     k = 1
@@ -615,10 +571,8 @@ momentEstim.baseGmm.cue <- function(object, ...)
   else
     {
     gt0 <- P$g(res$coef,x) #Should we compute the weigths with the initial value provided?
-    gt0 <- lm(gt0~1)
-    P$fixedKernW <-  weightsAndrews(gt0, prewhite=P$prewhite,
- 			   bw = P$bw, kernel = P$kernel, approx = P$approx, 
- 			   ar.method = P$ar.method, tol = P$tol) 
+    w <- .myKernHAC(gt0, P)
+    P$WSpec$sandwich$bw <- attr(w,"Spec")$bw
     P$weightMessage <- "Weights for kernel estimate of the covariance are fixed and based on the first step estimate of Theta"
 
     if (P$optfct == "optim")
@@ -644,10 +598,10 @@ momentEstim.baseGmm.cue <- function(object, ...)
 
     }
 
-  if(P$gradvf)
-    z$G <- P$gradv(z$coefficients, P$x)
+  if (length(as.list(args(P$gradv))) == 3)
+	    z$G <- P$gradv(z$coefficients, P$x)
   else
-    z$G <- P$gradv(z$coefficients, P$x, g = P$g)
+	    z$G <- P$gradv(z$coefficients, P$x, g = P$g)
 
   z$dat <- P$x
   z$gradv <- P$gradv
@@ -975,10 +929,10 @@ momentEstim.fixedW <- function(object, ...)
   else if(P$optfct == "nlminb")
      z$algoInfo <- list(convergence = res2$convergence, counts = res2$evaluations, message = res2$message)
 
-  if(P$gradvf)
-    z$G <- P$gradv(z$coefficients, P$x)
+  if (length(as.list(args(P$gradv))) == 3)
+	    z$G <- P$gradv(z$coefficients, P$x)
   else
-    z$G <- P$gradv(z$coefficients, P$x, g = P$g)
+	    z$G <- P$gradv(z$coefficients, P$x, g = P$g)
 
   z$dat <- P$x
   z$gt <- P$g(z$coefficients, P$x)

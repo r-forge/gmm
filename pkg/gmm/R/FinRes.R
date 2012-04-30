@@ -34,15 +34,9 @@ FinRes.baseGmm.res <- function(z, object, ...)
     }
   else if(P$vcov == "HAC")
     {
-    if(P$centeredVcov) 
-	gmat <- lm(z$gt~1)
-    else
-       {
-       gmat <- z$gt
-       class(gmat) <- "gmmFct"
-       }
-    v <- kernHAC(gmat, kernel = P$kernel, bw = P$bw, prewhite = P$prewhite, 
-		ar.method = P$ar.method, approx = P$approx, tol = P$tol, sandwich = FALSE)
+    if (!is.null(attr(z$w0,"Spec")))
+	    object$WSpec$sandwich$bw <- attr(z$w0,"Spec")$bw
+    v <- .myKernHAC(z$gt, object)
     z$v <- v
     }
 
@@ -100,6 +94,7 @@ FinRes.baseGmm.res <- function(z, object, ...)
   z$weightsMatrix <- P$weightsMatrix
   z$infVcov <- P$vcov
   z$infWmatrix <- P$wmatrix
+  z$allArg <- P$allArg
   z$met <- P$type
   z$kernel <- P$kernel
   z$coefficients <- c(z$coefficients)

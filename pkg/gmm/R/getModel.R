@@ -20,7 +20,6 @@ getModel.constGmm <- function(object, ...)
   {
   class(object) <- "baseGmm"
   obj <- getModel(object)
-	
   if (!is.null(object$t0))
 	{
 	if (!is.null(dim(object$eqConst)))
@@ -47,13 +46,38 @@ getModel.constGmm <- function(object, ...)
 	{
 	if (obj$x$ny>1)
 	  stop("Constrained GMM not implemented yet for system of equations")
+	obj$g2 <- function(tet, dat)
+	      {
+	      x <- attr(dat,"eqConst")$Xunc
+	      y <- attr(dat,"eqConst")$Yunc
+	      ny <- 1
+	      nh <- dat$nh
+	      tet <- matrix(tet, ncol = ncol(x))
+	      e <- y - x %*% t(tet)
+	      gt <- e * dat$x[, ny+dat$k+1]
+	      if(nh > 1)
+			for (i in 2:nh)	  gt <- cbind(gt, e*x[, (ny+dat$k+i)])
+	      return(gt)
+	      }
+    	obj$gradv2 <- function(dat)
+	      {
+	      x <- attr(dat,"eqConst")$Xunc
+	      y <- attr(dat,"eqConst")$Yunc
+	      nh <- dat$nh
+	      k <- ncol(x)
+	      ny <- 1
+	      dat$x <- cbind(y,x,dat$x[, dat$ny+dat$k+(1:nh)])
+	      dgb <- -(t(x[,(ny+k+1):(ny+k+nh)]) %*% x[,(ny+1):(ny+k)]) %x% diag(rep(1,ny))/nrow(x)
+	      return(dgb)
+	      }
+	attr(obj$x,"eqConst") <- list(unConstg = obj$g2, unConstgradv = obj$gradv2, eqConst = object$eqConst, 
+				Yunc = obj$x$x[,1], Xunc = as.matrix(obj$x$x[,1+(1:obj$x$k)]))
 	x <- as.matrix(obj$x$x[,1+(object$eqConst[,1])])%*%object$eqConst[,2]
 	obj$x$x <- obj$x$x[,-(1+(object$eqConst[,1]))]
 	obj$x$x[,1] <- obj$x$x[,1]-x
 	obj$x$k <- obj$x$k-nrow(object$eqConst)
 	if (obj$x$k<=0)
 		stop("Nothing to estimate")
-	attr(obj$x,"eqConst") <- list(eqConst = object$eqConst)
 	} else {
 	attr(obj$x,"eqConst") <- list(unConstg = obj$g, unConstgradv = obj$gradv, eqConst = object$eqConst)   	   	
 	obj$g <- function(tet, dat)
@@ -70,20 +94,24 @@ getModel.constGmm <- function(object, ...)
 		tet2 <- vector(length=length(tet)+nrow(resTet))
 		tet2[resTet[,1]] <- resTet[,2]
 		tet2[-resTet[,1]] <- tet
-		attr(dat,"eqConst")$unConstgradv(tet2, dat)[,-resTet[,1]]
+		if (!is.null(as.list(args(attr(dat,"eqConst")$unConstgradv))$g))
+			attr(dat,"eqConst")$unConstgradv(tet2, dat, g=attr(dat,"eqConst")$unConstg)[,-resTet[,1]]
+		else
+			attr(dat,"eqConst")$unConstgradv(tet2, dat)[,-resTet[,1]]
 		}
 	}
   obj$namesCoef <- obj$namesCoef[-object$eqConst[,1]]
   obj$type <- paste(obj$type,"(with equality constraints)",sep=" ")	
-  clname <-  strsplit(class(obj),"constGmm")
   mess <- paste(rownames(object$eqConst), " = " , object$eqConst[,2], "\n",collapse="")
   mess <- paste("#### Equality constraints ####\n",mess,"##############################\n\n",sep="")
-  obj$specMod <- mess                                         
+  obj$specMod <- mess  
+                                      
   return(obj)
   }
 
 getModel.baseGmm <- function(object, ...)
   {
+  object$allArg <- c(object, list(...))
   if(is(object$g, "formula"))
     {
     object$gradvf <- FALSE
@@ -98,9 +126,11 @@ getModel.baseGmm <- function(object, ...)
       	{
           clname <- "baseGmm.twoStep.formula"
           object$type <- "Linear model with iid errors: Regular IV or 2SLS"
-         }
-      else	
+        }
+      else
+	{
          clname <- paste(class(object), ".", object$type, ".formula", sep = "")
+        }
       }
     else
       {
@@ -145,9 +175,11 @@ getModel.baseGmm <- function(object, ...)
       }
     object$g <- g
     object$x <- dat
+    attr(object$x,"ModelType") <- "linear"
     }
   else
     {
+    attr(object$x,"ModelType") <- "nonlinear"
     k <- length(object$t0)
     if(is.null(names(object$t0)))
        object$namesCoef <- paste("Theta[" ,1:k, "]", sep = "")
@@ -155,7 +187,9 @@ getModel.baseGmm <- function(object, ...)
        object$namesCoef <- names(object$t0)
 
     if(is.null(object$weightsMatrix))
+      {
       clname <- paste(class(object), "." ,object$type, sep = "")
+      }
     else
 	{
         clname <- "fixedW"
@@ -182,6 +216,7 @@ getModel.baseGmm <- function(object, ...)
     return(v)
     }
  
+  
   object$iid<-iid
   object$TypeGmm <- class(object)
   object$gradv <- gradv	

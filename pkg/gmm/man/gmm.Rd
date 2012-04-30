@@ -1,7 +1,8 @@
 \name{gmm}
 
 \alias{gmm}
-
+\alias{gmmWithConst}
+	
 \title{Generalized method of moment estimation}
 
 \description{
@@ -15,6 +16,7 @@ kernel = c("Quadratic Spectral","Truncated", "Bartlett",
 prewhite = FALSE, ar.method = "ols", approx = "AR(1)", tol = 1e-7, 
 itermax = 100, optfct = c("optim","optimize","nlminb"), model=TRUE, X=FALSE, Y=FALSE, 
 TypeGmm = "baseGmm", centeredVcov = TRUE, weightsMatrix = NULL, traceIter = FALSE, data, eqConst = NULL, ...)
+gmmWithConst(obj, which, value)
 }
 \arguments{
 \item{g}{A function of the form \eqn{g(\theta,x)} and which returns a \eqn{n \times q} matrix with typical element \eqn{g_i(\theta,x_t)} for \eqn{i=1,...q} and \eqn{t=1,...,n}. This matrix is then used to build the q sample moment conditions. It can also be a formula if the model is linear (see details below).}
@@ -63,6 +65,10 @@ TypeGmm = "baseGmm", centeredVcov = TRUE, weightsMatrix = NULL, traceIter = FALS
 
 \item{eqConst}{Either a named vector (if "g" is a function), a simple vector for the nonlinear case indicating which of the \eqn{\theta_0} is restricted, or a qx2 vector defining equality constraints of the form \eqn{\theta_i=c_i}. See below for an example.}
 
+\item{which, value}{The equality constraint is of the form which=value. "which" can be a vector of type characters with the names of the coefficients being constrained, or a vector of type numeric with the position of the coefficient in the whole vector.}
+
+\item{obj}{Object of class "gmm"}
+
 \item{...}{More options to give to \code{\link{optim}}.}
 }
 
@@ -96,6 +102,8 @@ The Jacobian of these two conditions is (it should be an array but I can't make 
 \deqn{ 1~~~~~~~~~~ 0 }
 \deqn{ -2\mu+2x ~~~~~ 2\sigma }
 \deqn{-3\mu^{2}-3\sigma^{2} ~~~~ -6\mu\sigma}
+
+\code{gmmWithConst()} re-estimates an unrestricted model by adding an equality constraint. 
 }
 
 \value{
@@ -290,6 +298,13 @@ res2
 
 res3 <- gmm(z ~ f1 + f2 + f3, ~ f1 + f2 + f3, t0=c(0,1,.5,.5), type="cue", eqConst = c(1,2))
 res3
+
+### Examples with equality constraint using gmmWithConst
+###########################################################
+
+res2 <- gmm(z ~ f1 + f2 + f3, ~ f1 + f2 + f3)
+gmmWithConst(res2,c("f2","f3"),c(.5,.5))
+gmmWithConst(res2,c(2,3),c(.5,.5))
 
 
 }

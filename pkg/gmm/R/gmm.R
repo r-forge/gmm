@@ -54,6 +54,29 @@ class(ans) <- c("tsls","gmm")
 return(ans)
 }
 
+
+.myKernHAC <- function(gmat, obj)
+	{
+        if(obj$centeredVcov) 
+          gmat <- lm(gmat~1)
+        else
+          class(gmat) <- "gmmFct"
+	AllArg <- obj$WSpec$sandwich
+	AllArg$x <- gmat
+	if (is.function(AllArg$bw))
+		{
+		bw <- AllArg$bw(gmat, order.by = AllArg$order.by, kernel = AllArg$kernel, 
+			prewhite = AllArg$prewhite, ar.method = AllArg$ar.method)
+		AllArg$bw <- bw
+		}
+	weights <- do.call(weightsAndrews,AllArg)
+	AllArg$sandwich <- FALSE
+	AllArg$weights <- weights
+	w <- do.call(vcovHAC, AllArg)
+	attr(w,"Spec") <- list(weights = weights, bw = AllArg$bw, kernel = AllArg$kernel)
+	w
+	}
+
 getDat <- function (formula, h, data) 
 {
 	cl <- match.call()
@@ -241,28 +264,12 @@ getDat <- function (formula, h, data)
 .objCue <- function(thet, x, P)
   {
   gt <- P$g(thet,x)
-  if (is.null(P$fixedKernW))
-	w <-  weightsAndrews(lm(gt~1), prewhite=P$prewhite,
- 			   bw = P$bw, kernel = P$kernel, approx = P$approx, 
- 			   ar.method = P$ar.method, tol = P$tol) 
-  else
-	w <- P$fixedKernW
-
   gbar <- as.vector(colMeans(gt))
   if (P$vcov == "iid")
-    w2 <- P$iid(thet, x, P$g, P$centeredVcov)
+    w <- P$iid(thet, x, P$g, P$centeredVcov)
   if (P$vcov == "HAC")
-    {
-    if(P$centeredVcov)
-        gmat <- lm(P$g(thet,x)~1)
-    else
-      {
-        gmat <- P$g(thet,x)
-        class(gmat) <- "gmmFct"
-      }
-    w2 <- vcovHAC(gmat, weights=w, sandwich = FALSE)
-   }
-  obj <- crossprod(gbar,solve(w2,gbar))
+    w <- .myKernHAC(gt, P)
+  obj <- crossprod(gbar,solve(w,gbar))
   return(obj)
 }	
 
