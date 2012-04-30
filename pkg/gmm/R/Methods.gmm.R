@@ -35,6 +35,8 @@ summary.gmm <- function(object, ...)
 		names(ans$initTheta) <- names(z$coefficients)
 		}
         ans$specMod <- object$specMod
+	ans$bw <- attr(object$w0,"Spec")$bw
+	ans$weights <- attr(object$w0,"Spec")$weights
 	class(ans) <- "summary.gmm"
 	ans
 	}
@@ -71,8 +73,6 @@ print.summary.tsls <- function(x, digits = 5, ...)
 		" (P-Vavue = ",x$fstatistic$pvfstat[i],")\n")
 	
 	}
-
-
 print.summary.gmm <- function(x, digits = 5, ...)
 	{
 	cat("\nCall:\n")
@@ -82,7 +82,11 @@ print.summary.gmm <- function(x, digits = 5, ...)
 		cat("         (",x$cue$message,")\n\n")
 	else
 		cat("\n")
-	cat("Kernel: ", x$kernel,"\n\n")
+	cat("Kernel: ", x$kernel)
+	if (!is.null(x$bw))
+		cat("(with bw = ", round(x$bw,5),")\n\n")
+	else
+		cat("\n\n")	
 	cat("Coefficients:\n")
 	print.default(format(x$coefficients, digits=digits),
                       print.gap = 2, quote = FALSE)
