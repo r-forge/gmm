@@ -8,7 +8,7 @@ export(gmm,summary.gmm,smoothG,getDat,summary.gel,getLamb,gel, estfun.gmmFct, es
 	specTest.gmm, specTest.gel, print.specTest, momentEstim.baseGmm.twoStep, momentEstim.baseGmm.twoStep.formula,
         momentEstim.baseGmm.iterative.formula, momentEstim.baseGmm.iterative, momentEstim.baseGmm.cue.formula, 
 	momentEstim.baseGmm.cue, getModel.baseGmm, getModel.baseGel, getModel.constGmm, FinRes.baseGmm.res, momentEstim.baseGel.mod, 
-	momentEstim.baseGel.modFormula,tsls,summary.tsls, print.summary.tsls, KTest, print.gmmTests, KConfid, gmmWithConst)
+	momentEstim.baseGel.modFormula,tsls,summary.tsls, print.summary.tsls, KTest, print.gmmTests, gmmWithConst)
  
 S3method(summary, gmm)
 S3method(summary, tsls)

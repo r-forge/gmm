@@ -1,0 +1,4 @@
+Starting version 0.0-1
+
+o The package only include KConf for now. It has been removed from the gmm package because of the dependency on multicore which is not available on Windows.
+  It is very experimental for now.
