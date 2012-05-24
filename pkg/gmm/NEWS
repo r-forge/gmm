@@ -22,7 +22,7 @@ o The function getLamb() has been modified. It is now more efficient. The defaul
 o The choice "iter" from the option optlam is kept for cases in which the optimizer fails to solve for lambda. It is often the case 
   when type="ETEL" is chosen which tends to produce NA's.
 o For GEL of type "EL" and optfct="optim", the algorith constrOptim() is launched to make sure lambda'gt is always greater than 1
-  and avoid NA's when computing log(1-lambda'gt).
+  and avoid NA's when computing log(1-lambda'gt). The algorithm checks first with optim(), and swith to constrOptim() is optim() fails 
 o Sometimes, problems happen in GMM estimation because of the bad first step estimates used to compute the weighting matrix.
   The first step estimates are usually computed using the identity matrix. The vector is now printed for better control. 
 o Cleaned the codes. The data are in object$dat and we can get the moment matrix by calling gt <- object$g(object$coef,object$dat) for linear and 
@@ -32,8 +32,11 @@ o The K statistics for weakly identified models of Kleiberben (2005) has been ad
 o (gmm only) The bandwidth for the HAC estimation is set by the first step estimate. Its value, along with the weights, 
   is saved in attr(obj$w0,"Spec"). If the user is not satisfied with this automatic bw selection, bw can be set to any fixed number when
   calling gmm(). See ?gmm for more details and examples.
-o The function gmmWithConst() reestimate an unrestricted model by imposing linear constraints, using the same specification. It also use the same bandwidth for
-  the estimation os the HAC matrix
+o The function gmmWithConst() reestimate an unrestricted model by imposing linear constraints, using the same specification. 
+  It also use the same bandwidth for the estimation of the HAC matrix
+o A regularized version of GEL based on Chausse(2011) is now implemented. The Lagrange multiplier can be regularized by setting the option
+  "alpha=" to a number. The regularization can stabilize the GEL estimator. A preliminary paper will be available on my web site that analyze 
+  the properties of such modification.  A method for selecting alpha will be implemented in future version.   
 
 Changes in version 1.3-8
 

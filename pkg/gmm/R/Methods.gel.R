@@ -60,7 +60,11 @@ vcov.gel <- function(object, lambda = FALSE, ...)
 
 print.gel <- function(x, digits = 5, ...)
 	{
-	cat("Type de GEL: ", x$type, "\n\n")
+	if (is.null(x$CGEL))
+		cat("Type de GEL: ", x$type, "\n\n")
+	else
+		cat("CGEL of type: ", x$type, " (alpha = ", x$CGEL, ")\n\n")
+
 	cat("Coefficients:\n")
 	print.default(format(coef(x), digits = digits),
                       print.gap = 2, quote = FALSE)
@@ -78,7 +82,10 @@ print.summary.gel <- function(x, digits = 5, ...)
 	{
 	cat("\nCall:\n")
 	cat(paste(deparse(x$call), sep = "\n", collapse = "\n"), "\n\n", sep = "")
-	cat("\nType of GEL: ", x$type, "\n\n")
+	if (is.null(x$CGEL))
+		cat("Type de GEL: ", x$type, "\n\n")
+	else
+		cat("CGEL of type: ", x$type, " (alpha = ", x$CGEL, ")\n\n")
 	cat("Kernel: ", x$kernel, "\n\n")
 	cat("Coefficients:\n")
 	print.default(format(x$coefficients, digits = digits),
@@ -133,6 +140,7 @@ summary.gel <- function(object, ...)
 	ans$conv_pt <- z$conv_pt
 	ans$conv_moment <- cbind(z$conv_moment)
 	ans$conv_lambda <- z$conv_lambda
+	ans$CGEL <- z$CGEL
 	names(ans$conv_pt) <- "Sum_of_pt"
 	dimnames(ans$conv_moment) <- list(names(z$gt), "Sample_moment_with_pt")
 	class(ans) <- "summary.gel"

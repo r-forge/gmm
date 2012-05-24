@@ -53,14 +53,49 @@
 	return(c(rhomat))
 	}
 
+.getCgelLam <- function(gt, l0, type = c('EL', 'ET', 'CUE'), method = c("nlminb", "optim", "constrOptim"), control=list(), k = 1, alpha = 0.01)
+	{
+	type <- match.arg(type)
+	method <- match.arg(method)
+	fct <- function(l, X)
+		{
+		r1 <- colMeans(.rho(gt,l,derive=1,type=type,k=k)*X)
+		crossprod(r1) + alpha*crossprod(l)
+		}
+	Dfct <- function(l, X)
+		{
+		r2 <- .rho(X,l,derive=2,type=type,k=k)
+		r1 <- .rho(X,l,derive=1,type=type,k=k)
+		H <- t(X*r2)%*%X/nrow(X)
+		2*H%*%colMeans(r1*X) + 2*alpha*l
+		}
 
-getLamb <- function(gt, type = c('EL', 'ET', 'CUE', "ETEL"), tol_lam = 1e-7, maxiterlam = 100, tol_obj = 1e-7, 
+	if (method == "nlminb")
+		res <- nlminb(l0, fct, Dfct, X = gt, control = control) 
+	if (method == "optim")
+		res <- optim(l0, fct, Dfct, X = gt, method="BFGS", control = control) 
+	if (method == "constrOptim")
+		{
+		ci <- -rep(1,nrow(gt))
+		res <- constrOptim(rep(0,ncol(gt)),fct,Dfct,-gt,ci,control=control,X=gt)
+		}
+	if (method == "optim")
+		{
+		conv <- list(convergence = res$convergence, counts = res$counts, message = res$message)
+	} else {
+		conv <- list(convergence = res$convergence, counts = res$evaluations, message = res$message)
+		}
+
+	return(list(lambda = res$par, convergence = conv, 
+			obj = mean(.rho(gt,res$par, derive=0,type=type,k=k))))	
+	}
+
+getLamb <- function(gt, l0, type = c('EL', 'ET', 'CUE', "ETEL"), tol_lam = 1e-7, maxiterlam = 100, tol_obj = 1e-7, 
 		k = 1, 	method = c("nlminb", "optim", "iter"), control=list())
 	{
 	method <- match.arg(method)
 	if(is.null(dim(gt)))
 		gt <- matrix(gt,ncol=1)
-	l0 <- rep(0,ncol(gt))
 
 	if (method == "iter")
 		{
@@ -179,7 +214,7 @@ gel <- function(g, x, tet0, gradv = NULL, smooth = FALSE, type = c("EL", "ET", "
                 kernel = c("Truncated", "Bartlett"), bw = bwAndrews, approx = c("AR(1)", 
     		"ARMA(1,1)"), prewhite = 1, ar.method = "ols", tol_weights = 1e-7, tol_lam = 1e-9, tol_obj = 1e-9, 
 		tol_mom = 1e-9, maxiterlam = 100, constraint = FALSE, optfct = c("optim", "optimize", "nlminb"), 
-                optlam = c("nlminb", "optim", "iter"), Lambdacontrol = list(), model = TRUE, X = FALSE, Y = FALSE, TypeGel = "baseGel", ...)
+                optlam = c("nlminb", "optim", "iter"), Lambdacontrol = list(), model = TRUE, X = FALSE, Y = FALSE, TypeGel = "baseGel", alpha = NULL, ...)
 	{
 
 	type <- match.arg(type)
@@ -194,7 +229,7 @@ gel <- function(g, x, tet0, gradv = NULL, smooth = FALSE, type = c("EL", "ET", "
 		tol_weights = tol_weights, tol_lam = tol_lam, tol_obj = tol_obj, tol_mom = tol_mom, 
 		maxiterlam = maxiterlam, constraint = constraint, optfct = optfct, weights = weights,
                 optlam = optlam, model = model, X = X, Y = Y, TypeGel = TypeGel, call = match.call(), 
-		Lambdacontrol = Lambdacontrol)
+		Lambdacontrol = Lambdacontrol, alpha = alpha)
 
 	class(all_args)<-TypeGel
 	Model_info<-getModel(all_args)
@@ -205,24 +240,39 @@ gel <- function(g, x, tet0, gradv = NULL, smooth = FALSE, type = c("EL", "ET", "
 	}
 
 
-  .thetf <- function(tet, P, output=c("obj","all"))
+  .thetf <- function(tet, P, output=c("obj","all"), l0Env)
     {
     output <- match.arg(output)
     gt <- P$g(tet, P$dat)
-    if (P$optlam != "optim" & P$type == "EL") 
+    l0 <- get("l0",envir=l0Env)
+    if (is.null(P$CGEL))
+	{
+	if (P$optlam != "optim" & P$type == "EL") 
 	    {
-	    lamb <- try(getLamb(gt, type = P$type, tol_lam = P$tol_lam, maxiterlam = P$maxiterlam, 
+	    lamb <- try(getLamb(gt, l0, type = P$type, tol_lam = P$tol_lam, maxiterlam = P$maxiterlam, 
 			tol_obj = P$tol_obj, k = P$k1/P$k2, control = P$Lambdacontrol, 
 			method = P$optlam), silent = TRUE)
-	    if(class(lamb) == "try-error")
-		    lamb <- getLamb(gt, type = P$type, tol_lam = P$tol_lam, maxiterlam = P$maxiterlam, 
+            if(class(lamb) == "try-error")
+		    lamb <- getLamb(gt, l0, type = P$type, tol_lam = P$tol_lam, maxiterlam = P$maxiterlam, 
 			tol_obj = P$tol_obj, k = P$k1/P$k2, control = P$Lambdacontrol, method = "optim")
 	    }
-    else
-	    lamb <- getLamb(gt, type = P$type, tol_lam = P$tol_lam, maxiterlam = P$maxiterlam, 
+	    else
+		    lamb <- getLamb(gt, l0, type = P$type, tol_lam = P$tol_lam, maxiterlam = P$maxiterlam, 
 			tol_obj = P$tol_obj, k = P$k1/P$k2, control = P$Lambdacontrol, method = P$optlam)
-
+	}
+    else
+	{
+	if (P$type=="ETEL")
+		stop("CGEL not implemented for ETEL")
+	lamb <- try(.getCgelLam(gt, l0, type = P$type, method = "nlminb", control=P$Lambdacontrol, 
+			k = P$k1/P$k2, alpha = P$CGEL),silent=TRUE)
+	if (class(lamb) == "try-error")
+		lamb <- try(.getCgelLam(gt, l0, type = P$type, method = "constrOptim", control=P$Lambdacontrol, 
+			k = P$k1/P$k2, alpha = P$CGEL),silent=TRUE)
+	}
+	
     obj <- mean(.rho(gt, lamb$lambda, type = P$typet, derive = 0, k = P$k1/P$k2))
+    assign("l0",lamb$lambda,envir=l0Env)
     if(output == "obj")
 	    return(obj)
     else

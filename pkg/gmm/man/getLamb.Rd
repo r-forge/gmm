@@ -8,11 +8,13 @@
  It computes the vector of Lagrange multipliers, which maximizes the GEL objective function, using an iterative Newton method.
 }
 \usage{
-getLamb(gt, type = c("EL","ET","CUE", "ETEL"), tol_lam = 1e-7, maxiterlam = 100, tol_obj = 1e-7, k = 1, 
+getLamb(gt, l0, type = c("EL","ET","CUE", "ETEL"), tol_lam = 1e-7, maxiterlam = 100, tol_obj = 1e-7, k = 1, 
 	method = c("nlminb", "optim", "iter"), control = list())
 }
 \arguments{
 \item{gt}{A \eqn{n \times q} matrix with typical element \eqn{g_i(\theta,x_t)}}
+
+\item{l0}{Vector of starting values for lambda}
 
 \item{type}{"EL" for empirical likelihood, "ET" for exponential tilting and "CUE" for continuous updated estimator. See details for "ETEL".}
 

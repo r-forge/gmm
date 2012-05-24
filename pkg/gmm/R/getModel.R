@@ -122,7 +122,7 @@ getModel.baseGmm <- function(object, ...)
     
     if(is.null(object$weightsMatrix))
       {
-      if (object$vcov == "iid" & object$wmatrix != "ident")
+      if (object$vcov == "iid" & object$wmatrix != "ident" & object$type != "cue")
       	{
           clname <- "baseGmm.twoStep.formula"
           object$type <- "Linear model with iid errors: Regular IV or 2SLS"
@@ -268,7 +268,6 @@ getModel.baseGel <- function(object, ...)
         }
       return(gt)
       }
-
     gradv <- function(tet, dat, pt = NULL)
       {
       x <- dat$x
@@ -286,7 +285,14 @@ getModel.baseGel <- function(object, ...)
     P$dat <- dat
     P$gform <- P$g
     P$g <- g
-    P$gradv <- gradv
+    if (P$smooth)
+	{
+	P$gradv <- .Gf
+	P$gradvf <- FALSE
+    } else {
+	P$gradv <- gradv
+	P$gradvf <- TRUE
+	}
     }	
   else
     {
@@ -320,25 +326,36 @@ getModel.baseGel <- function(object, ...)
         }
     P$g1 <- P$g
 
-    rgmm <- gmm(P$g, P$dat, P$tet0, wmatrix = "ident")
-    P$bwVal <- P$bw(centeredGt <- lm(P$g(rgmm$coefficients, P$dat)~1), kernel = P$wkernel, prewhite = P$prewhite, 
-               ar.method = P$ar.method, approx = P$approx)
-    P$w <- smoothG(residuals(centeredGt), bw = P$bwVal)$kern_weights
+    gt <- gmm(P$g, P$dat, P$tet0, wmatrix = "ident")$gt
+    gt <- sweep(gt,2,colMeans(gt),FUN="-")
+    class(gt) <- "gmmFct"	
+    if (is.function(P$bw))
+	    P$bwVal <- P$bw(gt, kernel = P$wkernel, prewhite = P$prewhite, 
+	               ar.method = P$ar.method, approx = P$approx)
+    else
+	    P$bwVal <- P$bw
 
-    P$g <- function(thet, x, g1 = P$g1, bw = P$bwVal)
+    P$w <- smoothG(gt, bw = P$bwVal)$kern_weights
+    attr(P$dat,"smooth") <- list(bw=P$bwVal, w=P$w, g = P$g1)
+
+    P$g <- function(thet, x)
       {
-      gf <- g1(thet, x)
+      gf <- attr(x,"smooth")$g(thet, x)
+      bw <- attr(x,"smooth")$bw
       gt <- smoothG(gf, bw = bw)$smoothx
       return(gt)
       }
+    P$q <- ncol(gt)
     }
   else
    {
+   P$q <- ncol(P$g(P$tet0, P$dat))
    P$k1 <- 1
    P$k2 <- 1
    P$w <- kernel(1)
    P$bwVal <- 1
    }	
+  P$CGEL <- P$alpha
   class(P) <- clname
   return(P)
   }

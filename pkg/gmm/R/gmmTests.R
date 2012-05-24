@@ -134,12 +134,15 @@ KTest <- function(obj, theta0=NULL, alphaK = 0.04, alphaJ = 0.01)
 	bread <- t(fT)%*%solve(Vff,D)
 	K <- bread%*%solve(meat,t(bread))/V$n
 	pv <- 1-pchisq(K,dfK)
-	J <- t(fT)%*%solve(Vff,fT)/V$n-K
+	S <- t(fT)%*%solve(Vff,fT)/V$n
+	J <- S-K
+        dfS <- dfK +  dfJ
 	pvJ <- 1-pchisq(J,dfJ)
-	type <- c("K statistics","J statistics")
-	test <- c(K,J)
-	test <- cbind(test,c(pv,pvJ),c(dfK,dfJ))
-	dist <- paste("Chi_sq with ", c(dfK,dfJ), " degrees of freedom", sep="")
+	type <- c("K statistics","J statistics", "S statistics")
+	test <- c(K,J,S)
+        pvS <- 1-pchisq(S,dfS)
+	test <- cbind(test,c(pv,pvJ,pvS),c(dfK,dfJ,dfS))
+	dist <- paste("Chi_sq with ", c(dfK,dfJ,dfS), " degrees of freedom", sep="")
 	if(dfJ>0)
 		ans <- list(test=test,dist=dist,type=type,testName=testName)
 	else
@@ -212,6 +215,11 @@ gmmWithConst <- function(obj, which, value)
 
 KConfid <- function(obj, which, type = c("K", "KJ"), alpha = 0.05, alphaJ = 0.01, n = 4)
 	{
+	if (is.element("multicore", installed.packages()[,1])) 
+		theApply <- mclapply
+	else
+		theApply <- lapply
+
 	type <- match.arg(type)
 	if ( (obj$df == 0) & (type == "KJ"))
 		stop("Only K type is available for just identified models")
@@ -277,7 +285,7 @@ KConfid <- function(obj, which, type = c("K", "KJ"), alpha = 0.05, alphaJ = 0.01
 			else
 				return(res$root)
 			}
-		res <- mclapply(c(-1,1), getBoth)
+		res <- theApply(c(-1,1), getBoth)
 		c(res[[1]],res[[2]])
 	} else {
 		step <- 5*sqrt(diag(vcov(obj)))[which]
@@ -290,6 +298,10 @@ KConfid <- function(obj, which, type = c("K", "KJ"), alpha = 0.05, alphaJ = 0.01
 
 .getCircle <- function(x0,y0,g,n,b, trace=FALSE,  ...)
 	{
+	if (is.element("multicore", installed.packages()[,1])) 
+		theApply <- mclapply
+	else
+		theApply <- lapply
 	tol=1e-4
 	if (any(b<=0))
 		stop("b must be strictly positive")
@@ -312,7 +324,7 @@ KConfid <- function(obj, which, type = c("K", "KJ"), alpha = 0.05, alphaJ = 0.01
 	# get the four points of the cross
 	selectf <- list(f,f,f2,f2)
 	selectd <- c(1,-1,1,-1)
-	xy12 <- mclapply(1:4, function(i) try(uniroot(selectf[[i]],c(x0,x0+selectd[i]*b[1]),y0=y0,tol=tol)$root,silent=TRUE))
+	xy12 <- theApply(1:4, function(i) try(uniroot(selectf[[i]],c(x0,x0+selectd[i]*b[1]),y0=y0,tol=tol)$root,silent=TRUE))
 
 	x1 <- xy12[[1]]
 	x2 <- xy12[[2]]
@@ -329,14 +341,14 @@ KConfid <- function(obj, which, type = c("K", "KJ"), alpha = 0.05, alphaJ = 0.01
 		return(c(xt,yt))
 		}
 
-	res1 <- mclapply(lambda,getAll,dir=1,x=x1)
-	res2 <- mclapply(lambda,getAll,dir=-1,x=x2)
+	res1 <- theApply(lambda,getAll,dir=1,x=x1)
+	res2 <- theApply(lambda,getAll,dir=-1,x=x2)
 	res1 <- t(simplify2array(res1))
 	res2 <- t(simplify2array(res2))
 	solU <- rbind(c(x2,y0),res2[length(lambda):1,],c(f3(x0), f3(y1)),res1,c(x1,y0))
 
-	res1 <- mclapply(lambda,getAll,dir=-1,x=x1)
-	res2 <- mclapply(lambda,getAll,dir=1,x=x2)
+	res1 <- theApply(lambda,getAll,dir=-1,x=x1)
+	res2 <- theApply(lambda,getAll,dir=1,x=x2)
 	res1 <- t(simplify2array(res1))
 	res2 <- t(simplify2array(res2))
 	solD <- rbind(res2[length(lambda):1,],c(f3(x0), f3(y2)),res1)

@@ -623,25 +623,29 @@ momentEstim.baseGel.modFormula <- function(object, ...)
   {
   P <- object
   g <- P$g
+  l0Env <- new.env()
+  assign("l0",rep(0,P$q),envir=l0Env)
+
   n <- nrow(P$dat$x)
   if (!P$constraint)
     {
     if (P$optfct == "optim")
-      res <- optim(P$tet0, .thetf, P = P, ...)
+      res <- optim(P$tet0, .thetf, P = P, l0Env = l0Env, ...)
     if (P$optfct == "nlminb")
-      res <- nlminb(P$tet0, .thetf, P = P, ...)
+      res <- nlminb(P$tet0, .thetf, P = P, l0Env = l0Env, ...)
 	
     if (P$optfct == "optimize")
       { 
-      res <- optimize(.thetf, P$tet0, P = P, ...)
+      res <- optimize(.thetf, P$tet0, P = P, l0Env = l0Env, ...)
       res$par <- res$minimum
       res$convergence <- "There is no convergence code for optimize"
       }
     }
-  if(P$constraint)
-    res <- constrOptim(P$tet0, .thetf, grad = NULL, P = P, ...)
 
-  All <- .thetf(res$par, P, "all")
+  if(P$constraint)
+    res <- constrOptim(P$tet0, .thetf, grad = NULL, P = P, l0Env = l0Env, ...)
+
+  All <- .thetf(res$par, P, "all",l0Env = l0Env)
   gt <- All$gt
   rlamb <- All$lambda
 
@@ -653,7 +657,6 @@ momentEstim.baseGel.modFormula <- function(object, ...)
   z$gt <- gt
   rhom <- .rho(z$gt, z$lambda, type = P$typet, k = P$k1/P$k2)
   z$pt <- -.rho(z$gt, z$lambda, type = P$typet, derive = 1, k = P$k1/P$k2)/n
-
   # Making sure pt>0
   if (P$type=="CUE")
 	{
@@ -684,7 +687,11 @@ momentEstim.baseGel.modFormula <- function(object, ...)
     names(z$lambda) <- nameh
     }
 
-  G <- P$gradv(z$coefficients, P$dat, z$pt)
+ if(P$gradvf)
+    G <- P$gradv(z$coefficients, P$dat)
+  else
+    G <- P$gradv(z$coefficients, P$dat, g = P$g, z$pt)
+
   khat <- crossprod(c(z$pt)*z$gt,z$gt)/(P$k2)*P$bwVal
   G <- G/P$k1 
 
@@ -714,7 +721,7 @@ momentEstim.baseGel.modFormula <- function(object, ...)
   z$k1 <- P$k1
   z$k2 <- P$k2
   z$khat <- khat
-
+  z$CGEL <- P$CGEL
   class(z) <- paste(P$TypeGel, ".res", sep = "")
   return(z)
   }
@@ -724,25 +731,27 @@ momentEstim.baseGel.mod <- function(object, ...)
   P <- object
   x <- P$x
   n <- ifelse(is.null(dim(x)),length(x),nrow(x))
+  l0Env <- new.env()
+  assign("l0",rep(0,P$q),envir=l0Env)
   if (!P$constraint)
     {
     if (P$optfct == "optim")
-      res <- optim(P$tet0, .thetf, P = P, ...)
+      res <- optim(P$tet0, .thetf, P = P, l0Env = l0Env, ...)
     if (P$optfct == "nlminb")
-      res <- nlminb(P$tet0, .thetf, P = P, ...)
+      res <- nlminb(P$tet0, .thetf, P = P, l0Env = l0Env, ...)
 	
     if (P$optfct == "optimize")
       { 
-      res <- optimize(.thetf, P$tet0, P = P, ...)
+      res <- optimize(.thetf, P$tet0, P = P, l0Env = l0Env, ...)
       res$par <- res$minimum
       res$convergence <- "There is no convergence code for optimize"
       }
     }
 
   if(P$constraint)
-    res <- constrOptim(P$tet0, .thetf, grad = NULL, P = P, ...)
+    res <- constrOptim(P$tet0, .thetf, grad = NULL, P = P,l0Env = l0Env, ...)
 
-  All <- .thetf(res$par, P, "all")
+  All <- .thetf(res$par, P, "all",l0Env = l0Env)
   gt <- All$gt
   rlamb <- All$lambda
 
@@ -797,10 +806,13 @@ momentEstim.baseGel.mod <- function(object, ...)
   z$k1 <- P$k1
   z$k2 <- P$k2
   z$khat <- khat
+  z$CGEL <- P$CGEL
 
   class(z) <- paste(P$TypeGel, ".res", sep = "")
   return(z)
   }
+
+
 
 momentEstim.fixedW.formula <- function(object, ...)
   {
