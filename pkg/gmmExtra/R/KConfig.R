@@ -44,13 +44,13 @@ KConfid <- function(obj, which, type = c("K", "KJ"), alpha = 0.05, alphaJ = 0.01
 		test <- KTest(res)
 		if (type == "K")
 		   {
-		      ifelse(alpha > test$test[1,2], 1, -1)
+		      test$test[1,2]-alpha
 		   } else {
 		      if (test$test[2,2]<alphaJ) 
 		         {
-			    return(1)
+			    test$test[2,2] - alphaJ
 			 } else {
- 			    ifelse(test$test[1,2]<alphaK, 1, -1) 
+ 			    test$test[1,2] - alphaK
 			 }
 		   }	
 	}
@@ -109,13 +109,15 @@ KConfid <- function(obj, which, type = c("K", "KJ"), alpha = 0.05, alphaJ = 0.01
 	# get the four points of the cross
 	selectf <- list(f,f,f2,f2)
 	selectd <- c(1,-1,1,-1)
-	xy12 <- theApply(1:4, function(i) try(uniroot(selectf[[i]],c(x0,x0+selectd[i]*b[1]),y0=y0,tol=tol)$root,silent=TRUE))
+	xy12 <- theApply(1:2, function(i) try(uniroot(selectf[[i]],c(x0,x0+selectd[i]*b[1]),y0=y0,tol=tol)$root,silent=TRUE))
+	xy34 <- theApply(3:4, function(i) try(uniroot(selectf[[i]],c(y0,y0+selectd[i]*b[2]),y0=x0,tol=tol)$root,silent=TRUE))
 
 	x1 <- xy12[[1]]
 	x2 <- xy12[[2]]
-	y1 <- xy12[[3]]
-	y2 <- xy12[[4]]
+	y1 <- xy34[[1]]
+	y2 <- xy34[[2]]
 
+print(c(x1,x2,y1,y2))
 	getAll <- function(lambda, dir=1, x)
 		{
 		yi <- y1*lambda + y0*(1-lambda)

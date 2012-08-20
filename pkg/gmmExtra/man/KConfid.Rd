@@ -8,7 +8,7 @@
 KConfid(obj, which, type = c("K", "KJ"), alpha = 0.05, alphaJ = 0.01, n = 4)
 }
 \arguments{
- \item{obj}{Object of class "gmm" returned by \code{\link{gmm}} (not restricted)}
+ \item{obj}{Object of class "gmm" returned by \link{gmm} (not restricted)}
  \item{type}{Should we base the confidence interval on the K or K-J statistics.}
  \item{which}{A 2x1 vector or a scalar. The interval is computed for \code{coef(obj)[which]}. }
  \item{alpha, alphaJ}{The overall size and the size for the J-test when type is "KS".}
