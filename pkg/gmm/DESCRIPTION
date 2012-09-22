@@ -13,7 +13,7 @@ Description: It is a complete suite to estimate models based on moment
         (GEL) family of estimators, as presented by Smith(1997),
         Kitamura(1997), Newey-Smith(2004) and Anatolyev(2005).
 Depends: R (>= 2.10.0), sandwich
-Suggests: mvtnorm, car, fBasics, MASS, timeDate, timeSeries
+Suggests: mvtnorm, car, stabledist, MASS, timeDate, timeSeries
 Imports: stats
 License: GPL (>= 2)
 
