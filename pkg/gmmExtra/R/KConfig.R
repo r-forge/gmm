@@ -1,9 +1,6 @@
 KConfid <- function(obj, which, type = c("K", "KJ"), alpha = 0.05, alphaJ = 0.01, n = 4)
 	{
-	if (is.element("multicore", installed.packages()[,1])) 
-		theApply <- mclapply
-	else
-		theApply <- lapply
+	theApply <- mclapply
 
 	type <- match.arg(type)
 	if ( (obj$df == 0) & (type == "KJ"))
@@ -83,10 +80,7 @@ KConfid <- function(obj, which, type = c("K", "KJ"), alpha = 0.05, alphaJ = 0.01
 
 .getCircle <- function(x0,y0,g,n,b, trace=FALSE,  ...)
 	{
-	if (is.element("multicore", installed.packages()[,1])) 
-		theApply <- mclapply
-	else
-		theApply <- lapply
+	theApply <- mclapply
 	tol=1e-4
 	if (any(b<=0))
 		stop("b must be strictly positive")
