@@ -1,5 +1,10 @@
 import(stats)
+importFrom(car, linearHypothesis)
 
-export(KConfid)
+export(KConfid, bootGmm, plot.bootGmm, summary.bootGmm, bootJ, linearHypothesis.bootGmm)
+
+S3method(plot, bootGmm)
+S3method(summary, bootGmm)
+S3method(linearHypothesis, bootGmm)
  
 

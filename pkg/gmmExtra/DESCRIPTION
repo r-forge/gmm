@@ -1,12 +1,12 @@
 Package: gmmExtra
-Version: 0.0-1
-Date: 2012-05-24
+Version: 0.0-2
+Date: 2012-10-25
 Title: Extra tools for GMM estimation
 Author: Pierre Chausse <pchausse@uwaterloo.ca>
 Maintainer: Pierre Chausse <pchausse@uwaterloo.ca>
 Description: Tools for GMM such as additional tests or robust confidence regions. They only apply to gmm class object for the gmm package.
-Depends: R (>= 2.10.0), gmm (>= 1.4), parallel
-Suggests: mvtnorm, car, stabledist, MASS, timeDate, timeSeries
+Depends: R (>= 2.10.0), gmm (>= 1.4), parallel, car
+Suggests: mvtnorm, stabledist, MASS, timeDate, timeSeries
 Imports: stats
 License: GPL (>= 2)
 
