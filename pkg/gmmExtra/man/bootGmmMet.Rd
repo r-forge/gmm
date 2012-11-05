@@ -53,7 +53,7 @@ set.seed(123)
 d <- getdat(500)
 res <- gmm(d$Y~d$X-1,~d$Z-1)
 # Just resampling 25 time to save time
-resB <- bootGmm(res, 25, seed=123, niter=10, trace=TRUE)
+resB <- bootGmm(res, 25, seed = 123, niter = 2, trace = TRUE)
 plot(resB, 2)
 plot(resB, 2, "density")
 summary(resB)
