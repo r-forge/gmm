@@ -1,12 +1,14 @@
 \name{bootGmmMet}
 \alias{plot.bootGmm}
 \alias{summary.bootGmm}
+\alias{print.bootGmm}
 
 \title{Methods for Bootstrap Gmm}
 \description{Some methods to analyze the properties of the bootstrap estimates}
 \usage{
 \method{plot}{bootGmm}(x, which = 1, type = c("points", "density"), ...)
 \method{summary}{bootGmm}(object, ...)
+\method{print}{bootGmm}(x, ...)
 }
 \arguments{
  \item{object}{Object of class "bootGmm" returned by \link{bootGmm}}
@@ -54,6 +56,7 @@ d <- getdat(500)
 res <- gmm(d$Y~d$X-1,~d$Z-1)
 # Just resampling 25 time to save time
 resB <- bootGmm(res, 25, seed = 123, niter = 2, trace = TRUE)
+resB
 plot(resB, 2)
 plot(resB, 2, "density")
 summary(resB)

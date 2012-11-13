@@ -227,6 +227,29 @@ summary.bootGmm <- function(object, ...)
 	print(round(attr(object,"gmm")$coefficients,4))
 	}
 
+print.bootGmm <- function(x, ...)
+	{
+	n <- length(x)
+	cat("#################\n")
+	cat("# GMM Bootstrap #\n")
+	cat("#################\n\n")
+	cat("Original Call:\n    ",  paste(deparse(attr(x,"gmm")$call), sep = "\n", collapse = "\n"), "\n")
+	cat("Number of resamplings: ", n,"\n")
+	conv <- sapply(1:n, function(i) x[[i]]$ans$algoInfo$convergence)
+	cat("Number of successful estimations (convergence): ",n-sum(conv),"\n")  
+	coef <- t(sapply(1:n, function(i) x[[i]]$ans$coefficients))
+	ansB <- rbind(colMeans(coef), apply(coef,2,sd))
+	rownames(ansB) <- c("Mean","S-dev")
+	cat("\nBootstrap results:\n") 
+	printCoefmat(ansB)
+	res <- attr(x,"gmm")
+	ans <- res$coefficients
+	ans <- rbind(ans, summary(res)$coefficients[,2])
+	cat("\nOriginal estimation:\n") 
+	rownames(ans) <- c("Estimates","S-dev")
+	printCoefmat(ans)
+	}
+
 
 plot.bootGmm <- function(x, which = 1, type = c("points", "density"), ...)
 	{

@@ -111,7 +111,6 @@ KConfid <- function(obj, which, type = c("K", "KJ"), alpha = 0.05, alphaJ = 0.01
 	y1 <- xy34[[1]]
 	y2 <- xy34[[2]]
 
-print(c(x1,x2,y1,y2))
 	getAll <- function(lambda, dir=1, x)
 		{
 		yi <- y1*lambda + y0*(1-lambda)
