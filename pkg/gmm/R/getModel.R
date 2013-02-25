@@ -250,7 +250,12 @@ getModel.baseGel <- function(object, ...)
   if (is(P$g, "formula"))
     {
     clname <- paste(class(P), ".modFormula", sep = "")
-    dat <- getDat(P$g, P$x)
+    if (is.null(P$data))
+    	dat <- getDat(P$g, P$x)
+    else
+    	dat <- getDat(P$g, P$x, P$data)
+    if (P$k != dat$k)
+	stop("The length of tet0 does not match the number of regressors")
 
     g <- function(tet, dat)
       {

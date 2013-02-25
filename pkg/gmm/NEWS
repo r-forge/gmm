@@ -1,3 +1,7 @@
+Changes in version 1.4-6
+
+o Added the possibility of providing data.frame() with formula to gel()
+
 Changes in version 1.4-5
 
 o Replaced the deprecated function real(), is.real() and as.real() by double()
