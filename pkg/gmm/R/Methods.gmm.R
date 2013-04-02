@@ -37,13 +37,20 @@ summary.gmm <- function(object, ...)
         ans$specMod <- object$specMod
 	ans$bw <- attr(object$w0,"Spec")$bw
 	ans$weights <- attr(object$w0,"Spec")$weights
+	if(object$infVcov == "iid")
+		ans$kernel <- NULL
 	class(ans) <- "summary.gmm"
 	ans
 	}
 
-summary.tsls <- function(object, ...)
+summary.tsls <- function(object, vcov = NULL, ...)
 	{
+	if (!is.null(vcov))
+		object$vcov=vcov
+	else
+		object$vcov=vcov(object)
 	ans <- summary.gmm(object)
+	ans$met <- paste(ans$met, "(Meat type = ", attr(object$vcov, "vcovType"), ")",sep="")
 	k <- object$dat$k
 	fstat <- vector()
 	fstat[1] <- object$fsRes[[1]]$fstatistic[1]
@@ -82,11 +89,14 @@ print.summary.gmm <- function(x, digits = 5, ...)
 		cat("         (",x$cue$message,")\n\n")
 	else
 		cat("\n")
-	cat("Kernel: ", x$kernel)
-	if (!is.null(x$bw))
-		cat("(with bw = ", round(x$bw,5),")\n\n")
-	else
-		cat("\n\n")	
+	if( !is.null(x$kernel))
+		{
+		cat("Kernel: ", x$kernel)
+		if (!is.null(x$bw))
+			cat("(with bw = ", round(x$bw,5),")\n\n")
+		else
+			cat("\n\n")	
+		}
 	cat("Coefficients:\n")
 	print.default(format(x$coefficients, digits=digits),
                       print.gap = 2, quote = FALSE)
@@ -184,6 +194,64 @@ estfun.gmmFct <- function(x, y = NULL, theta = NULL, ...)
 	else
 		return(x)
 	}
+estfun.tsls <- function(x, ...)
+	{
+	model.matrix(x)*c(residuals(x))
+	}
+model.matrix.tsls <- function(object, ...)
+{
+dat <- object$dat
+ny <- dat$ny
+nh <- dat$nh
+k <- dat$k
+x <- dat$x
+n <- nrow(x)
+hm <- as.matrix(x[,(ny+k+1):(ny+k+nh)])
+xm <- as.matrix(x[,(ny+1):(ny+k)])
+xhat <- lm(xm~hm-1)$fitted
+assign <- 1:ncol(xhat)
+if (attr(object$terms,"intercept")==1)
+	assign <- assign-1
+attr(xhat,"assign") <- assign
+xhat
+}
+vcov.tsls <- function(object, type=c("Classical","HC0","HC1","HAC"), hacProp = list(), ...)
+	{
+	type <- match.arg(type)
+	if (type == "Classical")
+		{
+		sig  <- sum(c(residuals(object))^2)/(nrow(object$dat$x)-object$dat$k)
+  		ny <- object$dat$ny
+		nh <- object$dat$nh
+		k <- object$dat$k
+		n <- nrow(object$dat$x)
+		hm <- as.matrix(object$dat$x[,(ny+k+1):(ny+k+nh)])
+		Omega <- crossprod(hm)*sig/nrow(object$dat$x)
+		vcovType <- "Classical"
+		V <- solve(crossprod(object$G,solve(Omega,object$G)))/nrow(object$dat$x)
+		}
+	else if (strtrim(type,2) == "HC")
+		{
+		meat <- meatHC(object, type)
+		bread <- bread(object)
+		vcovType <- paste("HCCM: ", type, sep="")
+		V <- crossprod(bread, meat%*%bread)/nrow(object$dat$x)
+		}
+	else
+		{
+		object$centeredVcov <- TRUE
+		gt <- model.matrix(object)*c(residuals(object))
+		gt <- lm(gt~1)
+		arg <- c(list(x=gt,sandwich=FALSE),hacProp)
+		meat <- do.call(kernHAC, arg)
+		KType <- ifelse(is.null(hacProp$kernel),  formals(kernHAC)$kernel[[2]], hacProp$kernel)
+		vcovType <- paste("HAC: ", KType, sep="")
+		bread <- bread(object)
+		V <- crossprod(bread, meat%*%bread)/nrow(object$dat$x)
+		}
+	attr(V, "vcovType") <- vcovType
+	return(V)
+	}
 
 estfun.gmm <- function(x, ...)
   {
@@ -199,7 +267,19 @@ bread.gmm <- function(x, ...)
     stop("The bread matrix is singular")
   return(b)
   }
-
+bread.tsls <- function(x, ...)
+	{
+	dat <- x$dat
+  	ny <- dat$ny
+	nh <- dat$nh
+	k <- dat$k
+	x <- dat$x
+	n <- nrow(x)
+	hm <- as.matrix(x[,(ny+k+1):(ny+k+nh)])
+	xm <- as.matrix(x[,(ny+1):(ny+k)])
+	xhat <- lm(xm~hm-1)$fitted
+	solve(crossprod(xhat)/n)
+	}
 
 
 

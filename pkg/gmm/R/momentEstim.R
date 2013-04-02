@@ -200,8 +200,13 @@ momentEstim.baseGmm.twoStep.formula <- function(object, ...)
     {
     if (P$vcov == "iid")
     	{
-      res2 <- .tetlin(dat, w, P$gradv, P$g, type="2sls")
-      initTheta <- NULL
+      res1 <- .tetlin(dat, w, P$gradv, P$g, type="2sls")
+      initTheta <- res1$par
+      gmat <- g(res1$par, dat)
+      w <- crossprod(gmat)/n
+      res2 <- .tetlin(dat, w, P$gradv, g)	
+      res2$firstStageReg <- res1$firstStageReg
+      res2$fsRes <- res1$fsRes
       }
     if (P$vcov == "HAC")
       {
@@ -276,6 +281,11 @@ momentEstim.baseGmm.iterative.formula <- function(object, ...)
 		P$WSpec$sandwich$bw <- attr(w,"Spec")$bw
 	w <- .myKernHAC(gmat, P)
         }
+      if(P$vcov == "iid")
+	{
+        gmat <- g(tet, dat)
+	w <- crossprod(gmat)/n
+	}
       res <- .tetlin(dat, w, P$gradv, g)
       ch <- crossprod(abs(tet- res$par)/tet)^.5
       if (j>P$itermax)

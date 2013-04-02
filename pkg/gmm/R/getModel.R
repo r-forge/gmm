@@ -124,15 +124,7 @@ getModel.baseGmm <- function(object, ...)
     
     if(is.null(object$weightsMatrix))
       {
-      if (object$vcov == "iid" & object$wmatrix != "ident" & object$type != "cue")
-      	{
-          clname <- "baseGmm.twoStep.formula"
-          object$type <- "Linear model with iid errors: Regular IV or 2SLS"
-        }
-      else
-	{
-         clname <- paste(class(object), ".", object$type, ".formula", sep = "")
-        }
+      clname <- paste(class(object), ".", object$type, ".formula", sep = "")
       }
     else
       {
