@@ -268,6 +268,7 @@ momentEstim.baseGmm.iterative.formula <- function(object, ...)
   else
     {
     res <- .tetlin(dat, w, P$gradv, g, type="2sls")
+    fsRes <- res$fsRes
     initTheta <- res$par
     ch <- 100000
     j <- 1
@@ -319,7 +320,8 @@ momentEstim.baseGmm.iterative.formula <- function(object, ...)
 
   names(z$coefficients) <- P$namesCoef
   colnames(z$gt) <- P$namesgt
-
+  if (P$vcov == "iid" & P$wmatrix != "ident")
+	z$fsRes <- fsRes
   class(z) <- paste(P$TypeGmm,".res",sep="")
   z$specMod <- P$specMod
   return(z)	
