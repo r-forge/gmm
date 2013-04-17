@@ -52,34 +52,43 @@ summary.tsls <- function(object, vcov = NULL, ...)
 	ans <- summary.gmm(object)
 	ans$met <- paste(ans$met, "(Meat type = ", attr(object$vcov, "vcovType"), ")",sep="")
 	k <- object$dat$k
-	fstat <- vector()
-	fstat[1] <- object$fsRes[[1]]$fstatistic[1]
-	df1 <- object$fsRes[[1]]$fstatistic[2]
-	df2 <- object$fsRes[[1]]$fstatistic[3]
-	for (i in 2:k)	
-		fstat[i] <- object$fsRes[[i]]$fstatistic[1]
-	pvfstat <- 1-pf(fstat,df1, df2)
-	names(fstat) <- colnames(object$dat$x)[(object$dat$ny+1):(object$dat$ny+k)]
-	ans$fstatistic <- list(fstat = fstat, pvfstat = pvfstat, df1 = df1, df2 = df2)
+	if (!is.null(object$fsRes))
+		{
+		fstat <- vector()
+		fstat[1] <- object$fsRes[[1]]$fstatistic[1]
+		df1 <- object$fsRes[[1]]$fstatistic[2]
+		df2 <- object$fsRes[[1]]$fstatistic[3]
+		for (i in 2:k)	
+			fstat[i] <- object$fsRes[[i]]$fstatistic[1]
+		pvfstat <- 1-pf(fstat,df1, df2)
+		names(fstat) <- colnames(object$dat$x)[(object$dat$ny+1):(object$dat$ny+k)]
+		ans$fstatistic <- list(fstat = fstat, pvfstat = pvfstat, df1 = df1, df2 = df2)
+		}
         ans$specMod <- object$specMod
 	class(ans) <- "summary.tsls"
 	return(ans)
 	}
 
+
 print.summary.tsls <- function(x, digits = 5, ...)
 	{
 	print.summary.gmm(x,digits)
-	cat("\n First stage F-statistics: \n")
-	if(names(x$fstatistic$fstat)[1]=="(Intercept)")
-		start=2
-	else
-		start=1
-	for (i in start:length(x$fstatistic$fstat))
-		cat(names(x$fstatistic$fstat)[i], 
-		": F(",x$fstatistic$df1,", ",x$fstatistic$df2,") = ",x$fstatistic$fstat[i], 
-		" (P-Vavue = ",x$fstatistic$pvfstat[i],")\n")
-	
+	if (!is.null(x$fstatistic))
+		{
+		cat("\n First stage F-statistics: \n")
+		if(names(x$fstatistic$fstat)[1]=="(Intercept)")
+			start=2
+		else
+			start=1
+		for (i in start:length(x$fstatistic$fstat))
+			cat(names(x$fstatistic$fstat)[i], 
+			": F(",x$fstatistic$df1,", ",x$fstatistic$df2,") = ",x$fstatistic$fstat[i], 
+			" (P-Vavue = ",x$fstatistic$pvfstat[i],")\n")
+	} else {
+		cat("\n No first stage F-statistics (just identified model)\n")
+		}
 	}
+
 print.summary.gmm <- function(x, digits = 5, ...)
 	{
 	cat("\nCall:\n")
