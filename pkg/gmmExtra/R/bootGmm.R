@@ -120,7 +120,7 @@
 			.timeSimul(i,titer,comment=paste("(",niter," estimations per iteration)",sep=""), env=parent.frame())
 
 		L1 <- list(...)
-		L2 <- c(L1,list(X=c((nfin+1):(nfin+niter)), FUN=f2))
+		L2 <- c(L1,list(X=c((nfin+1):(nfin+niter)), FUN=f2, mc.cores=niter))
 		res2 <- do.call(mclapply,L2)
 		for (j in 1:length(res2))
 			res[[(nfin+j)]] <- res2[[j]]
