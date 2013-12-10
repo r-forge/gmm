@@ -10,10 +10,11 @@ Function to estimate a vector of parameters based on moment conditions using the
 \usage{
 gel(g, x, tet0, gradv = NULL, smooth = FALSE, type = c("EL","ET","CUE","ETEL"), 
     kernel = c("Truncated", "Bartlett"), bw = bwAndrews, 
-    approx = c("AR(1)", "ARMA(1,1)"), prewhite = 1, ar.method = "ols", tol_weights = 1e-7, 
-    tol_lam = 1e-9, tol_obj = 1e-9, tol_mom = 1e-9, maxiterlam = 100, constraint = FALSE,
-    optfct = c("optim", "optimize", "nlminb"), optlam = c("nlminb", "optim", "iter"), data, Lambdacontrol = list(), model = TRUE, 
-    X = FALSE, Y = FALSE, TypeGel = "baseGel", alpha = NULL, ...)
+    approx = c("AR(1)", "ARMA(1,1)"), prewhite = 1, ar.method = "ols", 
+    tol_weights = 1e-7, tol_lam = 1e-9, tol_obj = 1e-9, tol_mom = 1e-9, 
+    maxiterlam = 100, constraint = FALSE, optfct = c("optim", "optimize", 
+    "nlminb"), optlam = c("nlminb", "optim", "iter"), data, Lambdacontrol = list(),
+     model = TRUE, X = FALSE, Y = FALSE, TypeGel = "baseGel", alpha = NULL, ...)
 }
 \arguments{
 \item{g}{A function of the form \eqn{g(\theta,x)} and which returns a \eqn{n \times q} matrix with typical element \eqn{g_i(\theta,x_t)} for \eqn{i=1,...q} and \eqn{t=1,...,n}. This matrix is then used to build the q sample moment conditions. It can also be a formula if the model is linear (see details below).  }

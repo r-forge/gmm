@@ -52,7 +52,8 @@ g <- function(tet, x)
         }
 Dg <- function(tet, x)
         {
-        jacobian <- matrix(c( 1, 2*(-tet[1]+mean(x)), -3*tet[1]^2-3*tet[2]^2,0, 2*tet[2],-6*tet[1]*tet[2]), nrow=3,ncol=2)
+        jacobian <- matrix(c( 1, 2*(-tet[1]+mean(x)), -3*tet[1]^2-3*tet[2]^2,0, 2*tet[2],
+				-6*tet[1]*tet[2]), nrow=3,ncol=2)
         return(jacobian)
         }
 
