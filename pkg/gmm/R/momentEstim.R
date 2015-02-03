@@ -194,7 +194,7 @@ momentEstim.baseGmm.twoStep.formula <- function(object, ...)
   if (q == k2 | P$wmatrix == "ident")
     {
     res2 <- .tetlin(dat, w, P$gradv, P$g)
-    z = list(coefficients = res2$par, objective = res2$value, dat = dat, k = k, k2 = k2, n = n, q = q, df = df)
+    z = list(coefficients = res2$par, objective = res2$value, dat = dat, k = k, k2 = k2, n = n, q = q, df = df, df.residual = (n-k))
     }
   else
     {
@@ -216,7 +216,7 @@ momentEstim.baseGmm.twoStep.formula <- function(object, ...)
       w <- .myKernHAC(gmat, P)
       res2 <- .tetlin(dat, w, P$gradv, g)
       }
-    z = list(coefficients = res2$par, objective = res2$value, dat=dat, k=k, k2=k2, n=n, q=q, df=df, initTheta = initTheta)	
+    z = list(coefficients = res2$par, objective = res2$value, dat=dat, k=k, k2=k2, n=n, q=q, df=df, initTheta = initTheta, df.residual = (n-k))	
     }
   z$gt <- g(z$coefficients, dat) 
   b <- z$coefficients
@@ -263,7 +263,7 @@ momentEstim.baseGmm.iterative.formula <- function(object, ...)
   if (q == k2 | P$wmatrix == "ident")
     {
     res <- .tetlin(dat, w, P$gradv, g)
-    z = list(coefficients = res$par, objective = res$value, dat = dat, k = k, k2 = k2, n = n, q = q, df = df)
+    z = list(coefficients = res$par, objective = res$value, dat = dat, k = k, k2 = k2, n = n, q = q, df = df, df.residual = (n-k))
     }
   else
     {
@@ -298,7 +298,7 @@ momentEstim.baseGmm.iterative.formula <- function(object, ...)
 		cat("Iter :",j,": value=",res$value,", Coef = ", res$par,"\n") 
         j <- j+1	
       }
-    z = list(coefficients = res$par, objective = res$value, dat=dat, k=k, k2=k2, n=n, q=q, df=df, initTheta=initTheta)	
+    z = list(coefficients = res$par, objective = res$value, dat=dat, k=k, k2=k2, n=n, q=q, df=df, initTheta=initTheta, df.residual = (n-k))	
    }
   z$gt <- g(z$coefficients, dat) 
   b <- z$coefficients
@@ -524,7 +524,7 @@ momentEstim.baseGmm.cue.formula <- function(object, ...)
   if (q == k2 | P$wmatrix == "ident")
     {
     res <- .tetlin(dat, w, P$gradv, g)
-    z = list(coefficients = res$par, objective = res$value, dat = dat, k = k, k2 = k2, n = n, q = q, df = df)
+    z = list(coefficients = res$par, objective = res$value, dat = dat, k = k, k2 = k2, n = n, q = q, df = df, df.residual = (n-k))
     P$weightMessage <- "No CUE needed because the model is just identified"
     }
   else
@@ -569,7 +569,7 @@ momentEstim.baseGmm.cue.formula <- function(object, ...)
       res2$par <- res2$minimum
       res2$value <- res2$objective
       }
-    z = list(coefficients = res2$par, objective = res2$value, dat = dat, k = k, k2 = k2, n = n, q = q, df = df, initTheta=initTheta)
+    z = list(coefficients = res2$par, objective = res2$value, dat = dat, k = k, k2 = k2, n = n, q = q, df = df, initTheta=initTheta, df.residual = (n-k))
     if (P$optfct == "optim")
 	z$algoInfo <- list(convergence = res2$convergence, counts = res2$counts, message = res2$message)
     else if(P$optfct == "nlminb")
@@ -909,7 +909,7 @@ momentEstim.fixedW.formula <- function(object, ...)
     }
   
   res2 <- .tetlin(dat, w, P$gradv, g, inv=FALSE)
-  z = list(coefficients = res2$par, objective = res2$value, dat=dat, k=k, k2=k2, n=n, q=q, df=df)	
+  z = list(coefficients = res2$par, objective = res2$value, dat=dat, k=k, k2=k2, n=n, q=q, df=df, df.residual = (n-k))	
 
   z$gt <- g(z$coefficients, dat) 
   b <- z$coefficients
