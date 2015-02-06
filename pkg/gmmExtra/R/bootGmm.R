@@ -137,6 +137,8 @@
 
 bootGmm <- function(obj, N, seed = NULL, niter=8, trace=TRUE)
 	{
+        if (Sys.info()[["sysname"]] == "Windows")
+            niter <- 8
 	if(!is.null(seed))
 		set.seed(seed)
 	argCall <- obj$allArg
@@ -304,7 +306,7 @@ linearHypothesis.bootGmm <- function(model, hypothesis.matrix, rhs = NULL, ...)
 
 	# The following is borrowed from the car::linearHypothesis.default
 	if (is.character(hypothesis.matrix)) {
-		L <- car:::makeHypothesis(names(attr(obj,"gmm")$coefficients), hypothesis.matrix, rhs = NULL)
+		L <- makeHypothesis(names(attr(obj,"gmm")$coefficients), hypothesis.matrix, rhs = NULL)
 		if (is.null(dim(L))) L <- t(L)
 		rhs <- L[, NCOL(L)]
 		L <- L[, -NCOL(L), drop = FALSE]
@@ -315,7 +317,7 @@ linearHypothesis.bootGmm <- function(model, hypothesis.matrix, rhs = NULL, ...)
 				else hypothesis.matrix
 		if (is.null(rhs)) rhs <- rep(0,nrow(L))
 	}
-	hyp <- car:::printHypothesis(L, rhs, names(attr(obj,"gmm")$coefficients))
+	hyp <- printHypothesis(L, rhs, names(attr(obj,"gmm")$coefficients))
 	
 	##############
 	rhsB <- L%*%attr(obj,"gmm")$coefficients

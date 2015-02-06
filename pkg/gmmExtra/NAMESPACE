@@ -1,5 +1,7 @@
 import(stats)
-importFrom(car, linearHypothesis)
+importFrom(car, linearHypothesis, makeHypothesis, printHypothesis)
+importFrom(parallel, mclapply)
+importFrom(gmm, gmm, specTest, gmmWithConst, KTest)
 
 export(KConfid, bootGmm, plot.bootGmm, summary.bootGmm, bootJ, linearHypothesis.bootGmm, print.bootGmm)
 

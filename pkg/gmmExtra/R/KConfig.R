@@ -1,6 +1,9 @@
-KConfid <- function(obj, which, type = c("K", "KJ"), alpha = 0.05, alphaJ = 0.01, n = 4)
+KConfid <- function(obj, which, type = c("K", "KJ"), alpha = 0.05, alphaJ = 0.01, n = 4,
+                    mc.cores=2)
 	{
-	theApply <- mclapply
+        theApply <- mclapply
+        if (Sys.info()[["sysname"]] == "Windows")
+            mc.cores <- 1
 
 	type <- match.arg(type)
 	if ( (obj$df == 0) & (type == "KJ"))
@@ -60,19 +63,23 @@ KConfid <- function(obj, which, type = c("K", "KJ"), alpha = 0.05, alphaJ = 0.01
 		X0 <- obj$coef[which]
 		getBoth <- function(d)
 			{
-			res <- try(uniroot(getUniInt,c(X0,X0+d*step), obj = obj, which = which, type = type, 
-					alpha = alpha, alphaJ = alphaJ, alphaK = alphaK, tol=1e-4), silent=TRUE)
+			res <- try(uniroot(getUniInt,c(X0,X0+d*step),
+                                           obj = obj, which = which, type = type, 
+                                           alpha = alpha, alphaJ = alphaJ, alphaK = alphaK,
+                                           tol=1e-4), silent=TRUE)
 			if (class(res) == "try-error")
 				return(NA)
 			else
 				return(res$root)
 			}
-		res <- theApply(c(-1,1), getBoth)
+		res <- theApply(c(-1,1), getBoth, mc.cores=mc.cores)
 		c(res[[1]],res[[2]])
 	} else {
 		step <- 5*sqrt(diag(vcov(obj)))[which]
-		sol <- .getCircle(obj$coef[which][1],obj$coef[which][2],gForMulti,n , step, obj=obj, 
-					which=which, type=type, alpha=alpha, alphaJ=alphaJ, alphaK=alphaK)	
+		sol <- .getCircle(obj$coef[which][1],obj$coef[which][2],
+                                  gForMulti,n , step, obj=obj, 
+                                  which=which, type=type, alpha=alpha,
+                                  alphaJ=alphaJ, alphaK=alphaK)	
 		colnames(sol) <- names(obj$coef)[which]
 		sol
 		}
@@ -103,8 +110,12 @@ KConfid <- function(obj, which, type = c("K", "KJ"), alpha = 0.05, alphaJ = 0.01
 	# get the four points of the cross
 	selectf <- list(f,f,f2,f2)
 	selectd <- c(1,-1,1,-1)
-	xy12 <- theApply(1:2, function(i) try(uniroot(selectf[[i]],c(x0,x0+selectd[i]*b[1]),y0=y0,tol=tol)$root,silent=TRUE))
-	xy34 <- theApply(3:4, function(i) try(uniroot(selectf[[i]],c(y0,y0+selectd[i]*b[2]),y0=x0,tol=tol)$root,silent=TRUE))
+	xy12 <- theApply(1:2, function(i)
+            try(uniroot(selectf[[i]],c(x0,x0+selectd[i]*b[1]),y0=y0,tol=tol)$root,
+                silent=TRUE))
+	xy34 <- theApply(3:4, function(i)
+            try(uniroot(selectf[[i]],c(y0,y0+selectd[i]*b[2]),y0=x0,tol=tol)$root,
+                silent=TRUE))
 
 	x1 <- xy12[[1]]
 	x2 <- xy12[[2]]
@@ -115,7 +126,8 @@ KConfid <- function(obj, which, type = c("K", "KJ"), alpha = 0.05, alphaJ = 0.01
 		{
 		yi <- y1*lambda + y0*(1-lambda)
 		xi <- x0*lambda + x*(1-lambda)
-		xt <- try(uniroot(f,c(x0,x0+dir*b[1]),y0=y0, x0=x0, xi=xi, yi=yi,tol=tol)$root,silent=TRUE)
+		xt <- try(uniroot(f,c(x0,x0+dir*b[1]),y0=y0, x0=x0,
+                                  xi=xi, yi=yi,tol=tol)$root,silent=TRUE)
 		xt <- f3(xt)
 		yt <- y0 + (yi-y0)/(xi-x0)*(xt-x0)
 		return(c(xt,yt))

@@ -197,9 +197,9 @@ momentEstim.baseGmm.twoStep.formula <- function(object, ...)
     z = list(coefficients = res2$par, objective = res2$value, dat = dat, k = k, k2 = k2, n = n, q = q, df = df, df.residual = (n-k))
     }
   else
-    {
+    {  
     if (P$vcov == "iid")
-    	{
+   	{            
       res1 <- .tetlin(dat, w, P$gradv, P$g, type="2sls")
       initTheta <- res1$par
       gmat <- g(res1$par, dat)
@@ -209,7 +209,7 @@ momentEstim.baseGmm.twoStep.formula <- function(object, ...)
       res2$fsRes <- res1$fsRes
       }
     if (P$vcov == "HAC")
-      {
+      {          
       res1 <- .tetlin(dat, w, P$gradv, P$g, type="2sls")
       initTheta <- res1$par
       gmat <- g(res1$par, dat)
@@ -235,7 +235,6 @@ momentEstim.baseGmm.twoStep.formula <- function(object, ...)
   z$g <- P$g
   z$WSpec <- P$WSpec
   z$w0 <- w
-
   names(z$coefficients) <- P$namesCoef
   colnames(z$gt) <- P$namesgt
  
