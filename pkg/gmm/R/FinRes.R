@@ -92,7 +92,7 @@ FinRes.baseGmm.res <- function(z, object, ...)
 	}
    else
      {
-     if (is.null(P$weigthsMatrix))
+     if (is.null(P$weightsMatrix))
 	w <- diag(ncol(z$gt))
      else
 	w <- P$weightsMatrix
