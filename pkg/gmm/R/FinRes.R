@@ -19,7 +19,7 @@ FinRes <- function(z, object, ...)
   }
 
 FinRes.baseGmm.res <- function(z, object, ...)
-  {
+    {
   P <- object
   x <- z$dat
   n <- ifelse(is.null(nrow(z$gt)),length(z$gt),nrow(z$gt))
@@ -71,8 +71,7 @@ FinRes.baseGmm.res <- function(z, object, ...)
 	    object$WSpec$sandwich$bw <- attr(z$w0,"Spec")$bw
     v <- .myKernHAC(z$gt, object)
     z$v <- v
-    }
-
+    }  
   if (P$vcov == "TrueFixed") 
 	{
 	z$vcov=try(solve(crossprod(G, P$weightsMatrix) %*% G)/n, silent = TRUE)
@@ -80,16 +79,16 @@ FinRes.baseGmm.res <- function(z, object, ...)
            {
            z$vcov <- matrix(Inf,length(z$coef),length(z$coef))
            warning("The covariance matrix of the coefficients is singular")
-           }
+       }
 	}
-  else if (is.null(P$weigthsMatrix) & (P$wmatrix != "ident") )
+  else if ( (is.null(P$weightsMatrix)) & (P$wmatrix != "ident") )
 	{
  	z$vcov <- try(solve(crossprod(G, solve(v, G)))/n, silent = TRUE)
         if(class(z$vcov) == "try-error")
            {
            z$vcov <- matrix(Inf,length(z$coef),length(z$coef))
            warning("The covariance matrix of the coefficients is singular")
-           }
+       }
 	}
    else
      {
@@ -97,11 +96,11 @@ FinRes.baseGmm.res <- function(z, object, ...)
 	w <- diag(ncol(z$gt))
      else
 	w <- P$weightsMatrix
-
-     if (dim(G)[1] == dim(G)[2])	
+     if (dim(G)[1] == dim(G)[2]){
 	T1 <- try(solve(G), silent=TRUE)
-     else
-	T1 <- try(solve(t(G)%*%w%*%G,t(G)%*%w), silent = TRUE)
+     } else {
+         T1 <- try(solve(t(G)%*%w%*%G,t(G)%*%w), silent = TRUE)
+     }
      if(class(T1) == "try-error")
            {
            z$vcov <- matrix(Inf,length(z$coef),length(z$coef))
