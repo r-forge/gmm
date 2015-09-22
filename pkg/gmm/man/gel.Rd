@@ -8,7 +8,7 @@
 Function to estimate a vector of parameters based on moment conditions using the GEL method as presented by Newey-Smith(2004) and Anatolyev(2005).
 }
 \usage{
-gel(g, x, tet0, gradv = NULL, smooth = FALSE, type = c("EL","ET","CUE","ETEL"), 
+gel(g, x, tet0, gradv = NULL, smooth = FALSE, type = c("EL","ET","CUE","ETEL","HD","ETHD"), 
     kernel = c("Truncated", "Bartlett"), bw = bwAndrews, 
     approx = c("AR(1)", "ARMA(1,1)"), prewhite = 1, ar.method = "ols", 
     tol_weights = 1e-7, tol_lam = 1e-9, tol_obj = 1e-9, tol_mom = 1e-9, 
@@ -27,7 +27,11 @@ gel(g, x, tet0, gradv = NULL, smooth = FALSE, type = c("EL","ET","CUE","ETEL"),
 
 \item{smooth}{If set to TRUE, the moment function is smoothed as proposed by Kitamura(1997)}
 
-\item{type}{"EL" for empirical likelihood, "ET" for exponential tilting, "CUE" for continuous updated estimator and "ETEL" for exponentially tilted empirical likelihood of Schennach(2007).}
+\item{type}{"EL" for empirical likelihood, "ET" for exponential tilting,
+  "CUE" for continuous updated estimator, "ETEL" for exponentially
+  tilted empirical likelihood of Schennach(2007), "HD" for Hellinger
+  Distance of Kitamura-Otsu-Evdokimov (2013), and "ETHD" for the
+  exponentially tilted Hellinger distance of Antoine-Dovonon (2015).}
 
 \item{kernel}{type of kernel used to compute the covariance matrix of the vector of sample moment conditions (see \code{\link{kernHAC}} for more details) and to smooth the moment conditions if "smooth" is set to TRUE. Only two types of kernel are available. The truncated implies a Bartlett kernel for the HAC matrix and the Bartlett implies a Parzen kernel (see Smith 2004).}
 
@@ -123,7 +127,6 @@ The object of class "gel" is a list containing at least the following:
 
 }
 
-
 \references{
 Anatolyev, S. (2005), GMM, GEL, Serial Correlation, and Asymptotic Bias. \emph{Econometrica}, \bold{73}, 983-1002.
 
@@ -132,6 +135,10 @@ Andrews DWK (1991), Heteroskedasticity and Autocorrelation Consistent Covariance
 
 Kitamura, Yuichi (1997), Empirical Likelihood Methods With Weakly Dependent Processes.
 \emph{The Annals of Statistics}, \bold{25}, 2084-2102.
+
+Kitamura, Y. and Otsu, T. and Evdokimov, K. (2013), Robustness,
+Infinitesimal Neighborhoods and Moment Restrictions.
+\emph{Econometrica}, \bold{81}, 1185-1201.
 
 Newey, W.K. and Smith, R.J. (2004), Higher Order Properties of GMM and 
 Generalized Empirical Likelihood Estimators. \emph{Econometrica}, \bold{72}, 219-255.

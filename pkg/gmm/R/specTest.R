@@ -41,6 +41,8 @@ specTest.gel <- function(x, ...)
 	khat <- x$khat
 	gbar <- colMeans(x$gt)
 	LR_test <- 2*x$objective*n*x$k2/(x$bwVal*x$k1^2)
+        if (x$type == "ETHD")
+            LR_test <- LR_test*2
 	LM_test <- n*crossprod(x$lambda, crossprod(khat, x$lambda))/(x$bwVal^2)
 	J_test <- n*crossprod(gbar, solve(khat, gbar))/(x$k1^2)
 	test <- c(LR_test, LM_test, J_test)

@@ -1,6 +1,8 @@
 Changes in version 1.5-3
 
 o Fixed a typo in FinRes.R file. It was preventing to compute the proper vcov matrix for a very special case (fixed weights)
+o Added Helinger distance and Exponentially tilted Helinger estimator to gel()
+o Fixed the LR test of ETEL in gel()
 
 Changes in version 1.5-2
 

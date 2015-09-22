@@ -719,28 +719,17 @@ momentEstim.baseGel.modFormula <- function(object, ...)
   rlamb <- All$lambda
 
   z <- list(coefficients = res$par, lambda = rlamb$lambda, conv_lambda = rlamb$conv, conv_par = res$convergence, dat=P$dat)
-  rho1 <- .rho(gt, z$lambda, derive = 1, type = P$typel, k = P$k1/P$k2)
-  z$foc_lambda <- crossprod(colMeans(rho1*gt))
 
   z$type <- P$type
   z$gt <- gt
-  rhom <- .rho(z$gt, z$lambda, type = P$typet, k = P$k1/P$k2)
-  z$pt <- -.rho(z$gt, z$lambda, type = P$typet, derive = 1, k = P$k1/P$k2)/n
-  # Making sure pt>0
-  if (P$type=="CUE")
-	{
-	eps <- -length(z$pt)*min(min(z$pt),0)
-	z$pt <- (z$pt+eps/length(z$pt))/(1+eps)
-	}
-  ###################
-
-  z$conv_moment <- colSums(z$pt*z$gt)
-  z$conv_pt <- sum(as.numeric(z$pt))
-  z$objective <- sum(rhom - .rho(1, 0, type = P$typet))/n
+  pt <- .getImpProb(z$gt, z$lambda, P$type, P$k1, P$k2)
+  z$pt <- c(pt) 
+  z$conv_moment <- attr(pt, "conv_moment")
+  z$conv_pt <- attr(pt, "conv_pt")
+  z$objective <- All$obj
 
   namex <- colnames(P$dat$x[, (P$dat$ny+1):(P$dat$ny+P$dat$k)])
   nameh <- colnames(P$dat$x[, (P$dat$ny+P$dat$k+1):(P$dat$ny+P$dat$k+P$dat$nh)])
-
 
   if (P$dat$ny > 1)
     {
@@ -825,24 +814,14 @@ momentEstim.baseGel.mod <- function(object, ...)
   rlamb <- All$lambda
 
   z <- list(coefficients = res$par, lambda = rlamb$lambda, conv_lambda = rlamb$conv, conv_par = res$convergence, dat=P$dat)
-  rho1 <- .rho(gt, z$lambda, derive = 1, type = P$typel, k = P$k1/P$k2)
-  z$foc_lambda <- crossprod(colMeans(rho1*gt))
 
   z$type <- P$type
   z$gt <- gt
-  rhom <- .rho(z$gt, z$lambda, type = P$typet, k = P$k1/P$k2)
-  z$pt <- -.rho(z$gt, z$lambda, type = P$typel, derive = 1, k = P$k1/P$k2)/n
-
-# making sure pt>0
-  if (P$type=="CUE")
-	{
-	eps <- -length(z$pt)*min(min(z$pt),0)
-	z$pt <- (z$pt+eps/length(pt))/(1+eps)
-	}
-##################
-  z$conv_moment <- colSums(as.numeric(z$pt)*z$gt)
-  z$conv_pt <- sum(as.numeric(z$pt))
-  z$objective <- sum(as.numeric(rhom) - .rho(1, 0, type = P$typet, k = P$k1/P$k2))/n
+  pt <- .getImpProb(z$gt, z$lambda, P$type, P$k1, P$k2)
+  z$pt <- c(pt) 
+  z$conv_moment <- attr(pt, "conv_moment")
+  z$conv_pt <- attr(pt, "conv_pt")
+  z$objective <- All$obj
 
   if(P$gradvf)
     G <- P$gradv(z$coefficients, x)

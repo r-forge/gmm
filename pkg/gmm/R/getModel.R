@@ -223,16 +223,6 @@ getModel.baseGel <- function(object, ...)
   {
 
   P <- object
-  if (P$type == "ETEL")
-    {
-    P$typel <- "ET"
-    P$typet <- "EL"	
-    }
-  else
-    {
-    P$typel <- P$type
-    P$typet <- P$type
-    }
   if(P$optfct == "optim" | P$optfct == "nlminb")
     P$k <- length(P$tet0)
   else
