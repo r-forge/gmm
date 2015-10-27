@@ -338,6 +338,12 @@ res2 <- gmm(z ~ f1 + f2 + f3, ~ f1 + f2 + f3)
 gmmWithConst(res2,c("f2","f3"),c(.5,.5))
 gmmWithConst(res2,c(2,3),c(.5,.5))
 
+## Creating an object without estimation for a fixed parameter vector
+###################################################################
+
+res2_2 <- evalGmm(z ~ f1 + f2 + f3, ~ f1 + f2 + f3,
+                  t0=res2$coefficients, tetw=res2$coefficients)
+summary(res2_2)
 
 }
 

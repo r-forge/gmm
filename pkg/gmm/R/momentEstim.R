@@ -728,7 +728,7 @@ momentEstim.baseGel.mod <- function(object, ...)
         gt <- All$gt
         rlamb <- All$lambda
 
-        z <- list(coefficients = res$par, lambda = rlamb$lambda, conv_lambda = rlamb$conv, conv_par = res$convergence, dat=P$dat)
+        z <- list(coefficients = res$par, lambda = rlamb$lambda, conv_lambda = rlamb$conv, conv_par = res$convergence, dat=x)
 
         z$type <- P$type
         z$gt <- gt
@@ -939,4 +939,75 @@ momentEstim.fixedW <- function(object, ...)
         class(z) <- paste(P$TypeGmm,".res",sep="")	
         return(z)
     }
+
+momentEstim.baseGel.eval <- function(object, ...)
+    {
+        P <- object
+        q <- attr(P$x, "q")
+        n <- attr(P$x, "n")
+        l0Env <- new.env()
+        assign("l0",rep(0,q),envir=l0Env)
+        All <- .thetf(P$tet0, P, "all",l0Env = l0Env)
+        gt <- All$gt
+        rlamb <- All$lambda
+        z <- list(coefficients = P$tet0, lambda = rlamb$lambda, conv_lambda = rlamb$conv, conv_par = NULL, dat=P$x)
+
+        z$type <- P$type
+        z$gt <- gt
+        pt <- .getImpProb(z$gt, z$lambda, P$type, P$k1, P$k2)
+        z$pt <- c(pt) 
+        z$conv_moment <- attr(pt, "conv_moment")
+        z$conv_pt <- attr(pt, "conv_pt")
+        z$objective <- All$obj
+        z$call <- P$call
+        z$k1 <- P$k1
+        z$k2 <- P$k2
+        z$CGEL <- P$CGEL
+        z$typeDesc <- P$typeDesc
+        z$specMod <- P$specMod
+        names(z$coefficients) <- P$namesCoef
+        if (!is.null(object$namesgt))
+            {
+                colnames(z$gt) <- object$namesgt
+            } else {
+                colnames(z$gt) <- paste("g",1:ncol(z$gt), sep="")
+            }
+        names(z$lambda) <- paste("Lam(", colnames(z$gt), ")", sep="")
+        if(P$gradvf)
+            G <- P$gradv(z$coefficients, P$x)
+        else
+            G <- P$gradv(z$coefficients, P$x, z$pt)
+        khat <- crossprod(c(z$pt)*z$gt,z$gt)/(P$k2)*P$bwVa
+  
+        G <- G/P$k1
+        kg <- solve(khat, G)
+        z$vcov_par <- solve(crossprod(G, kg))/n
+        if (length(z$lambda) == length(z$coefficients))
+            {
+                z$vcov_lambda <- matrix(NA, rep(length(z$lambda), 2))
+                z$lambda <- rep(NA, length(z$lambda))
+                z$specMod <- paste(z$specMod, "\n Just identified model; no lambda nor specification test needed\n", sep="")
+            } else {
+                z$vcov_lambda <- solve(khat, ( diag(ncol(khat)) - G %*% (z$vcov_par*n) %*% t(kg) ))/n*P$bwVal^2
+            }
+        
+        z$weights <- P$w
+        z$bwVal <- P$bwVal
+        names(z$bwVal) <- "Bandwidth"
+        dimnames(z$vcov_par) <- list(names(z$coefficients), names(z$coefficients))
+        dimnames(z$vcov_lambda) <- list(names(z$lambda), names(z$lambda))
+        if (attr(P$x,"ModelType") == "linear")
+            {
+                tmp <- .residuals(z$coefficients, P$x)
+                z$fitted.values <- tmp$yhat	
+                z$residuals <- tmp$residuals
+                z$terms <- P$x$mt
+                if(P$model) z$model <- P$x$mf
+                if(P$X) z$x <- as.matrix(P$x$x[,(P$x$ny+1):(P$x$ny+P$x$k)])
+                if(P$Y) z$y <- as.matrix(P$x$x[,1:P$x$ny])
+            } 
+        z$khat <- khat
+        return(z)
+    }
+
 

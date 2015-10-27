@@ -1,6 +1,7 @@
 \name{gel}
 
 \alias{gel}
+\alias{evalGel}
 
 \title{Generalized Empirical Likelihood estimation}
 
@@ -18,6 +19,14 @@ gel(g, x, tet0 = NULL, gradv = NULL, smooth = FALSE,
     Lambdacontrol = list(), model = TRUE, X = FALSE, Y = FALSE,
     TypeGel = "baseGel", alpha = NULL, eqConst = NULL,
     eqConstFullVcov = FALSE, ...)
+evalGel(g, x, tet0, gradv = NULL, smooth = FALSE,
+        type = c("EL", "ET", "CUE", "ETEL", "HD", "ETHD"),
+        kernel = c("Truncated", "Bartlett"), bw = bwAndrews,
+        approx = c("AR(1)", "ARMA(1,1)"), prewhite = 1,
+        ar.method = "ols", tol_weights = 1e-7, tol_lam = 1e-9, tol_obj = 1e-9, 
+        tol_mom = 1e-9, maxiterlam = 100, optlam = c("nlminb", "optim",
+        "iter"), data, Lambdacontrol = list(), model = TRUE, X = FALSE,
+        Y = FALSE, alpha = NULL, ...)
 }
 \arguments{
 \item{g}{A function of the form \eqn{g(\theta,x)} and which returns a \eqn{n \times q} matrix with typical element \eqn{g_i(\theta,x_t)} for \eqn{i=1,...q} and \eqn{t=1,...,n}. This matrix is then used to build the q sample moment conditions. It can also be a formula if the model is linear (see details below).  }
@@ -94,8 +103,15 @@ where \eqn{r} is a truncated parameter that depends on the bandwidth and \eqn{k(
 
 The method solves 
 \eqn{\hat{\theta} = \arg\min \left[\arg\max_\lambda \frac{1}{n}\sum_{t=1}^n \rho(<g(\theta,x_t),\lambda>) - \rho(0) \right]}
- }
 
+\code{\link{evalGel}} generates the object of class "gel" for a fixed vector of
+parameters. There is no estimation for \eqn{\theta}, but the optimal
+vector of Lagrange multipliers \eqn{\lambda} is computed. The objective
+function is then the profiled likelihood for a given \eqn{\theta}. It
+can be used to construct a confidence interval by inverting  the
+likelihood ratio test. 
+}
+ 
 \value{
 'gel' returns an object of 'class' '"gel"' 
 
@@ -220,6 +236,10 @@ x <- H
 
 res <- gel(g, x, c(0, .3, .6))
 summary(res)
+
+# Using evalGel to create the object without estimation
+
+res <- evalGel(g, x, res$coefficients)
 
 }
 

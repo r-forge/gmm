@@ -215,12 +215,16 @@ getModel.baseGel <- function(object, ...)
             if (dat$ny > 1)
                 {
                     namey <- colnames(dat$x[,1:dat$ny])
-                    object$namesCoef <- paste(rep(namey, dat$k), "_", rep(namex, rep(dat$ny, dat$k)), sep = "")
+                    namesCoef <- paste(rep(namey, dat$k), "_", rep(namex, rep(dat$ny, dat$k)), sep = "")
                     object$namesgt <- paste(rep(namey, dat$nh), "_", rep(nameh, rep(dat$ny, dat$nh)), sep = "")
                 } else {
-                    object$namesCoef <- namex
+                    namesCoef <- namex
                     object$namesgt <- nameh
                 }
+            if (is.null(names(object$tet0)))
+                object$namesCoef <- namesCoef
+            else
+                object$namesCoef <- names(object$tet0)
             attr(object$x,"ModelType") <- "linear"
             attr(object$x, "k") <- k
             attr(object$x, "q") <- object$x$ny*object$x$nh

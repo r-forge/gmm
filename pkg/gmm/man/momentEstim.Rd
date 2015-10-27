@@ -8,6 +8,7 @@
 \alias{momentEstim.baseGmm.eval}
 \alias{momentEstim.baseGel.mod}
 \alias{momentEstim.baseGel.modFormula}
+\alias{momentEstim.baseGel.eval}
 \title{Method for estimating models based on moment conditions}
 \description{
 It estimates a model which is caracterized by the method \code{getModel} (see details). 
@@ -22,6 +23,7 @@ It estimates a model which is caracterized by the method \code{getModel} (see de
 \method{momentEstim}{baseGmm.eval}(object, ...)
 \method{momentEstim}{baseGel.mod}(object, ...)
 \method{momentEstim}{baseGel.modFormula}(object, ...)
+\method{momentEstim}{baseGel.eval}(object, ...)
 }
 \arguments{
 \item{object}{An object created by the method \code{getModel}}

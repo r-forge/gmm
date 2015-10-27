@@ -254,6 +254,36 @@ gel <- function(g, x, tet0 = NULL, gradv = NULL, smooth = FALSE, type = c("EL", 
 	return(z)
 	}
 
+evalGel <- function(g, x, tet0, gradv = NULL, smooth = FALSE, type = c("EL", "ET", "CUE", "ETEL", "HD", "ETHD"), 
+                    kernel = c("Truncated", "Bartlett"), bw = bwAndrews, approx = c("AR(1)", "ARMA(1,1)"),
+                    prewhite = 1, ar.method = "ols", tol_weights = 1e-7, tol_lam = 1e-9, tol_obj = 1e-9, 
+                    tol_mom = 1e-9, maxiterlam = 100, optlam = c("nlminb", "optim", "iter"), data, Lambdacontrol = list(),
+                    model = TRUE, X = FALSE, Y = FALSE, alpha = NULL, ...)
+	{
+
+	type <- match.arg(type)
+	optlam <- match.arg(optlam)
+	weights <- weightsAndrews
+	approx <- match.arg(approx)
+	kernel <- match.arg(kernel)
+        TypeGel <- "baseGel"
+
+	if(missing(data))
+            data<-NULL
+	all_args <- list(g = g, x = x, tet0 = tet0, gradv = gradv, smooth = smooth, type = type,
+                         kernel = kernel, bw = bw, approx = approx, prewhite = prewhite, ar.method = ar.method, 
+                         tol_weights = tol_weights, tol_lam = tol_lam, tol_obj = tol_obj, tol_mom = tol_mom, 
+                         maxiterlam = maxiterlam, weights = weights, optlam = optlam, model = model, X = X,
+                         Y = Y, call = match.call(), Lambdacontrol = Lambdacontrol, alpha = alpha, data = data,
+                         optfct="optim")
+                         
+	class(all_args)<-TypeGel
+	Model_info<-getModel(all_args)
+        class(Model_info) <- "baseGel.eval"
+	z <- momentEstim(Model_info, ...)
+	class(z) <- "gel"
+	return(z)
+	}
 
 .thetf <- function(tet, P, output=c("obj","all"), l0Env)
     {
