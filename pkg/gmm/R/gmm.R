@@ -124,6 +124,9 @@ getDat <- function (formula, h, data)
 	mf[[1L]] <- as.name("model.frame")
 	mf <- eval(mf, parent.frame())
 	mt <- attr(mf, "terms")
+	y <- as.matrix(model.response(mf, "numeric"))
+	xt <- as.matrix(model.matrix(mt, mf, NULL))
+        n <- NROW(y)
 
 	if (inherits(h,'formula'))
 		{
@@ -138,6 +141,11 @@ getDat <- function (formula, h, data)
 		mfh <- eval(mfh, parent.frame())
 		mth <- attr(mfh, "terms")
 		h <- as.matrix(model.matrix(mth, mfh, NULL))
+                if (length(h) == 0)
+                    {
+                        h <- as.matrix(rep(1,n))
+                        colnames(h) <- "h.(Intercept)"
+                    }                
 		}
 	else
 		{		
@@ -155,8 +163,6 @@ getDat <- function (formula, h, data)
 			h <- as.matrix(h[,2:ncol(h)])
 			}
 		}
-	y <- as.matrix(model.response(mf, "numeric"))
-	xt <- as.matrix(model.matrix(mt, mf, NULL))
 	ny <- ncol(y)
 	k <- ncol(xt)
 	nh <- ncol(h)

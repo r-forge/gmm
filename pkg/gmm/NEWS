@@ -11,7 +11,9 @@ o Add the option of fixing the value of some coefficient in gel as it as already
 o It is no possible to provide gmm with the gradiant function when constrOptim is used.
 o There is now an evalGmm() function to create a gmm object with a given fixed vector. Not estimation is done, but the bandwidth and weights
   for the HAC estimator are generated. It is possible to give a different vector os parameters for the moment function and the weighting matrix.
+o There is also an evalGel(). You fix the parameters and only the lambda are computed.
 o Fixed NAMESPACE to avoid the notes given by CRAN.
+o Modified getDat to allow for ~1 as instruments. Useful for inference on the mean using empirical likelihood.
 
 Changes in version 1.5-2
 
