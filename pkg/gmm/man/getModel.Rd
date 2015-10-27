@@ -2,6 +2,7 @@
 \alias{getModel.baseGmm}
 \alias{getModel.baseGel}
 \alias{getModel.constGmm}
+\alias{getModel.constGel}
 \title{Method for setting the properties of a model}
 \description{
 It collects what is needed by the method \code{momentEstim} (see details). 
@@ -9,6 +10,8 @@ It collects what is needed by the method \code{momentEstim} (see details).
 \usage{
 \method{getModel}{baseGmm}(object, ...)
 \method{getModel}{baseGel}(object, ...)
+\method{getModel}{constGel}(object, ...)
+\method{getModel}{constGel}(object, ...)
 }
 \arguments{
 \item{object}{An object of class \code{baseGmm} }

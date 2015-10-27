@@ -42,36 +42,15 @@ FinRes.baseGmm.res <- function(z, object, ...)
 		initTheta[-eqConst[,1]] <- z$initTheta
 		z$initTheta <- initTheta
 		}
-	z$df <- z$df+nrow(eqConst)
-	z$k <- z$k2+nrow(eqConst)
-	z$k2 <- z$k+nrow(eqConst)
-	z$gradv <- attr(x,"eqConst")$unConstgradv
-	z$g <- attr(x,"eqConst")$unConstg 
+	z$k <- z$k+nrow(eqConst)
+	z$k2 <- z$k2+nrow(eqConst)
+        attr(x, "eqConst") <- NULL
 	z$specMod <- paste(z$specMod, "** Note: Covariance matrix computed for all coefficients based on restricted values **\n\n")
-	}  
-	
-  if (length(as.list(args(z$gradv))) == 2)
-        z$G <- z$gradv(x)
-  else if (length(as.list(args(z$gradv))) == 3)
-	z$G <- z$gradv(z$coefficients, x)
-  else
-        z$G <- z$gradv(z$coefficients, x, g = z$g)
-
-  G <- z$G
-  iid <- z$iid 	
-
-  if (P$vcov == "iid")
-    {
-    v <- iid(z$coefficients, x, z$g, P$centeredVcov)
-    z$v <- v
     }
-  else if(P$vcov == "HAC")
-    {
-    if (!is.null(attr(z$w0,"Spec")))
-	    object$WSpec$sandwich$bw <- attr(z$w0,"Spec")$bw
-    v <- .myKernHAC(z$gt, object)
-    z$v <- v
-    }  
+  z$G <- z$gradv(z$coefficients, x)
+  G <- z$G
+  v <- .weightFct(z$coefficient, x, P$vcov)
+  z$v <- v
   if (P$vcov == "TrueFixed") 
 	{
 	z$vcov=try(solve(crossprod(G, P$weightsMatrix) %*% G)/n, silent = TRUE)
@@ -108,7 +87,7 @@ FinRes.baseGmm.res <- function(z, object, ...)
            }
      else
      	   z$vcov <- T1%*%v%*%t(T1)/n	
-     }
+ }
   dimnames(z$vcov) <- list(names(z$coefficients), names(z$coefficients))
   z$call <- P$call
   

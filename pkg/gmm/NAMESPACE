@@ -1,15 +1,17 @@
 import(stats)
 importFrom(sandwich, estfun, bread, kernHAC, weightsAndrews, vcovHAC, bwAndrews, meatHC)
-
+importFrom(methods, is)
+importFrom(graphics, abline, legend, lines, panel.smooth, par, plot, points)
+importFrom(grDevices, dev.interactive, devAskNewPage,  extendrange)
 
 export(gmm,summary.gmm,smoothG,getDat,summary.gel,getLamb,gel, estfun.gmmFct, estfun.gmm, estfun.gel, bread.gel, bread.gmm, 
-	print.gmm,coef.gmm,vcov.gmm,print.summary.gmm, confint.gel, print.gel, print.summary.gel, vcov.gel, coef.gel, fitted.gmm, 
-	residuals.gmm, fitted.gel, residuals.gel, plot.gmm, plot.gel,formula.gmm, formula.gel, charStable, specTest, 
-	specTest.gmm, specTest.gel, print.specTest, momentEstim.baseGmm.twoStep, momentEstim.baseGmm.twoStep.formula,
-        momentEstim.baseGmm.iterative.formula, momentEstim.baseGmm.iterative, momentEstim.baseGmm.cue.formula, 
-	momentEstim.baseGmm.cue, getModel.baseGmm, getModel.baseGel, getModel.constGmm, FinRes.baseGmm.res, momentEstim.baseGel.mod, 
-	momentEstim.baseGel.modFormula,tsls,summary.tsls, print.summary.tsls, KTest, print.gmmTests, gmmWithConst, estfun.tsls, 
-	model.matrix.tsls,vcov.tsls, bread.tsls)
+       print.gmm,coef.gmm,vcov.gmm,print.summary.gmm, confint.gel, print.gel, print.summary.gel, vcov.gel, coef.gel, fitted.gmm, 
+       residuals.gmm, fitted.gel, residuals.gel, plot.gmm, plot.gel,formula.gmm, formula.gel, charStable, specTest, 
+       specTest.gmm, specTest.gel, print.specTest, momentEstim.baseGmm.twoStep, momentEstim.baseGmm.twoStep.formula,
+       momentEstim.baseGmm.iterative.formula, momentEstim.baseGmm.iterative, momentEstim.baseGmm.cue.formula, 
+       momentEstim.baseGmm.cue, getModel.baseGmm, getModel.baseGel, getModel.constGmm, getModel.constGel,
+       FinRes.baseGmm.res, momentEstim.baseGel.mod, momentEstim.baseGel.modFormula,tsls,summary.tsls, print.summary.tsls,
+       KTest, print.gmmTests, gmmWithConst, estfun.tsls, model.matrix.tsls,vcov.tsls, bread.tsls, evalGmm, momentEstim.baseGmm.eval)
  
 S3method(summary, gmm)
 S3method(summary, tsls)
@@ -42,7 +44,9 @@ S3method(FinRes, baseGmm.res)
 S3method(getModel, baseGmm)
 S3method(getModel, baseGel)
 S3method(getModel, constGmm)
+S3method(getModel, constGel)
 S3method(momentEstim, baseGmm.twoStep)
+S3method(momentEstim, baseGmm.eval)
 S3method(momentEstim, baseGmm.twoStep.formula)
 S3method(momentEstim, baseGmm.iterative.formula)
 S3method(momentEstim, baseGmm.iterative)

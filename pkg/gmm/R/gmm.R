@@ -47,6 +47,38 @@ z <- FinRes(z, Model_info)
 z
 }
 
+evalGmm <- function(g, x, t0, tetw=NULL, gradv=NULL, wmatrix = c("optimal","ident"),  vcov=c("HAC","iid","TrueFixed"), 
+	      kernel=c("Quadratic Spectral","Truncated", "Bartlett", "Parzen", "Tukey-Hanning"),crit=10e-7,bw = bwAndrews, 
+	      prewhite = FALSE, ar.method = "ols", approx="AR(1)",tol = 1e-7,
+	      model=TRUE, X=FALSE, Y=FALSE,  centeredVcov = TRUE, weightsMatrix = NULL, data)
+{
+TypeGmm = "baseGmm"
+type <- "eval"    
+kernel <- match.arg(kernel)
+vcov <- match.arg(vcov)
+wmatrix <- match.arg(wmatrix)
+if (is.null(tetw) & is.null(weightsMatrix))
+    stop("If the weighting matrix is not provided, you need to provide the vector of parameters tetw")
+    
+if(vcov=="TrueFixed" & is.null(weightsMatrix))
+	stop("TrueFixed vcov only for fixed weighting matrix")
+if(!is.null(weightsMatrix))
+	wmatrix <- "optimal"
+if(missing(data))
+    data<-NULL
+all_args<-list(data = data, g = g, x = x, t0 = t0, tetw = tetw, gradv = gradv, type = type, wmatrix = wmatrix, vcov = vcov, kernel = kernel,
+                   crit = crit, bw = bw, prewhite = prewhite, ar.method = ar.method, approx = approx, 
+                   weightsMatrix = weightsMatrix, centeredVcov = centeredVcov, tol = tol, itermax = 100, 
+		   optfct = NULL, model = model, X = X, Y = Y, call = match.call(), traceIter = NULL, 
+                   eqConst = NULL, eqConstFullVcov = FALSE)
+class(all_args)<-TypeGmm
+Model_info<-getModel(all_args)
+class(Model_info) <- "baseGmm.eval"
+z <- momentEstim(Model_info)
+z <- FinRes(z, Model_info)
+z
+}
+
 tsls <- function(g,x,data)
 {
 if(class(g) != "formula")
@@ -155,9 +187,11 @@ getDat <- function (formula, h, data)
 }
 
 
-.tetlin <- function(dat, w, gradv, g, type=NULL, inv=TRUE)
+.tetlin <- function(dat, w, type=NULL)
   {
   x <- dat$x
+  g <- .momentFct
+  gradv <- .DmomentFct
   ny <- dat$ny
   nh <- dat$nh
   k <- dat$k
@@ -165,7 +199,16 @@ getDat <- function (formula, h, data)
   ym <- as.matrix(x[,1:ny])
   xm <- as.matrix(x[,(ny+1):(ny+k)])
   hm <- as.matrix(x[,(ny+k+1):(ny+k+nh)])
+  if (!is.null(attr(dat, "eqConst")))
+      {
+          resTet <- attr(dat,"eqConst")$eqConst
+          y2 <- xm[, resTet[,1],drop=FALSE]%*%resTet[,2]
+          ym <- ym-c(y2)
+          xm <- xm[,-resTet[,1],drop=FALSE]
+          k <- ncol(xm)
+      }
   includeExo <- which(colnames(xm)%in%colnames(hm))
+  inv <- attr(w, "inv")
   if (!is.null(type))
   	{            
   	if(type=="2sls")
@@ -219,7 +262,7 @@ getDat <- function (formula, h, data)
 	whx <- w%*% (crossprod(hm, xm) %x% diag(ny))
 	wvecyh <- w%*%matrix(crossprod(ym, hm), ncol = 1)
         }
-     dg <- gradv(dat)
+     dg <- gradv(NULL, dat)
      xx <- crossprod(dg, whx)
      par <- solve(xx, crossprod(dg, wvecyh))
      }
@@ -255,11 +298,11 @@ getDat <- function (formula, h, data)
   return(res)
   }
 
-
-.obj1 <- function(thet, x, w, gf, INV = TRUE)
-  {
-  gt <- gf(thet, x)
+.obj1 <- function(thet, x, w)
+    {
+  gt <- .momentFct(thet, x)
   gbar <- as.vector(colMeans(gt))
+  INV <- attr(w, "inv")
   if (INV)		
   	obj <- crossprod(gbar, solve(w, gbar))
   else
@@ -267,14 +310,14 @@ getDat <- function (formula, h, data)
   return(obj)
   }
 
-.Gf <- function(thet, x, g, pt = NULL)
+.Gf <- function(thet, x, pt = NULL)
   {
   myenv <- new.env()
   assign('x', x, envir = myenv)
   assign('thet', thet, envir = myenv)
   barg <- function(x, thet)
     {
-    gt <- g(thet, x)
+    gt <- .momentFct(thet, x)
     if (is.null(pt))
 	    gbar <- as.vector(colMeans(gt))
     else
@@ -286,16 +329,138 @@ getDat <- function (formula, h, data)
   return(G)
   }
 
-.objCue <- function(thet, x, P)
-  {
-  gt <- P$g(thet,x)
+.objCue <- function(thet, x, type=c("HAC", "iid", "ident", "fct", "fixed"))
+    {
+  type <- match.arg(type)
+  gt <- .momentFct(thet, x)
   gbar <- as.vector(colMeans(gt))
-  if (P$vcov == "iid")
-    w <- P$iid(thet, x, P$g, P$centeredVcov)
-  if (P$vcov == "HAC")
-    w <- .myKernHAC(gt, P)
+  w <- .weightFct(thet, x, type)
   obj <- crossprod(gbar,solve(w,gbar))
   return(obj)
 }	
 
 
+.momentFct <- function(tet, dat)
+    {
+        if (!is.null(attr(dat, "eqConst")))
+            {
+                resTet <- attr(dat,"eqConst")$eqConst
+                tet2 <- vector(length=length(tet)+nrow(resTet))                
+                tet2[resTet[,1]] <- resTet[,2]
+                tet2[-resTet[,1]] <- tet
+            } else {
+                tet2 <- tet
+            }
+        if (attr(dat, "ModelType") == "linear")
+            {
+                x <- dat$x
+                ny <- dat$ny
+                nh <- dat$nh
+                k <- dat$k
+                tet2 <- matrix(tet2, ncol = k)
+                e <- x[,1:ny] - x[,(ny+1):(ny+k)] %*% t(tet2)
+                gt <- e * x[, ny+k+1]
+                if(nh > 1)
+                    for (i in 2:nh)
+                        gt <- cbind(gt, e*x[, (ny+k+i)])
+            } else {
+                gt <- attr(dat,"momentfct")(tet2, dat)
+            }
+        if (!is.null(attr(dat, "smooth")))
+            {
+                bw <- attr(dat, "smooth")$bw
+                w <- attr(dat, "smooth")$w
+                gt <- smoothG(gt, bw = bw, weights = w)$smoothx
+            }
+        return(gt)
+    }
+
+.DmomentFct <- function(tet, dat, pt=NULL)
+    {
+        if (!is.null(attr(dat, "eqConst")))
+            {
+                resTet <- attr(dat,"eqConst")$eqConst
+                tet2 <- vector(length=length(tet)+nrow(resTet))
+                tet2[resTet[,1]] <- resTet[,2]
+                tet2[-resTet[,1]] <- tet
+            } else {
+                tet2 <- tet
+            }
+        if ((attr(dat,"ModelType") == "linear") & (is.null(attr(dat, "smooth"))))
+            {
+                x <- dat$x
+                ny <- dat$ny
+                nh <- dat$nh
+                k <- dat$k
+                dgb <- -(t(x[,(ny+k+1):(ny+k+nh)]) %*% x[,(ny+1):(ny+k)]) %x% diag(rep(1,ny))/nrow(x)
+                if (!is.null(attr(dat, "eqConst")))
+                    dgb <- dgb[,-attr(dat,"eqConst")$eqConst[,1], drop=FALSE]
+            } else {
+                if (is.null(attr(dat,"gradv")))
+                    dgb <- .Gf(tet2, dat, pt)
+                else
+                    dgb <- attr(dat,"gradv")(tet2, dat)
+                if (!is.null(attr(dat, "eqConst")))
+                    dgb <- dgb[,-attr(dat,"eqConst")$eqConst[,1], drop=FALSE]                
+            }
+        return(dgb)
+    }
+                
+.weightFct <- function(tet, dat, type=c("HAC", "iid", "ident", "fct", "fixed")) 
+    {
+        type <- match.arg(type)
+        if (type == "fixed")
+            {
+                w <- attr(dat, "weight")$w
+                attr(w, "inv") <- FALSE
+            }
+         else if (type == "ident")
+             {
+                 w <- diag(attr(dat, "q"))
+                 attr(w, "inv") <- FALSE
+             } else { 
+                 gt <- .momentFct(tet,dat)
+                 if(attr(dat, "weight")$centeredVcov)
+                     gt <- residuals(lm(gt~1))
+                 n <- NROW(gt)
+             }
+        if (type == "HAC")
+            {
+                obj <- attr(dat, "weight")
+                obj$centeredVcov <- FALSE
+                w <- .myKernHAC(gt, obj)
+                attr(w, "inv") <- TRUE
+            }
+        if (type == "iid")
+            {
+                w <- crossprod(gt)/n
+                attr(w, "inv") <- TRUE
+            }
+        if (type == "fct")
+            {
+                w <- attr(dat, "weight")$fct(gt, attr(dat, "weight")$fctArg)
+                attr(w, "inv") <- TRUE
+            }
+        return(w)
+    }
+
+.residuals <- function(tet, dat)
+    {
+        if (!is.null(attr(dat, "eqConst")))
+            {
+                resTet <- attr(dat,"eqConst")$eqConst
+                tet2 <- vector(length=length(tet)+nrow(resTet))
+                tet2[resTet[,1]] <- resTet[,2]
+                tet2[-resTet[,1]] <- tet
+            } else {
+                tet2 <- tet
+            }
+        tet2 <- t(matrix(tet2, nrow = dat$ny))
+        y <- as.matrix(dat$x[,1:dat$ny])
+        x <- as.matrix(dat$x[,(dat$ny+1):(dat$ny+dat$k)])
+        yhat <- x%*%tet2
+        e <- y-yhat
+        return(list(residuals=e, yhat=yhat))
+    }
+           
+        

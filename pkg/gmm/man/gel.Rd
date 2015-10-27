@@ -8,18 +8,24 @@
 Function to estimate a vector of parameters based on moment conditions using the GEL method as presented by Newey-Smith(2004) and Anatolyev(2005).
 }
 \usage{
-gel(g, x, tet0, gradv = NULL, smooth = FALSE, type = c("EL","ET","CUE","ETEL","HD","ETHD"), 
+gel(g, x, tet0 = NULL, gradv = NULL, smooth = FALSE,
+    type = c("EL","ET","CUE","ETEL","HD","ETHD"), 
     kernel = c("Truncated", "Bartlett"), bw = bwAndrews, 
     approx = c("AR(1)", "ARMA(1,1)"), prewhite = 1, ar.method = "ols", 
     tol_weights = 1e-7, tol_lam = 1e-9, tol_obj = 1e-9, tol_mom = 1e-9, 
     maxiterlam = 100, constraint = FALSE, optfct = c("optim", "optimize", 
-    "nlminb"), optlam = c("nlminb", "optim", "iter"), data, Lambdacontrol = list(),
-     model = TRUE, X = FALSE, Y = FALSE, TypeGel = "baseGel", alpha = NULL, ...)
+    "nlminb"), optlam = c("nlminb", "optim", "iter"), data,
+    Lambdacontrol = list(), model = TRUE, X = FALSE, Y = FALSE,
+    TypeGel = "baseGel", alpha = NULL, eqConst = NULL,
+    eqConstFullVcov = FALSE, ...)
 }
 \arguments{
 \item{g}{A function of the form \eqn{g(\theta,x)} and which returns a \eqn{n \times q} matrix with typical element \eqn{g_i(\theta,x_t)} for \eqn{i=1,...q} and \eqn{t=1,...,n}. This matrix is then used to build the q sample moment conditions. It can also be a formula if the model is linear (see details below).  }
 
-\item{tet0}{A \eqn{k \times 1} vector of starting values. If the dimension of \eqn{\theta} is one, see the argument "optfct".}
+\item{tet0}{A \eqn{k \times 1} vector of starting values. If the
+  dimension of \eqn{\theta} is one, see the argument "optfct". In the
+  linear case, if tet0=NULL, the 2-step gmm estimator is used as starting
+  value. However, it has to be provided when eqConst is not NULL}
 
 \item{x}{The matrix or vector of data from which the function \eqn{g(\theta,x)} is computed. If "g" is a formula, it is an \eqn{n \times Nh} matrix of instruments (see details below).}
 
@@ -68,6 +74,10 @@ gel(g, x, tet0, gradv = NULL, smooth = FALSE, type = c("EL","ET","CUE","ETEL","H
 \item{TypeGel}{The name of the class object created by the method \code{getModel}. It allows developers to extand the package and create other GEL methods.}
 
 \item{alpha}{Regularization coefficient for discrete CGEL estimation (experimental). By setting alpha to any value, the model is estimated by CGEL of type specified    by the option \code{type}. See Chausse (2011)}
+
+\item{eqConst}{Either a named vector (if "g" is a function), a simple vector for the nonlinear case indicating which of the \eqn{\theta_0} is restricted, or a qx2 vector defining equality constraints of the form \eqn{\theta_i=c_i}. See \code{\link{gmm}} for an example.}
+
+\item{eqConstFullVcov}{If FALSE, the constrained coefficients are assumed to be fixed and only the covariance of the unconstrained coefficients is computed. If TRUE, the covariance matrix of the full set of coefficients is computed.}
 
 \item{...}{More options to give to \code{\link{optim}}, \code{\link{optimize}} or \code{\link{constrOptim}}.}
 

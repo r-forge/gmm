@@ -5,6 +5,7 @@
 \alias{momentEstim.baseGmm.iterative}
 \alias{momentEstim.baseGmm.cue.formula}
 \alias{momentEstim.baseGmm.cue}
+\alias{momentEstim.baseGmm.eval}
 \alias{momentEstim.baseGel.mod}
 \alias{momentEstim.baseGel.modFormula}
 \title{Method for estimating models based on moment conditions}
@@ -18,6 +19,9 @@ It estimates a model which is caracterized by the method \code{getModel} (see de
 \method{momentEstim}{baseGmm.iterative}(object, ...)
 \method{momentEstim}{baseGmm.cue.formula}(object, ...)
 \method{momentEstim}{baseGmm.cue}(object, ...)
+\method{momentEstim}{baseGmm.eval}(object, ...)
+\method{momentEstim}{baseGel.mod}(object, ...)
+\method{momentEstim}{baseGel.modFormula}(object, ...)
 }
 \arguments{
 \item{object}{An object created by the method \code{getModel}}

@@ -61,9 +61,9 @@ vcov.gel <- function(object, lambda = FALSE, ...)
 print.gel <- function(x, digits = 5, ...)
 	{
 	if (is.null(x$CGEL))
-		cat("Type de GEL: ", x$type, "\n")
+		cat("Type de GEL: ", x$typeDesc, "\n")
 	else
-		cat("CGEL of type: ", x$type, " (alpha = ", x$CGEL, ")\n")
+		cat("CGEL of type: ", x$typeDesc, " (alpha = ", x$CGEL, ")\n")
 	if (!is.null(attr(x$dat,"smooth")))
 		{
 		cat("Kernel: ", attr(x$dat,"smooth")$kernel," (bw=",
@@ -75,13 +75,18 @@ print.gel <- function(x, digits = 5, ...)
 	cat("Coefficients:\n")
 	print.default(format(coef(x), digits = digits),
                       print.gap = 2, quote = FALSE)
-	cat("\n")
-	cat("Lambdas:\n")
-	print.default(format(coef(x, lambda = TRUE), digits = digits),
-                      print.gap = 2, quote = FALSE)
-	cat("\n")
+        if (length(x$coefficients)<length(x$lambda))
+            {
+                cat("\n")
+                cat("Lambdas:\n")
+                print.default(format(coef(x, lambda = TRUE), digits = digits),
+                              print.gap = 2, quote = FALSE)
+            }
+        cat("\n")
 	cat("Convergence code for the coefficients: ", x$conv_par,"\n")
-	cat("Convergence code for Lambda: ", x$conv_lambda$convergence,"\n")
+        if (length(x$coefficients)<length(x$lambda))
+            cat("Convergence code for Lambda: ", x$conv_lambda$convergence,"\n")
+        cat(x$specMod)
 	invisible(x)
 	}
 
@@ -90,9 +95,9 @@ print.summary.gel <- function(x, digits = 5, ...)
 	cat("\nCall:\n")
 	cat(paste(deparse(x$call), sep = "\n", collapse = "\n"), "\n\n", sep = "")
 	if (is.null(x$CGEL))
-		cat("Type of GEL: ", x$type, "\n")
+		cat("Type of GEL: ", x$typeDesc, "\n")
 	else
-		cat("CGEL of type: ", x$type, " (alpha = ", x$CGEL, ")\n")
+		cat("CGEL of type: ", x$typeDesc, " (alpha = ", x$CGEL, ")\n")
 
 	if (!is.null(x$smooth))
 		{
@@ -105,16 +110,20 @@ print.summary.gel <- function(x, digits = 5, ...)
 	print.default(format(x$coefficients, digits = digits),
                       print.gap = 2, quote = FALSE)
 
-	cat("\nLambdas:\n")
-	print.default(format(x$lambda, digits=digits),
-                      print.gap = 2, quote = FALSE)
-
-	cat("\n", x$stest$ntest, "\n")
-	print.default(format(x$stest$test, digits=digits),
-                      print.gap = 2, quote = FALSE)
-
+        if (length(x$coefficients)<length(x$lambda))
+            {
+                cat("\nLambdas:\n")
+                print.default(format(x$lambda, digits=digits),
+                              print.gap = 2, quote = FALSE)
+                
+                cat("\n", x$stest$ntest, "\n")
+                print.default(format(x$stest$test, digits=digits),
+                              print.gap = 2, quote = FALSE)
+            }
+        cat(x$specMod)
 	cat("\nConvergence code for the coefficients: ", x$conv_par, "\n")
-	cat("\nConvergence code for the lambdas: ", x$conv_lambda$convergence, "\n")
+        if (length(x$coefficients)<length(x$lambda))
+            cat("\nConvergence code for the lambdas: ", x$conv_lambda$convergence, "\n")
 	
 	invisible(x)
 	}

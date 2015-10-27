@@ -184,50 +184,48 @@ getLamb <- function(gt, l0, type = c('EL', 'ET', 'CUE', "ETEL", "HD", "ETHD"), t
 smoothG <- function (x, bw = bwAndrews, prewhite = 1, ar.method = "ols", weights = weightsAndrews,
 			kernel = c("Bartlett", "Parzen", "Truncated", "Tukey-Hanning"), approx = c("AR(1)", "ARMA(1,1)"),
 			tol = 1e-7) 
-	{
+    {
 	kernel <- match.arg(kernel)
 	approx <- match.arg(approx)
-		
+        
 	n <- nrow(x)
 	if (is.function(weights))
-		{
-                        class(x) <- "gmmFct"
-			w <- weights(x, bw = bw, kernel = kernel,  
-			prewhite = prewhite, ar.method = ar.method, tol = tol, 
-			verbose = FALSE, approx = approx)
-		}
-		else
-			w <- weights
+            {
+                class(x) <- "gmmFct"
+                w <- weights(x, bw = bw, kernel = kernel,  
+                             prewhite = prewhite, ar.method = ar.method, tol = tol, 
+                             verbose = FALSE, approx = approx)
+            } else {
+                w <- weights
+            }
+        if (is.numeric(w))
+            {
+                rt <- length(w)
+                if (rt >= 2)
+                    {
+                        w <- c(w[rt:2], w)
+                        w <- w / sum(w)
+                        w <- kernel(w[rt:length(w)])
+                    } else {
+                        w <- kernel(1)
+                    }
+            } else {
+                if (class(w) != "tskernel")                   
+                    stop("Provided weights must be a numeric vector or an object of class 'tskernel'")
+            }
+        if (length(w$coef)>1)
+            x <- kernapply(x, w)
+        sx <- list("smoothx" = x, "kern_weights" = w, bw = bw)
+        return(sx)		
+    }
+                      
 
-
-	rt <- length(w)
-	if (rt >= 2)
-		{
-		rt <- length(w)
-		if (rt>1)
-			{
-			w <- c(w[rt:2], w)
-			w <- w / sum(w)
-			w <- kernel(w[rt:length(w)])
-			}
-		else
-			w <- kernel(1)
-
-		x <- kernapply(x,w)		
-		sx <- list("smoothx" = x, "kern_weights" = w)
-		return(sx)		
-		}
-	else
-		sx <- list("smoothx" = x,"kern_weights" = kernel(1))
-		return(sx)		
-	}
-
-
-gel <- function(g, x, tet0, gradv = NULL, smooth = FALSE, type = c("EL", "ET", "CUE", "ETEL", "HD", "ETHD"), 
+gel <- function(g, x, tet0 = NULL, gradv = NULL, smooth = FALSE, type = c("EL", "ET", "CUE", "ETEL", "HD", "ETHD"), 
                 kernel = c("Truncated", "Bartlett"), bw = bwAndrews, approx = c("AR(1)", 
     		"ARMA(1,1)"), prewhite = 1, ar.method = "ols", tol_weights = 1e-7, tol_lam = 1e-9, tol_obj = 1e-9, 
 		tol_mom = 1e-9, maxiterlam = 100, constraint = FALSE, optfct = c("optim", "optimize", "nlminb"), 
-                optlam = c("nlminb", "optim", "iter"), data, Lambdacontrol = list(), model = TRUE, X = FALSE, Y = FALSE, TypeGel = "baseGel", alpha = NULL, ...)
+                optlam = c("nlminb", "optim", "iter"), data, Lambdacontrol = list(), model = TRUE, X = FALSE, Y = FALSE, TypeGel = "baseGel", alpha = NULL,
+                eqConst = NULL, eqConstFullVcov = FALSE, ...)
 	{
 
 	type <- match.arg(type)
@@ -236,6 +234,9 @@ gel <- function(g, x, tet0, gradv = NULL, smooth = FALSE, type = c("EL", "ET", "
 	weights <- weightsAndrews
 	approx <- match.arg(approx)
 	kernel <- match.arg(kernel)
+        if (!is.null(eqConst))
+            TypeGel <- "constGel"
+
 	if(missing(data))
 		data<-NULL
 	all_args <- list(g = g, x = x, tet0 = tet0, gradv = gradv, smooth = smooth, type = type,
@@ -243,7 +244,7 @@ gel <- function(g, x, tet0, gradv = NULL, smooth = FALSE, type = c("EL", "ET", "
 		tol_weights = tol_weights, tol_lam = tol_lam, tol_obj = tol_obj, tol_mom = tol_mom, 
 		maxiterlam = maxiterlam, constraint = constraint, optfct = optfct, weights = weights,
                 optlam = optlam, model = model, X = X, Y = Y, TypeGel = TypeGel, call = match.call(), 
-		Lambdacontrol = Lambdacontrol, alpha = alpha, data = data)
+		Lambdacontrol = Lambdacontrol, alpha = alpha, data = data, eqConst = eqConst, eqConstFullVcov = eqConstFullVcov)
 
 	class(all_args)<-TypeGel
 	Model_info<-getModel(all_args)
@@ -256,44 +257,47 @@ gel <- function(g, x, tet0, gradv = NULL, smooth = FALSE, type = c("EL", "ET", "
 
 .thetf <- function(tet, P, output=c("obj","all"), l0Env)
     {
-    output <- match.arg(output)
-    gt <- P$g(tet, P$dat)
-    l0 <- get("l0",envir=l0Env)
-    if (is.null(P$CGEL))
-	{
-	if (P$optlam != "optim" & P$type == "EL") 
-	    {
-	    lamb <- try(getLamb(gt, l0, type = P$type, tol_lam = P$tol_lam, maxiterlam = P$maxiterlam, 
-			tol_obj = P$tol_obj, k = P$k1/P$k2, control = P$Lambdacontrol, 
-			method = P$optlam), silent = TRUE)
-            if(class(lamb) == "try-error")
-		    lamb <- getLamb(gt, l0, type = P$type, tol_lam = P$tol_lam, maxiterlam = P$maxiterlam, 
-			tol_obj = P$tol_obj, k = P$k1/P$k2, control = P$Lambdacontrol, method = "optim")
-	    }
-	    else
+        output <- match.arg(output)
+        gt <- P$g(tet, P$x)
+        l0 <- get("l0",envir=l0Env)
+        if (((P$type=="ETEL")|(P$type=="ETHD"))&(!is.null(P$CGEL)))
+            {
+                P$CGEL <- NULL
+                warning("CGEL not implemented for ETEL no for ETHD")
+            }
+        if (is.null(P$CGEL))
+            {
+                if (P$optlam != "optim" & P$type == "EL") 
+                    {
+                        lamb <- try(getLamb(gt, l0, type = P$type, tol_lam = P$tol_lam, maxiterlam = P$maxiterlam, 
+                                            tol_obj = P$tol_obj, k = P$k1/P$k2, control = P$Lambdacontrol, 
+                                            method = P$optlam), silent = TRUE)
+                        if(class(lamb) == "try-error")
+                            lamb <- getLamb(gt, l0, type = P$type, tol_lam = P$tol_lam, maxiterlam = P$maxiterlam, 
+                                            tol_obj = P$tol_obj, k = P$k1/P$k2, control = P$Lambdacontrol, method = "optim")
+                    }
+                else
 		    lamb <- getLamb(gt, l0, type = P$type,  tol_lam = P$tol_lam, maxiterlam = P$maxiterlam, 
-			tol_obj = P$tol_obj, k = P$k1/P$k2, control = P$Lambdacontrol, method = P$optlam)
-	}
-    else
-	{
-	if ((P$type=="ETEL")|(P$type=="ETHD"))
-		stop("CGEL not implemented for ETEL nor for ETHD")
-	lamb <- try(.getCgelLam(gt, l0, type = P$type, method = "nlminb", control=P$Lambdacontrol, 
-			k = P$k1/P$k2, alpha = P$CGEL),silent=TRUE)
-	if (class(lamb) == "try-error")
-		lamb <- try(.getCgelLam(gt, l0, type = P$type, method = "constrOptim", control=P$Lambdacontrol, 
-			k = P$k1/P$k2, alpha = P$CGEL),silent=TRUE)
-	}
-    if (P$type != "ETHD")
-        obj <- mean(.rho(gt, lamb$lambda, type = P$type, derive = 0, k = P$k1/P$k2)-
-                    .rho(1, 0, type = P$type, derive = 0, k = P$k1/P$k2))
-    else
-        obj <- sum(.rho(gt, lamb$lambda, type = P$type, derive = 0, k = P$k1/P$k2)-
-                   .rho(1, 0, type = P$type, derive = 0, k = P$k1/P$k2))
-    assign("l0",lamb$lambda,envir=l0Env)
-    if(output == "obj")
+                                    tol_obj = P$tol_obj, k = P$k1/P$k2, control = P$Lambdacontrol, method = P$optlam)
+            }
+        else
+            {
+                lamb <- try(.getCgelLam(gt, l0, type = P$type, method = "nlminb", control=P$Lambdacontrol, 
+                                        k = P$k1/P$k2, alpha = P$CGEL),silent=TRUE)
+                if (class(lamb) == "try-error")
+                    lamb <- try(.getCgelLam(gt, l0, type = P$type, method = "constrOptim", control=P$Lambdacontrol, 
+                                            k = P$k1/P$k2, alpha = P$CGEL),silent=TRUE)
+            }
+        if (P$type != "ETHD")
+            obj <- mean(.rho(gt, lamb$lambda, type = P$type, derive = 0, k = P$k1/P$k2)-
+                            .rho(1, 0, type = P$type, derive = 0, k = P$k1/P$k2))
+        else
+            obj <- sum(.rho(gt, lamb$lambda, type = P$type, derive = 0, k = P$k1/P$k2)-
+                           .rho(1, 0, type = P$type, derive = 0, k = P$k1/P$k2))
+        assign("l0",lamb$lambda,envir=l0Env)
+        if(output == "obj")
 	    return(obj)
-    else
+        else
 	    return(list(obj = obj, lambda = lamb, gt = gt))
     }
 

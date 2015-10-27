@@ -2,6 +2,7 @@
 
 \alias{gmm}
 \alias{gmmWithConst}
+\alias{evalGmm}
 	
 \title{Generalized method of moment estimation}
 
@@ -17,6 +18,11 @@ gmm(g,x,t0=NULL,gradv=NULL, type=c("twoStep","cue","iterative"),
     model=TRUE, X=FALSE, Y=FALSE, TypeGmm = "baseGmm", centeredVcov = TRUE, 
     weightsMatrix = NULL, traceIter = FALSE, data, eqConst = NULL, 
     eqConstFullVcov = FALSE, ...)
+evalGmm(g, x, t0, tetw=NULL, gradv=NULL, wmatrix = c("optimal","ident"),
+    vcov=c("HAC","iid","TrueFixed"), kernel=c("Quadratic Spectral","Truncated", 
+    "Bartlett", "Parzen", "Tukey-Hanning"),crit=10e-7,bw = bwAndrews,
+    prewhite = FALSE, ar.method = "ols", approx="AR(1)",tol = 1e-7,
+    model=TRUE, X=FALSE, Y=FALSE,  centeredVcov = TRUE, weightsMatrix = NULL, data)
 gmmWithConst(obj, which, value)
 }
 \arguments{
@@ -24,7 +30,12 @@ gmmWithConst(obj, which, value)
 
 \item{x}{The matrix or vector of data from which the function \eqn{g(\theta,x)} is computed. If "g" is a formula, it is an \eqn{n \times Nh} matrix of instruments or a formula (see details below).}
 
-\item{t0}{A \eqn{k \times 1} vector of starting values. It is required only when "g" is a function because only then a numerical algorithm is used to minimize the objective function. If the dimension of \eqn{\theta} is one, see the argument "optfct".}
+\item{t0}{A \eqn{k \times 1} vector of starting values. It is required
+  only when "g" is a function because only then a numerical algorithm is
+  used to minimize the objective function. If the dimension of
+  \eqn{\theta} is one, see the argument "optfct".}
+
+\item{tetw}{A \eqn{k \times 1} vector to compute the weighting matrix.}
 
 \item{gradv}{A function of the form \eqn{G(\theta,x)} which returns a \eqn{q\times k} matrix of derivatives of \eqn{\bar{g}(\theta)} with respect to \eqn{\theta}. By default, the numerical algorithm \code{numericDeriv} is used. It is of course strongly suggested to provide this function when it is possible. This gradient is used to compute the asymptotic covariance matrix of \eqn{\hat{\theta}} and to obtain the analytical gradient of the objective function if the method is set to "CG" or "BFGS" in \code{\link{optim}} and if "type" is not set to "cue". If "g" is a formula, the gradiant is not required (see the details below).}
 
@@ -106,7 +117,11 @@ The Jacobian of these two conditions is (it should be an array but I can't make 
 \deqn{ -2\mu+2x ~~~~~ 2\sigma }
 \deqn{-3\mu^{2}-3\sigma^{2} ~~~~ -6\mu\sigma}
 
-\code{gmmWithConst()} re-estimates an unrestricted model by adding an equality constraint. 
+\code{gmmWithConst()} re-estimates an unrestricted model by adding an
+equality constraint.
+\code{evalGmm()} creates an object of class '"gmm"' for a given
+parameter vector. If no vector "tetw" is provided and the weighting
+matrix needs to be computed, "t0" is used.,  
 }
 
 \value{
@@ -208,8 +223,8 @@ summary(res_black)$coefficients
 ## APT test with Fama-French factors and GMM
 
 f1 <- zm
-f2 <- Finance[1:300, "hml"] - rf
-f3 <- Finance[1:300, "smb"] - rf
+f2 <- Finance[1:300, "hml"] 
+f3 <- Finance[1:300, "smb"] 
 h <- cbind(f1, f2, f3)
 res2 <- gmm(z ~ f1 + f2 + f3, x = h)
 coef(res2)
