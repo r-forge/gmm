@@ -11,67 +11,74 @@
 #  A copy of the GNU General Public License is available at
 #  http://www.r-project.org/Licenses/
 
+
 confint.gel <- function(object, parm, level = 0.95, lambda = FALSE, ...)
-		{
-		z <- object	
-		n <- nrow(z$gt)
-		
-		se_par <- sqrt(diag(z$vcov_par))
-		par <- z$coefficients
-		tval <- par/se_par
-
-		se_parl <- sqrt(diag(z$vcov_lambda))
-		lamb <- z$lambda
-
-		zs <- qnorm((1 - level)/2, lower.tail=FALSE)
-		ch <- zs*se_par
-
-		if(!lambda)
-			{
-			ans <- cbind(par-ch, par+ch)
-			dimnames(ans) <- list(names(par), c((1 - level)/2, 0.5+level/2))
-			}
-		if(lambda)
-			{
-			chl <- zs*se_parl
-			ans <- cbind(lamb - chl, lamb + chl)
-			dimnames(ans) <- list(names(lamb), c((1 - level)/2, 0.5 + level/2))
-			}		
-		if(!missing(parm))
-			ans <- ans[parm,]
-		ans
-		}
+    {
+        z <- object	
+        n <- nrow(z$gt)
+        
+        se_par <- sqrt(diag(z$vcov_par))
+        par <- z$coefficients
+        tval <- par/se_par
+        
+        se_parl <- sqrt(diag(z$vcov_lambda))
+        lamb <- z$lambda
+        
+        zs <- qnorm((1 - level)/2, lower.tail=FALSE)
+        ch <- zs*se_par
+        
+        if(!lambda)
+            {
+                ans <- cbind(par-ch, par+ch)
+                dimnames(ans) <- list(names(par), c((1 - level)/2, 0.5+level/2))
+            }
+        if(lambda)
+            {
+                if (length(z$coefficients) == length(z$lambda))
+                    {
+                        cat("\nNo confidence intervals for lambda when the model is just identified.\n")
+                        return(NULL)
+                    } else {
+                        chl <- zs*se_parl
+                        ans <- cbind(lamb - chl, lamb + chl)
+                        dimnames(ans) <- list(names(lamb), c((1 - level)/2, 0.5 + level/2))
+                    }
+            }		
+        if(!missing(parm))
+            ans <- ans[parm,]
+        ans
+    }
 
 coef.gel <- function(object, lambda = FALSE, ...) 
-	{
+    {
 	if(!lambda)
-		object$coefficients
+            object$coefficients
 	else
-		object$lambda
-	}
+            object$lambda
+    }
 
 vcov.gel <- function(object, lambda = FALSE, ...) 
-	{
+    {
 	if(!lambda)
-		object$vcov_par
+            object$vcov_par
 	else
-		object$vcov_lambda
-	}
+            object$vcov_lambda
+    }
 
 print.gel <- function(x, digits = 5, ...)
-	{
+    {
 	if (is.null(x$CGEL))
-		cat("Type de GEL: ", x$typeDesc, "\n")
+            cat("Type de GEL: ", x$typeDesc, "\n")
 	else
-		cat("CGEL of type: ", x$typeDesc, " (alpha = ", x$CGEL, ")\n")
+            cat("CGEL of type: ", x$typeDesc, " (alpha = ", x$CGEL, ")\n")
 	if (!is.null(attr(x$dat,"smooth")))
-		{
+            {
 		cat("Kernel: ", attr(x$dat,"smooth")$kernel," (bw=",
-		attr(x$dat,"smooth")$bw,")\n\n")
-		}
+                    attr(x$dat,"smooth")$bw,")\n\n")
+            }
 	else
-		cat("\n")
-
+            cat("\n")
+        
 	cat("Coefficients:\n")
 	print.default(format(coef(x), digits = digits),
                       print.gap = 2, quote = FALSE)
@@ -81,49 +88,48 @@ print.gel <- function(x, digits = 5, ...)
                       print.gap = 2, quote = FALSE)
         cat("\n")
 	cat("Convergence code for the coefficients: ", x$conv_par,"\n")
-        if (length(x$coefficients)<length(x$lambda))
-            cat("Convergence code for Lambda: ", x$conv_lambda$convergence,"\n")
+        cat("Convergence code for Lambda: ", x$conv_lambda$convergence,"\n")
         cat(x$specMod)
 	invisible(x)
-	}
+    }
 
 print.summary.gel <- function(x, digits = 5, ...)
-	{
+    {
 	cat("\nCall:\n")
 	cat(paste(deparse(x$call), sep = "\n", collapse = "\n"), "\n\n", sep = "")
 	if (is.null(x$CGEL))
-		cat("Type of GEL: ", x$typeDesc, "\n")
+            cat("Type of GEL: ", x$typeDesc, "\n")
 	else
-		cat("CGEL of type: ", x$typeDesc, " (alpha = ", x$CGEL, ")\n")
-
+            cat("CGEL of type: ", x$typeDesc, " (alpha = ", x$CGEL, ")\n")
+        
 	if (!is.null(x$smooth))
-		{
+            {
 		cat("Kernel: ", x$smooth$kernel," (bw=", x$smooth$bw,")\n\n")
-		}
-	else
+            }else {
 		cat("\n")
-
+            }
+        
 	cat("Coefficients:\n")
 	print.default(format(x$coefficients, digits = digits),
                       print.gap = 2, quote = FALSE)
-
+        
         if (length(x$coefficients)<length(x$lambda))
             {
                 cat("\nLambdas:\n")
                 print.default(format(x$lambda, digits=digits),
                               print.gap = 2, quote = FALSE)
-                
-                cat("\n", x$stest$ntest, "\n")
-                print.default(format(x$stest$test, digits=digits),
-                              print.gap = 2, quote = FALSE)
+            } else {
+                cat("\nNo table for Lambda when the model is just identified\n")
             }
-        cat(x$specMod)
-	cat("\nConvergence code for the coefficients: ", x$conv_par, "\n")
-        if (length(x$coefficients)<length(x$lambda))
-            cat("\nConvergence code for the lambdas: ", x$conv_lambda$convergence, "\n")
-	
-	invisible(x)
-	}
+        cat("\n", x$stest$ntest, "\n")
+        print.default(format(x$stest$test, digits=digits),
+                      print.gap = 2, quote = FALSE)
+        cat("\n",x$specMod)
+        cat("\nConvergence code for the coefficients: ", x$conv_par, "\n")
+        cat("\nConvergence code for the lambdas: ", x$conv_lambda$convergence, "\n")
+        
+        invisible(x)
+    }
 
 summary.gel <- function(object, ...)
 	{
@@ -161,6 +167,8 @@ summary.gel <- function(object, ...)
 	ans$conv_moment <- cbind(z$conv_moment)
 	ans$conv_lambda <- z$conv_lambda
 	ans$CGEL <- z$CGEL
+        ans$typeDesc <- z$typeDesc
+        ans$specMod <- z$specMod
 	if (!is.null(attr(object$dat,"smooth")))
 		ans$smooth <- attr(object$dat,"smooth")
 	names(ans$conv_pt) <- "Sum_of_pt"

@@ -243,7 +243,7 @@ gel <- function(g, x, tet0 = NULL, gradv = NULL, smooth = FALSE, type = c("EL", 
                 kernel = kernel, bw = bw, approx = approx, prewhite = prewhite, ar.method = ar.method, 
 		tol_weights = tol_weights, tol_lam = tol_lam, tol_obj = tol_obj, tol_mom = tol_mom, 
 		maxiterlam = maxiterlam, constraint = constraint, optfct = optfct, weights = weights,
-                optlam = optlam, model = model, X = X, Y = Y, TypeGel = TypeGel, call = match.call(), 
+                         optlam = optlam, model = model, X = X, Y = Y, TypeGel = TypeGel, call = match.call(), 
 		Lambdacontrol = Lambdacontrol, alpha = alpha, data = data, eqConst = eqConst, eqConstFullVcov = eqConstFullVcov)
 
 	class(all_args)<-TypeGel

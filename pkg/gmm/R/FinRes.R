@@ -45,7 +45,7 @@ FinRes.baseGmm.res <- function(z, object, ...)
                 z$k <- z$k+nrow(eqConst)
                 z$k2 <- z$k2+nrow(eqConst)
                 attr(x, "eqConst") <- NULL
-                z$specMod <- paste(z$specMod, "** Note: Covariance matrix computed for all coefficients based on restricted values **\n\n")
+                z$specMod <- paste(z$specMod, "** Note: Covariance matrix computed for all coefficients based on restricted values \n   Tests non-valid**\n\n")
             }
         z$G <- z$gradv(z$coefficients, x)
         G <- z$G

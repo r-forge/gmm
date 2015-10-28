@@ -164,7 +164,7 @@ getModel.constGel <- function(object, ...)
         obj$eqConst <- object$eqConst
         attr(obj$x, "k") <- attr(obj$x, "k")-nrow(object$eqConst)
         obj$namesCoef <- obj$namesCoef[-object$eqConst[,1]]
-        obj$type <- paste(obj$type,"(with equality constraints)",sep=" ")	
+        obj$typeDesc <- paste(obj$typeDesc,"(with equality constraints)",sep=" ")	
         mess <- paste(rownames(object$eqConst), " = " , object$eqConst[,2], "\n",collapse="")
         mess <- paste("#### Equality constraints ####\n",mess,"##############################\n\n",sep="")
         obj$specMod <- mess
@@ -288,6 +288,7 @@ getModel.baseGel <- function(object, ...)
     }
     object$g <- .momentFct
     object$CGEL <- object$alpha
+    object$typeDesc <- object$type
     class(object) <- clname
     return(object)
 }

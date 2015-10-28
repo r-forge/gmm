@@ -619,7 +619,6 @@ momentEstim.baseGel.modFormula <- function(object, ...)
 
         if(P$constraint)
             res <- constrOptim(P$tet0, .thetf, grad = NULL, P = P, l0Env = l0Env, ...)
-
         All <- .thetf(res$par, P, "all",l0Env = l0Env)
         gt <- All$gt
         rlamb <- All$lambda
@@ -662,7 +661,7 @@ momentEstim.baseGel.modFormula <- function(object, ...)
                 z$coefficients <- coef
                 attr(P$x, "k") <- attr(P$x, "k") + nrow(eqConst)        
                 attr(P$x,"eqConst") <- NULL
-                z$specMod <- paste(z$specMod, "** Note: Covariance matrix computed for all coefficients based on restricted values **\n\n")
+                z$specMod <- paste(z$specMod, "** Note: Covariance matrix computed for all coefficients based on restricted values \n   Tests non-valid**\n\n")
             }
   
         if(P$gradvf)
@@ -670,11 +669,14 @@ momentEstim.baseGel.modFormula <- function(object, ...)
         else
             G <- P$gradv(z$coefficients, P$x, z$pt)
         khat <- crossprod(c(z$pt)*z$gt,z$gt)/(P$k2)*P$bwVa
-  
+        z$G <- G
         G <- G/P$k1
         kg <- solve(khat, G)
         z$vcov_par <- solve(crossprod(G, kg))/n
-        z$vcov_lambda <- solve(khat, ( diag(ncol(khat)) - G %*% (z$vcov_par*n) %*% t(kg) ))/n*P$bwVal^2
+        if (dim(G)[1] == dim(G)[2])
+            z$vcov_lambda <- matrix(0, dim(G))
+        else
+            z$vcov_lambda <- solve(khat, ( diag(ncol(khat)) - G %*% (z$vcov_par*n) %*% t(kg) ))/n*P$bwVal^2
   
         z$weights <- P$w
         z$bwVal <- P$bwVal
@@ -691,6 +693,7 @@ momentEstim.baseGel.modFormula <- function(object, ...)
         if(P$Y) z$y <- as.matrix(P$x$x[,1:P$x$ny])  
         z$khat <- khat
         class(z) <- paste(P$TypeGel, ".res", sep = "")
+        z$allArg <- P$allArg
         return(z)
     }
 
@@ -752,27 +755,23 @@ momentEstim.baseGel.mod <- function(object, ...)
                 z$coefficients <- coef
                 attr(x, "k") <- attr(x, "k") + nrow(eqConst)        
                 attr(x,"eqConst") <- NULL
-                z$specMod <- paste(z$specMod, "** Note: Covariance matrix computed for all coefficients based on restricted values **\n\n")
+                z$specMod <- paste(z$specMod, "** Note: Covariance matrix computed for all coefficients based on restricted values \n   Tests non-valid**\n\n")
             }
 
         if(P$gradvf)
             G <- P$gradv(z$coefficients, x)
         else
             G <- P$gradv(z$coefficients, x, z$pt)
- 
+        z$G <- G
         khat <- crossprod(c(z$pt)*z$gt, z$gt)/(P$k2)*P$bwVal
         G <- G/P$k1 
-
+        
         kg <- solve(khat, G)
         z$vcov_par <- solve(crossprod(G, kg))/n
-        if (length(z$lambda) == length(z$coefficients))
-            {
-                z$vcov_lambda <- matrix(NA, rep(length(z$lambda), 2))
-                z$lambda <- rep(NA, length(z$lambda))
-                z$specMod <- paste(z$specMod, "\n Just identified model; no lambda nor specification test needed\n", sep="")
-            } else {
-                z$vcov_lambda <- solve(khat, ( diag(ncol(khat)) - G %*% (z$vcov_par*n) %*% t(kg) ))/n*P$bwVal^2
-            }
+        if (dim(G)[1] == dim(G)[2])
+            z$vcov_lambda <- matrix(0, dim(G))
+        else
+            z$vcov_lambda <- solve(khat, ( diag(ncol(khat)) - G %*% (z$vcov_par*n) %*% t(kg) ))/n*P$bwVal^2
 	
         z$weights <- P$w
         z$bwVal <- P$bwVal
@@ -787,6 +786,7 @@ momentEstim.baseGel.mod <- function(object, ...)
         z$khat <- khat
         z$CGEL <- P$CGEL
         z$typeDesc <- P$typeDesc
+        z$allArg <- P$allArg        
         class(z) <- paste(P$TypeGel, ".res", sep = "")
         return(z)
     }
@@ -813,6 +813,7 @@ momentEstim.fixedW.formula <- function(object, ...)
                     warning("The matrix of weights is not strictly positive definite")
             }  
         res2 <- .tetlin(dat, w)
+        
         z = list(coefficients = res2$par, objective = res2$value, dat=dat, k=k, k2=k2, n=n, q=q, df=df, df.residual = (n-k))	
 
         z$gt <- g(z$coefficients, dat)
@@ -956,7 +957,7 @@ momentEstim.baseGel.eval <- function(object, ...)
         z$k1 <- P$k1
         z$k2 <- P$k2
         z$CGEL <- P$CGEL
-        z$typeDesc <- P$typeDesc
+        z$typeDesc <- paste(P$typeDesc, " (Eval only, tests non-valid) ", sep="")
         z$specMod <- P$specMod
         names(z$coefficients) <- P$namesCoef
         if (!is.null(object$namesgt))
@@ -971,18 +972,15 @@ momentEstim.baseGel.eval <- function(object, ...)
         else
             G <- P$gradv(z$coefficients, P$x, z$pt)
         khat <- crossprod(c(z$pt)*z$gt,z$gt)/(P$k2)*P$bwVa
-  
+
+        z$G <- G
         G <- G/P$k1
         kg <- solve(khat, G)
         z$vcov_par <- solve(crossprod(G, kg))/n
-        if (length(z$lambda) == length(z$coefficients))
-            {
-                z$vcov_lambda <- matrix(NA, rep(length(z$lambda), 2))
-                z$lambda <- rep(NA, length(z$lambda))
-                z$specMod <- paste(z$specMod, "\n Just identified model; no lambda nor specification test needed\n", sep="")
-            } else {
-                z$vcov_lambda <- solve(khat, ( diag(ncol(khat)) - G %*% (z$vcov_par*n) %*% t(kg) ))/n*P$bwVal^2
-            }
+        if (dim(G)[1] == dim(G)[2])
+            z$vcov_lambda <- matrix(0, dim(G)[1], dim(G)[2])
+        else
+            z$vcov_lambda <- solve(khat, ( diag(ncol(khat)) - G %*% (z$vcov_par*n) %*% t(kg) ))/n*P$bwVal^2
         
         z$weights <- P$w
         z$bwVal <- P$bwVal
