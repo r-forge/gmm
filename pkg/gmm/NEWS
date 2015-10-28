@@ -14,6 +14,8 @@ o There is now an evalGmm() function to create a gmm object with a given fixed v
 o There is also an evalGel(). You fix the parameters and only the lambda are computed.
 o Fixed NAMESPACE to avoid the notes given by CRAN.
 o Modified getDat to allow for ~1 as instruments. Useful for inference on the mean using empirical likelihood.
+o The Lambdas and specTest from gel are printed even if the model is just identified. It is consitent with gmm which prints the j-test
+  for just identified models. The reason if to allow evalGel to generate the Lamdbas for testing purpose. 
 
 Changes in version 1.5-2
 

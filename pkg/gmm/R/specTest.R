@@ -49,6 +49,8 @@ specTest.gel <- function(x, ...)
 	df <- (ncol(x$gt) - length(x$coef))
 	ntest <- noquote(paste("Over-identifying restrictions tests: degrees of freedom is ", df, sep = ""))
 	vptest <- pchisq(test,df,lower.tail = FALSE)
+        if (df == 0)
+            vptest[] <- "###"
 	test <- cbind(test,vptest)
 	dimnames(test) <- list(c("LR test", "LM test", "J test"), c("statistics", "p-value"))	
 	ans <- list(test = test, ntest = ntest)

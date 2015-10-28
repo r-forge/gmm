@@ -674,14 +674,7 @@ momentEstim.baseGel.modFormula <- function(object, ...)
         G <- G/P$k1
         kg <- solve(khat, G)
         z$vcov_par <- solve(crossprod(G, kg))/n
-        if (length(z$lambda) == length(z$coefficients))
-            {
-                z$vcov_lambda <- matrix(NA, rep(length(z$lambda), 2))
-                z$lambda <- rep(NA, length(z$lambda))
-                z$specMod <- paste(z$specMod, "\n Just identified model; no lambda nor specification test needed\n", sep="")
-            } else {
-                z$vcov_lambda <- solve(khat, ( diag(ncol(khat)) - G %*% (z$vcov_par*n) %*% t(kg) ))/n*P$bwVal^2
-            }
+        z$vcov_lambda <- solve(khat, ( diag(ncol(khat)) - G %*% (z$vcov_par*n) %*% t(kg) ))/n*P$bwVal^2
   
         z$weights <- P$w
         z$bwVal <- P$bwVal

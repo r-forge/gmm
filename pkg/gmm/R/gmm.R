@@ -80,38 +80,39 @@ z
 }
 
 tsls <- function(g,x,data)
-{
-if(class(g) != "formula")
-	stop("2SLS is for linear models expressed as formula only")
-ans <- gmm(g,x,data=data,vcov="iid")
-ans$met <- "Two Stage Least Squares"
-ans$call <- match.call()
-class(ans) <- c("tsls","gmm")
-return(ans)
-}
+    {
+        if(class(g) != "formula")
+            stop("2SLS is for linear models expressed as formula only")
+        ans <- gmm(g,x,data=data,vcov="iid")
+        ans$met <- "Two Stage Least Squares"
+        ans$call <- match.call()
+        class(ans) <- c("tsls","gmm")
+        return(ans)
+    }
 
 
 .myKernHAC <- function(gmat, obj)
-	{
+    {
+        gmat <- as.matrix(gmat)
         if(obj$centeredVcov) 
-          gmat <- lm(gmat~1)
+            gmat <- lm(gmat~1)
         else
-          class(gmat) <- "gmmFct"
+            class(gmat) <- "gmmFct"
 	AllArg <- obj$WSpec$sandwich
 	AllArg$x <- gmat
 	if (is.function(AllArg$bw))
-		{
+            {
 		bw <- AllArg$bw(gmat, order.by = AllArg$order.by, kernel = AllArg$kernel, 
-			prewhite = AllArg$prewhite, ar.method = AllArg$ar.method)
+                                prewhite = AllArg$prewhite, ar.method = AllArg$ar.method)
 		AllArg$bw <- bw
-		}
+            }
 	weights <- do.call(weightsAndrews,AllArg)
 	AllArg$sandwich <- FALSE
 	AllArg$weights <- weights
 	w <- do.call(vcovHAC, AllArg)
 	attr(w,"Spec") <- list(weights = weights, bw = AllArg$bw, kernel = AllArg$kernel)
 	w
-	}
+    }
 
 getDat <- function (formula, h, data) 
 {
@@ -127,13 +128,15 @@ getDat <- function (formula, h, data)
 	y <- as.matrix(model.response(mf, "numeric"))
 	xt <- as.matrix(model.matrix(mt, mf, NULL))
         n <- NROW(y)
-
 	if (inherits(h,'formula'))
-		{
+            {
+                tmp <- as.character(formula)
+                h <- paste(tmp[2], "~", as.character(h)[2], sep="")
+                h <- as.formula(h)
 		mfh <- match.call(expand.dots = FALSE)
 		mh <- match(c("h", "data"), names(mfh), 0L)
 		mfh <- mfh[c(1L, mh)]
-		mfh$formula <- mfh$h
+		mfh$formula <- h
 		mfh$h <- NULL
 		mfh$drop.unused.levels <- TRUE
 		mfh$na.action <- "na.pass"
@@ -141,19 +144,11 @@ getDat <- function (formula, h, data)
 		mfh <- eval(mfh, parent.frame())
 		mth <- attr(mfh, "terms")
 		h <- as.matrix(model.matrix(mth, mfh, NULL))
-                if (length(h) == 0)
-                    {
-                        h <- as.matrix(rep(1,n))
-                        colnames(h) <- "h.(Intercept)"
-                    }                
 		}
 	else
-		{		
-		if (!is.matrix(h))
-			h <- cbind(rep(1,length(h)),h)
-		else	
-			h <- cbind(rep(1,nrow(h)),h)
-		h <- as.matrix(h)	
+            {
+                h <- as.matrix(h)
+		h <- cbind(1,h)
 		if(is.null(colnames(h)))
 			colnames(h) <- c("h.(Intercept)",paste("h",1:(ncol(h)-1),sep=""))
 		else
@@ -166,9 +161,6 @@ getDat <- function (formula, h, data)
 	ny <- ncol(y)
 	k <- ncol(xt)
 	nh <- ncol(h)
-
-	if (nrow(y) != nrow(xt) | nrow(xt) != nrow(h) | nrow(y)!=nrow(h))
-		stop("The number of observations of X, Y and H must be the same")
 	if (nh<k)
 		stop("The number of moment conditions must be at least equal to the number of coefficients to estimate")
 	if (is.null(colnames(y)))
@@ -378,7 +370,7 @@ getDat <- function (formula, h, data)
                 w <- attr(dat, "smooth")$w
                 gt <- smoothG(gt, bw = bw, weights = w)$smoothx
             }
-        return(gt)
+        return(as.matrix(gt))
     }
 
 .DmomentFct <- function(tet, dat, pt=NULL)
@@ -409,7 +401,7 @@ getDat <- function (formula, h, data)
                 if (!is.null(attr(dat, "eqConst")))
                     dgb <- dgb[,-attr(dat,"eqConst")$eqConst[,1], drop=FALSE]                
             }
-        return(dgb)
+        return(as.matrix(dgb))
     }
                 
 .weightFct <- function(tet, dat, type=c("HAC", "iid", "ident", "fct", "fixed")) 

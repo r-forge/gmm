@@ -68,10 +68,7 @@ getModel.baseGmm <- function(object, ...)
             {
                 object$gradv <- .DmomentFct
                 object$gradvf <- FALSE
-                if (is.null(object$data))
-                    dat <- getDat(object$g, object$x)
-                else
-                    dat <- getDat(object$g, object$x, object$data)
+                dat <- getDat(object$g, object$x, data = object$data)
                 if(is.null(object$weightsMatrix))
                     {
                         clname <- paste(class(object), ".", object$type, ".formula", sep = "")
@@ -81,11 +78,11 @@ getModel.baseGmm <- function(object, ...)
                     }
                 object$x <- dat
                 object$gform<-object$g
-                namex <- colnames(dat$x[,(dat$ny+1):(dat$ny+dat$k)])
-                nameh <- colnames(dat$x[,(dat$ny+dat$k+1):(dat$ny+dat$k+dat$nh)]) 
+                namex <- colnames(dat$x[,(dat$ny+1):(dat$ny+dat$k), drop=FALSE])
+                nameh <- colnames(dat$x[,(dat$ny+dat$k+1):(dat$ny+dat$k+dat$nh), drop=FALSE]) 
                 if (dat$ny > 1)
                     {
-                        namey <- colnames(dat$x[,1:dat$ny])
+                        namey <- colnames(dat$x[,1:dat$ny, drop=FALSE])
                         object$namesCoef <- paste(rep(namey, dat$k), "_", rep(namex, rep(dat$ny, dat$k)), sep = "")
                         object$namesgt <- paste(rep(namey, dat$nh), "_", rep(nameh, rep(dat$ny, dat$nh)), sep = "")
                     } else {
@@ -210,8 +207,8 @@ getModel.baseGel <- function(object, ...)
             object$gradvf <- FALSE
             object$x <- dat
             object$gform<-object$g
-            namex <- colnames(dat$x[,(dat$ny+1):(dat$ny+dat$k)])
-            nameh <- colnames(dat$x[,(dat$ny+dat$k+1):(dat$ny+dat$k+dat$nh)]) 
+            namex <- colnames(dat$x[,(dat$ny+1):(dat$ny+dat$k), drop=FALSE])
+            nameh <- colnames(dat$x[,(dat$ny+dat$k+1):(dat$ny+dat$k+dat$nh), drop=FALSE])
             if (dat$ny > 1)
                 {
                     namey <- colnames(dat$x[,1:dat$ny])

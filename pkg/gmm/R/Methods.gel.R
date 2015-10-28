@@ -75,13 +75,10 @@ print.gel <- function(x, digits = 5, ...)
 	cat("Coefficients:\n")
 	print.default(format(coef(x), digits = digits),
                       print.gap = 2, quote = FALSE)
-        if (length(x$coefficients)<length(x$lambda))
-            {
-                cat("\n")
-                cat("Lambdas:\n")
-                print.default(format(coef(x, lambda = TRUE), digits = digits),
-                              print.gap = 2, quote = FALSE)
-            }
+        cat("\n")
+        cat("Lambdas:\n")
+        print.default(format(coef(x, lambda = TRUE), digits = digits),
+                      print.gap = 2, quote = FALSE)
         cat("\n")
 	cat("Convergence code for the coefficients: ", x$conv_par,"\n")
         if (length(x$coefficients)<length(x$lambda))
