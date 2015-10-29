@@ -46,7 +46,7 @@ specTest.gel <- function(x, ...)
 	LM_test <- n*crossprod(x$lambda, crossprod(khat, x$lambda))/(x$bwVal^2)
 	J_test <- n*crossprod(gbar, solve(khat, gbar))/(x$k1^2)
 	test <- c(LR_test, LM_test, J_test)
-	df <- (ncol(x$gt) - length(x$coef))
+	df <- x$df
 	ntest <- noquote(paste("Over-identifying restrictions tests: degrees of freedom is ", df, sep = ""))
 	vptest <- pchisq(test,df,lower.tail = FALSE)
         if (df == 0)

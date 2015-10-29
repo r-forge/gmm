@@ -13,9 +13,12 @@ o There is now an evalGmm() function to create a gmm object with a given fixed v
   for the HAC estimator are generated. It is possible to give a different vector os parameters for the moment function and the weighting matrix.
 o There is also an evalGel(). You fix the parameters and only the lambda are computed.
 o Fixed NAMESPACE to avoid the notes given by CRAN.
-o Modified getDat to allow for ~1 as instruments. Useful for inference on the mean using empirical likelihood.
+o Modified getDat to allow for ~1 as instruments. Useful for inference on the mean using empirical likelihood with gel(x~1,~1).
 o The Lambdas and specTest from gel are printed even if the model is just identified. It is consitent with gmm which prints the j-test
-  for just identified models. The reason if to allow evalGel to generate the Lamdbas for testing purpose. 
+  for just identified models. The reason if to allow evalGel to generate the Lamdbas for testing purpose.
+o confint.gxx() has been modified. It now create an object and a print method has been created as well.
+o confint.gel includes the possibility of building a confidence interval using the inversion of one of the three specification tests.
+  It is therefore possible de construct an Empirical Likelihood confidence interval as described in Owen 2001. See manual.
 
 Changes in version 1.5-2
 

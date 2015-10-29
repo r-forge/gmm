@@ -599,8 +599,10 @@ momentEstim.baseGel.modFormula <- function(object, ...)
     {
         P <- object
         g <- P$g
-        q <- attr(object$x, "q")
-        n <- attr(object$x, "n")
+        q <- attr(P$x, "q")
+        n <- attr(P$x, "n")
+        k <- attr(P$x, "k")
+        df <- q-k*P$x$ny
         l0Env <- new.env()
         assign("l0",rep(0,q),envir=l0Env)
         if (!P$constraint)
@@ -638,6 +640,7 @@ momentEstim.baseGel.modFormula <- function(object, ...)
         z$CGEL <- P$CGEL
         z$typeDesc <- P$typeDesc
         z$specMod <- P$specMod
+        z$df <- df
 
         names(z$coefficients) <- object$namesCoef
         if (!is.null(object$namesgt))
@@ -659,7 +662,8 @@ momentEstim.baseGel.modFormula <- function(object, ...)
                 ncoef[eqConst[,1]] <- rownames(eqConst)
                 names(coef) <- ncoef
                 z$coefficients <- coef
-                attr(P$x, "k") <- attr(P$x, "k") + nrow(eqConst)        
+                attr(P$x, "k") <- attr(P$x, "k") + nrow(eqConst)
+                z$df <- z$df - nrow(eqConst)
                 attr(P$x,"eqConst") <- NULL
                 z$specMod <- paste(z$specMod, "** Note: Covariance matrix computed for all coefficients based on restricted values \n   Tests non-valid**\n\n")
             }
@@ -672,11 +676,23 @@ momentEstim.baseGel.modFormula <- function(object, ...)
         z$G <- G
         G <- G/P$k1
         kg <- solve(khat, G)
-        z$vcov_par <- solve(crossprod(G, kg))/n
+        z$vcov_par <- try(solve(crossprod(G, kg))/n, silent=TRUE)
+        if (class(z$vcov_par) == "try-error")
+            {
+                warning("Cannot compute the covariance matrix of the coefficients; matrix singular")
+                z$vcov_par <- matrix(NA, length(z$coefficients), length(z$coefficients))
+            }
         if (dim(G)[1] == dim(G)[2])
-            z$vcov_lambda <- matrix(0, dim(G))
-        else
-            z$vcov_lambda <- solve(khat, ( diag(ncol(khat)) - G %*% (z$vcov_par*n) %*% t(kg) ))/n*P$bwVal^2
+            {
+                z$vcov_lambda <- matrix(0, dim(G)[1], dim(G)[2])
+            } else {
+                z$vcov_lambda <- try(solve(khat, ( diag(ncol(khat)) - G %*% (z$vcov_par*n) %*% t(kg) ))/n*P$bwVal^2, silent=TRUE)
+                if (class(z$vcov_lambda) == "try-error")
+                    {
+                        warning("Cannot compute the covariance matrix of the lambdas; matrix singular")
+                        z$vcov_lambda <- matrix(NA, length(z$lambda), length(z$lambda))
+                    }
+            }
   
         z$weights <- P$w
         z$bwVal <- P$bwVal
@@ -703,6 +719,7 @@ momentEstim.baseGel.mod <- function(object, ...)
         x <- P$x
         q <- attr(x, "q")
         n <- attr(x, "n")
+        df <- q - attr(x, "k")
         l0Env <- new.env()
         assign("l0",rep(0,q),envir=l0Env)
         if (!P$constraint)
@@ -735,6 +752,7 @@ momentEstim.baseGel.mod <- function(object, ...)
         z$objective <- All$obj
         names(z$coefficients) <- P$namesCoef
         z$specMod <- P$specMod
+        z$df <- df
         if (!is.null(object$namesgt))
             {
                 colnames(z$gt) <- object$namesgt
@@ -753,7 +771,8 @@ momentEstim.baseGel.mod <- function(object, ...)
                 ncoef[eqConst[,1]] <- rownames(eqConst)
                 names(coef) <- ncoef
                 z$coefficients <- coef
-                attr(x, "k") <- attr(x, "k") + nrow(eqConst)        
+                attr(x, "k") <- attr(x, "k") +  nrow(eqConst)
+                z$df <- z$df -  nrow(eqConst)
                 attr(x,"eqConst") <- NULL
                 z$specMod <- paste(z$specMod, "** Note: Covariance matrix computed for all coefficients based on restricted values \n   Tests non-valid**\n\n")
             }
@@ -767,12 +786,23 @@ momentEstim.baseGel.mod <- function(object, ...)
         G <- G/P$k1 
         
         kg <- solve(khat, G)
-        z$vcov_par <- solve(crossprod(G, kg))/n
+        z$vcov_par <- try(solve(crossprod(G, kg))/n, silent=TRUE)
+        if (class(z$vcov_par) == "try-error")
+            {
+                warning("Cannot compute the covariance matrix of the coefficients; matrix singular")
+                z$vcov_par <- matrix(NA, length(z$coefficients), length(z$coefficients))
+            }
         if (dim(G)[1] == dim(G)[2])
-            z$vcov_lambda <- matrix(0, dim(G))
-        else
-            z$vcov_lambda <- solve(khat, ( diag(ncol(khat)) - G %*% (z$vcov_par*n) %*% t(kg) ))/n*P$bwVal^2
-	
+            {
+                z$vcov_lambda <- matrix(0, dim(G)[1], dim(G)[2])
+            } else {
+                z$vcov_lambda <- try(solve(khat, ( diag(ncol(khat)) - G %*% (z$vcov_par*n) %*% t(kg) ))/n*P$bwVal^2, silent=TRUE)
+                if (class(z$vcov_lambda) == "try-error")
+                    {
+                        warning("Cannot compute the covariance matrix of the lambdas; matrix singular")
+                        z$vcov_lambda <- matrix(NA, length(z$lambda), length(z$lambda))
+                    }
+            }
         z$weights <- P$w
         z$bwVal <- P$bwVal
         names(z$bwVal) <- "Bandwidth"
@@ -960,6 +990,7 @@ momentEstim.baseGel.eval <- function(object, ...)
         z$typeDesc <- paste(P$typeDesc, " (Eval only, tests non-valid) ", sep="")
         z$specMod <- P$specMod
         names(z$coefficients) <- P$namesCoef
+        z$df <- length(z$lambda) - length(z$coefficients) 
         if (!is.null(object$namesgt))
             {
                 colnames(z$gt) <- object$namesgt
