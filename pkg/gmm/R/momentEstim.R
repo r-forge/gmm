@@ -783,8 +783,7 @@ momentEstim.baseGel.mod <- function(object, ...)
             G <- P$gradv(z$coefficients, x, z$pt)
         z$G <- G
         khat <- crossprod(c(z$pt)*z$gt, z$gt)/(P$k2)*P$bwVal
-        G <- G/P$k1 
-        
+        G <- G/P$k1
         kg <- solve(khat, G)
         z$vcov_par <- try(solve(crossprod(G, kg))/n, silent=TRUE)
         if (class(z$vcov_par) == "try-error")

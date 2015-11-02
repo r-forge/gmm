@@ -16,6 +16,88 @@ getModel <- function(object, ...)
         UseMethod("getModel")
     }
 
+getModel.sysGmm <- function(object, ...)
+    {
+        object$allArg <- c(object, list(...))
+        if (!is.list(object$g))
+            stop("g must be list of formulas")
+        if (length(object$g) == 1)
+            stop("For single equation GMM, use the function gmm()")
+        if (!all(sapply(1:length(object$g), function(i) is(object$g[[i]], "formula"))))
+            stop("g must be a list of formulas")
+        if (!is.list(object$h))
+            {
+                if(!is(object$h, "formula"))
+                    stop("h is either a list of formulas or a formula")
+                else
+                    object$h <- list(object$h)
+            } else {
+                if (!all(sapply(1:length(object$h), function(i) is(object$h[[i]], "formula"))))
+                    stop("h is either a list of formulas or a formula")
+            }
+        if (length(object$h) == 1)
+            {
+                dat <- lapply(1:length(object$g), function(i) try(getDat(object$g[[i]], object$h[[1]], data = object$data), silent=TRUE))
+                typeDesc <- "System Gmm with common instruments"
+            } else {
+                if (length(object$h) != length(object$g))
+                    stop("The number of formulas in h should be the same as the number of formulas in g, \nunless the instruments are the same in each equation, \nin which case the number of equation in h should be 1")                    
+                dat <- lapply(1:length(object$g), function(i) try(getDat(object$g[[i]], object$h[[i]], data = object$data), silent=TRUE))
+                typeDesc <- "System Gmm"
+            }
+        if (is.null(names(object$g)))
+            names(dat) <- paste("System_", 1:length(dat), sep="")
+        else
+            names(dat) <- names(object$g)        
+#### Need to set the gradiant function ####        object$gradv <- .DmomentFct
+        if (length(object$h) == 1)
+            dat <- lapply(1:length(object$g), function(i) try(getDat(object$g[[i]], object$h[[1]], data = object$data), silent=TRUE))
+        for (i in 1:length(dat))
+            {
+                if (class(dat[[i]]) == "try-error")
+                    {
+                        cat("\nSystem of equations:", i, "\n###############\n", sep="")
+                        stop(dat[[i]])
+                    }
+            }
+        if (!all(sapply(1:length(dat), function(i) dat[[i]]$ny == 1)))
+            stop("The number of dependent variable must be one in every equation")
+        
+#### What to do with fixed weights???        
+#                if(is.null(object$weightsMatrix))
+#                    {
+#                        clname <- paste(class(object), ".", object$type, ".formula", sep = "")
+#                    } else {    
+#                        clname <- "fixedW.formula"
+#                        object$type <- "One step GMM with fixed W"
+#                    }
+        clname <- "sysGmm.formula"
+        object$x <- dat
+        namex <- lapply(1:length(dat), function(i) colnames(dat[[i]]$x[,2:(1+dat[[i]]$k), drop=FALSE]))
+        nameh <- lapply(1:length(dat), function(i) colnames(dat[[i]]$x[,(2+dat$k):(1+dat[[i]]$k+dat[[i]]$nh), drop=FALSE]))
+        namey <- lapply(1:length(dat), function(i) colnames(dat[[i]]$x[,1, drop=FALSE]))
+        object$namesCoef <- do.call(c, namex)
+        object$namesgt <- do.call(c, nameh)
+        object$namesy <- do.call(c, namey)
+        attr(object$x,"ModelType") <- "linear"
+        attr(object$x, "k") <- length(object$namesCoef)
+        attr(object$x, "q") <- length(object$namesgt)
+        attr(object$x, "n") <- NROW(object$x[[1]]$x)
+        object$TypeGmm <- class(object)
+        attr(object$x, "weight") <- list(w=object$weightsMatrix,
+                                         centeredVcov=object$centeredVcov)
+        attr(object$x, "weight")$WSpec <- list()
+        attr(object$x, "weight")$WSpec$sandwich <- list(kernel = object$kernel, bw = object$bw,
+                                                        prewhite = object$prewhite,
+                                                        ar.method = object$ar.method,
+                                                        approx = object$approx, tol = object$tol)
+        attr(object$x, "weight")$vcov <- object$vcov
+        object$g <- .momentFct
+        class(object)  <- clname
+        return(object)
+    }
+
+
 getModel.constGmm <- function(object, ...)
     {
         class(object) <- "baseGmm"
@@ -63,7 +145,8 @@ getModel.constGmm <- function(object, ...)
 
 getModel.baseGmm <- function(object, ...)
     {
-        object$allArg <- c(object, list(...))
+        
+        object$allArg <- c(object, list(...))        
         if(is(object$g, "formula"))
             {
                 object$gradv <- .DmomentFct

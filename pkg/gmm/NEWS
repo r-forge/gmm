@@ -19,6 +19,7 @@ o The Lambdas and specTest from gel are printed even if the model is just identi
 o confint.gxx() has been modified. It now create an object and a print method has been created as well.
 o confint.gel includes the possibility of building a confidence interval using the inversion of one of the three specification tests.
   It is therefore possible de construct an Empirical Likelihood confidence interval as described in Owen 2001. See manual.
+o On the process to create a sysGmm for system og linear equations. The function sysGmm() will do the job. Not yet working.
 
 Changes in version 1.5-2
 
