@@ -17,6 +17,102 @@ momentEstim <- function(object, ...)
         UseMethod("momentEstim")
     }
 
+momentEstim.sysGmm.twoStep.formula <- function(object, ...)
+    {
+        dat <- object$x        
+        if (attr(dat, "sysInfo")$commonCoef)
+            {
+                ## Getting first step estimate ##                
+                y <- lapply(1:length(dat), function(i) dat[[i]]$x[,1])
+                y <- do.call(c, y)
+                x <- lapply(1:length(dat), function(i) dat[[i]]$x[,2:(dat[[i]]$k+1)])
+                x <- do.call(rbind, x)
+                z <- lapply(1:length(dat), function(i)
+                    dat[[i]]$x[,(2+dat[[i]]$k):ncol(dat[[i]]$x)])
+                z <- .diagMatrix(z)
+                names(y) <- dimnames(x) <- dimnames(z) <- NULL
+                data <- list(y=y, x=x, z=z)
+                dat2 <- getDat(y~x-1, ~z-1, data=data)
+                attr(dat2, "ModelType") <- "linear"
+                res0 <- .tetlin(dat2, 1, "2sls")
+                tet0 <- res0$par
+                fsRes <- res0$Res
+                #tet0 <- tsls(y~x-1, ~z-1, data=data)$coefficients
+                tet0 <- rep(list(tet0), length(dat))
+                ## Getting the weights                
+                w <- .weightFct_Sys(tet=tet0, dat=dat, type=object$vcov)
+                res <- .tetlin(dat2, w)
+                res$par <- c(res$par)
+                par <- list()
+                for (i in 1:length(dat))
+                    {
+                        par[[i]] <- res$par
+                        names(par[[i]]) <- object$namesCoef[[i]]
+                    }
+                names(par) <- names(dat)
+                df <- ncol(z) - ncol(x)
+                k <- ncol(x)
+                q <- ncol(z)
+                n <- nrow(dat[[1]]$x)
+                df.residuals <- n - k
+            } else {
+                ## Getting first step estimate ##
+                res0 <- lapply(1:length(dat), function(i) tsls(object$formula$g[[i]], object$formula$h[[i]], data=object$data))
+                tet0 <- lapply(1:length(dat), function(i) res0[[i]]$coefficients)
+                fsRes <- lapply(1:length(dat), function(i) res0[[i]]$fsRes)
+                                        # Getting the weights
+                w <- .weightFct_Sys(tet=tet0, dat=dat, type=object$vcov)
+                y <- lapply(1:length(dat), function(i) dat[[i]]$x[,1])
+                y <- do.call(c, y)
+                x <- lapply(1:length(dat), function(i) dat[[i]]$x[,2:(dat[[i]]$k+1)])
+                x <- .diagMatrix(x)
+                z <- lapply(1:length(dat), function(i)
+                    dat[[i]]$x[,(2+dat[[i]]$k):ncol(dat[[i]]$x)])
+                z <- .diagMatrix(z)
+                names(y) <- dimnames(x) <- dimnames(z) <- NULL
+                data <- list(y=y, x=x, z=z)
+                dat2 <- getDat(y~x-1, ~z-1, data=data)
+                attr(dat2, "ModelType") <- "linear"
+                res <- .tetlin(dat2, w)
+                par <- list()
+                k <- attr(dat, "sysInfo")$k
+                for (i in 1:length(dat))
+                    {
+                        par[[i]] <- res$par[1:k[[i]]]
+                        names(par[[i]]) <- object$namesCoef[[i]]
+                        res$par <- res$par[-(1:k[[i]])]
+                    }
+                names(par) <- names(dat)
+                df <- ncol(z) - ncol(x)
+                k <- ncol(x)
+                q <- ncol(z)
+                n <- nrow(dat[[1]]$x)
+                df.residuals <- n - k                
+            }
+        z = list(coefficients = par, objective = res$value, dat=dat, k=k, q=q, df=df, df.residual=df.residual, n=n)	
+        z$gt <- object$g(z$coefficients, dat)
+        z$initTheta <- tet0
+        tmp <- lapply(1:length(dat), function(i) .residuals(z$coefficients[[i]], dat[[i]]))
+        z$fitted.values <- lapply(1:length(dat), function(i) tmp[[i]]$yhat)                      
+        z$residuals <- lapply(1:length(dat), function(i) tmp[[i]]$residuals)	
+        z$terms <- lapply(1:length(dat), function(i) dat[[i]]$mt)
+        if(object$model) z$model <- lapply(1:length(dat), function(i) dat[[i]]$mf)
+        if(object$X) z$x <- lapply(1:length(dat), function(i)
+            as.matrix(dat[[i]]$x[,(dat[[i]]$ny+1):(dat[[i]]$ny+dat[[i]]$k)]))
+        if(object$Y) z$y <- lapply(1:length(dat), function(i) as.matrix(dat[[i]]$x[,1:dat[[i]]$ny]))
+        z$gradv <- object$gradv
+        z$g <- object$g
+        z$WSpec <- object$WSpec
+        z$w0 <- w
+        colnames(z$gt) <- do.call(c, object$namesgt)
+        z$fsRes <- fsRes        
+        class(z) <- "sysGmm.res"
+        z$specMod <- object$specMod
+        return(z)	        
+    }
+
+
+
 momentEstim.baseGmm.eval <- function(object, ...)
     {
         P <- object
@@ -177,6 +273,52 @@ momentEstim.baseGmm.twoStep <- function(object, ...)
         z$w0 <- w
         return(z)
     }
+
+
+momentEstim.tsls.twoStep.formula <- function(object, ...)
+    {
+        P <- object
+        g <- P$g
+        dat <- P$x
+        if (dat$ny > 1)
+            stop("tsls is for one dimentional dependent variable")
+        n <- attr(dat, "n")
+        q <- attr(dat, "q")
+        k <- attr(dat, "k")
+        k2 <- k*dat$ny
+        df <- q-k*dat$ny
+        w = .weightFct(NULL, dat, "ident")
+        if (q == k2)
+            {
+                res2 <- .tetlin(dat, w)
+                z = list(coefficients = res2$par, objective = res2$value, dat = dat, k = k,
+                    k2 = k2, n = n, q = q, df = df, df.residual = (n-k))
+            } else {
+                res2 <- .tetlin(dat, w, type="2sls")
+                z = list(coefficients = res2$par, objective = res2$value, dat=dat, k=k, k2=k2,
+                    n=n, q=q, df=df, df.residual = (n-k))	
+            }
+        z$gt <- g(z$coefficients, dat) 
+        tmp <- .residuals(z$coefficients, dat)
+        z$fitted.values <- tmp$yhat	
+        z$residuals <- tmp$residuals	
+        z$terms <- dat$mt
+        if(P$model) z$model <- dat$mf
+        if(P$X) z$x <- as.matrix(dat$x[,(dat$ny+1):(dat$ny+dat$k)])
+        if(P$Y) z$y <- as.matrix(dat$x[,1:dat$ny])
+        z$gradv <- P$gradv
+        z$iid <- P$iid
+        z$g <- P$g
+        z$WSpec <- P$WSpec
+        z$w0 <- w
+        names(z$coefficients) <- P$namesCoef
+        colnames(z$gt) <- P$namesgt        
+        z$fsRes <- res2$fsRes        
+        class(z) <- "baseGmm.res"
+        z$specMod <- P$specMod
+        return(z)	
+    }
+
 
 momentEstim.baseGmm.twoStep.formula <- function(object, ...)
     {

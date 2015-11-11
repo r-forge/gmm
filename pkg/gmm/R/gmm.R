@@ -11,7 +11,7 @@
 #  A copy of the GNU General Public License is available at
 #  http://www.r-project.org/Licenses/
 
-gmm <- function(g,x,t0=NULL,gradv=NULL, type=c("twoStep","cue","iterative"), wmatrix = c("optimal","ident"),  vcov=c("HAC","iid","TrueFixed"), 
+gmm <- function(g,x,t0=NULL,gradv=NULL, type=c("twoStep","cue","iterative"), wmatrix = c("optimal","ident"),  vcov=c("HAC","MDS","iid","TrueFixed"), 
                 kernel=c("Quadratic Spectral","Truncated", "Bartlett", "Parzen", "Tukey-Hanning"),crit=10e-7,bw = bwAndrews, 
                 prewhite = FALSE, ar.method = "ols", approx="AR(1)",tol = 1e-7, itermax=100,optfct=c("optim","optimize","nlminb", "constrOptim"),
                 model=TRUE, X=FALSE, Y=FALSE, TypeGmm = "baseGmm", centeredVcov = TRUE, weightsMatrix = NULL, traceIter = FALSE, data, eqConst = NULL, 
@@ -46,22 +46,65 @@ gmm <- function(g,x,t0=NULL,gradv=NULL, type=c("twoStep","cue","iterative"), wma
         z
     }
 
-sysGmm <- function(g, h, type=c("twoStep","cue","iterative"), wmatrix = c("optimal","ident"),  vcov=c("HAC","mdf","TrueFixed"), 
-                kernel=c("Quadratic Spectral","Truncated", "Bartlett", "Parzen", "Tukey-Hanning"),crit=10e-7,bw = bwAndrews, 
-                prewhite = FALSE, ar.method = "ols", approx="AR(1)",tol = 1e-7, itermax=100,optfct=c("optim","optimize","nlminb", "constrOptim"),
-                model=TRUE, X=FALSE, Y=FALSE, centeredVcov = TRUE, weightsMatrix = NULL, traceIter = FALSE, data, eqConst = NULL, 
-                eqConstFullVcov = FALSE, ...)
+five <- function(g, h, commonCoef = FALSE, data = NULL)
     {
-        type <- match.arg(type)
+        res  <- sysGmm(g, h, wmatrix = "optimal", vcov = "CondHom", commonCoef=commonCoef, data=data)
+        attr(res$dat, "sysInfo")$typeDesc <- "Full-Information IV (FIVE)"
+        res$call <- match.call()
+        res
+    }
+
+threeSLS <- function(g, h, commonCoef = FALSE, data = NULL)
+    {
+        if (!is(h, "formula"))
+            if (length(h) != 1)
+                stop("In 3SLS, h is a single equation since the same instruments are used in each equation")
+        res <- sysGmm(g, h, vcov = "CondHom", commonCoef=commonCoef, data=data)
+        attr(res$dat, "sysInfo")$typeDesc <- "3-stage Least Squares"
+        res$call <- match.call()
+        res
+    }
+sur <- function(g, commonCoef = FALSE, data = NULL)
+    {
+        if (!is.list(g))
+            stop("g must be list of formulas")
+        if (length(g) == 1)
+            stop("For single equation GMM, use the function gmm()")
+        if (!all(sapply(1:length(g), function(i) is(g[[i]], "formula"))))
+            stop("g must be a list of formulas")
+        tm <- lapply(1:length(g), function(i) terms(g[[i]]))
+        reg <- lapply(1:length(g), function(i) attr(tm[[i]], "term.labels"))
+        reg <- unique(do.call(c,reg))
+        h <- paste(reg, collapse = "+")
+        if (all(sapply(1:length(g), function(i) attr(tm[[i]], "intercept") == 0)))
+            h <- paste(h, "-1")
+        h <- as.formula(paste("~", h))
+        res <- sysGmm(g, h, vcov = "CondHom", commonCoef=commonCoef, data=data)
+        attr(res$dat, "sysInfo")$typeDesc <- "Seemingly Unrelated Regression (SUR)"
+        res$call <- match.call()        
+        res
+        }
+            
+randEffect <- function(g, data = NULL)
+    {
+        res <- sur(g, commonCoef = TRUE, data = data)
+        attr(res$dat, "sysInfo")$typeDesc <- "Random Effect Estimator"
+        res$call <- match.call()        
+        res
+    }
+
+
+sysGmm <- function(g, h, wmatrix = c("optimal","ident"),
+                   vcov=c("MDS", "HAC", "CondHom", "TrueFixed"), 
+                   kernel=c("Quadratic Spectral","Truncated", "Bartlett", "Parzen", "Tukey-Hanning"),
+                   crit=10e-7,bw = bwAndrews, prewhite = FALSE, ar.method = "ols", approx="AR(1)",tol = 1e-7,
+                   model=TRUE, X=FALSE, Y=FALSE, centeredVcov = TRUE, weightsMatrix = NULL,
+                   data, commonCoef = FALSE)
+    {
         kernel <- match.arg(kernel)
         vcov <- match.arg(vcov)
         wmatrix <- match.arg(wmatrix)
-        optfct <- match.arg(optfct)
-
-        if (!is.null(eqConst))
-            TypeGmm <- "constSysGmm"
-        else
-            TypeGmm = "sysGmm"
+        TypeGmm = "sysGmm"
 
         if(vcov=="TrueFixed" & is.null(weightsMatrix))
             stop("TrueFixed vcov only for fixed weighting matrix")
@@ -69,16 +112,15 @@ sysGmm <- function(g, h, type=c("twoStep","cue","iterative"), wmatrix = c("optim
             wmatrix <- "optimal"
         if(missing(data))
             data<-NULL
-        all_args<-list(data = data, g = g, h = h, type = type, wmatrix = wmatrix, vcov = vcov, kernel = kernel,
+        all_args<-list(data = data, g = g, h = h, wmatrix = wmatrix, vcov = vcov, kernel = kernel,
                        crit = crit, bw = bw, prewhite = prewhite, ar.method = ar.method, approx = approx, 
-                       weightsMatrix = weightsMatrix, centeredVcov = centeredVcov, tol = tol, itermax = itermax, 
-                       optfct = optfct, model = model, X = X, Y = Y, call = match.call(), traceIter = traceIter, 
-                       eqConst = eqConst, eqConstFullVcov = eqConstFullVcov)
+                       weightsMatrix = weightsMatrix, centeredVcov = centeredVcov, tol = tol, 
+                       model = model, X = X, Y = Y, call = match.call(), commonCoef=commonCoef)
         class(all_args)<-TypeGmm
-        Model_info<-getModel(all_args, ...)
-        z <- momentEstim(Model_info, ...)
+        Model_info<-getModel(all_args)
+        z <- momentEstim(Model_info)
         z <- FinRes(z, Model_info)
-        z
+        return(z)
     }
 
 
@@ -118,7 +160,7 @@ tsls <- function(g,x,data)
     {
         if(class(g) != "formula")
             stop("2SLS is for linear models expressed as formula only")
-        ans <- gmm(g,x,data=data,vcov="iid")
+        ans <- gmm(g,x,data=data,vcov="iid", TypeGmm="tsls")
         ans$met <- "Two Stage Least Squares"
         ans$call <- match.call()
         class(ans) <- c("tsls","gmm")
@@ -161,6 +203,9 @@ getDat <- function (formula, h, data)
     mf <- eval(mf, parent.frame())
     mt <- attr(mf, "terms")
     y <- as.matrix(model.response(mf, "numeric"))
+    namey <- as.character(formula)[2]
+    if (ncol(y)>1)
+        namey <- paste(namey, ".", 1:ncol(y), sep="")
     xt <- as.matrix(model.matrix(mt, mf, NULL))
     n <- NROW(y)
     if (inherits(h,'formula'))
@@ -199,12 +244,7 @@ getDat <- function (formula, h, data)
     if (nh<k)
         stop("The number of moment conditions must be at least equal to the number of coefficients to estimate")
     if (is.null(colnames(y)))
-        {
-            if (ny>1) 
-                colnames(y) <- paste("y",1:ncol(y),sep="")
-            if (ny == 1) 
-                colnames(y) <- "y"
-        }
+                colnames(y) <- namey
     rownames(xt) <- rownames(y)
     rownames(h) <- rownames(y)
     x <- cbind(y,xt,h)
@@ -218,7 +258,6 @@ getDat <- function (formula, h, data)
     colnames(x)<-c(colnames(y),colnames(xt),colnames(h))
     return(list(x=x,nh=nh,ny=ny,k=k,mf=mf,mt=mt,cl=cl))
 }
-
 
 .tetlin <- function(dat, w, type=NULL)
     {
@@ -372,6 +411,21 @@ getDat <- function (formula, h, data)
         return(obj)
     }	
 
+.momentFct_Sys <- function(tet, dat)
+    {
+        q <- length(dat)
+        f <- function(i, dat)
+            {
+                d <- dat[[i]]
+                attr(d, "eqConst") <- attr(dat, "eqConst")
+                attr(d, "ModelType") <- attr(dat, "ModelType")
+                attr(d,"momentfct")  <- attr(dat,"momentfct")
+                attr(d, "smooth") <- attr(dat, "smooth")
+                .momentFct(tet[[i]], d)
+            }
+        mom <- lapply(1:q, function(i) f(i, dat))
+        do.call(cbind, mom)
+    }
 
 .momentFct <- function(tet, dat)
     {
@@ -408,6 +462,25 @@ getDat <- function (formula, h, data)
         return(as.matrix(gt))
     }
 
+.DmomentFct_Sys <- function(tet, dat, pt=NULL)
+    {
+        q <- length(dat)
+        f <- function(i, dat)
+            {
+                d <- dat[[i]]
+                attr(d, "eqConst") <- attr(dat, "eqConst")
+                attr(d, "ModelType") <- attr(dat, "ModelType")
+                attr(d,"momentfct")  <- attr(dat,"momentfct")
+                attr(d, "smooth") <- attr(dat, "smooth")
+                .DmomentFct(tet[[i]], d, pt)
+            }        
+        dmom <- lapply(1:q, function(i) f(i, dat))
+        if (attr(dat, "sysInfo")$commonCoef)
+            do.call(rbind,dmom)
+        else
+            .diagMatrix(dmom)
+    }
+
 .DmomentFct <- function(tet, dat, pt=NULL)
     {
         if (!is.null(attr(dat, "eqConst")))
@@ -441,7 +514,7 @@ getDat <- function (formula, h, data)
         return(as.matrix(dgb))
     }
 
-.weightFct <- function(tet, dat, type=c("HAC", "iid", "ident", "fct", "fixed")) 
+.weightFct <- function(tet, dat, type=c("HAC", "MDS", "iid", "ident", "fct", "fixed")) 
     {
         type <- match.arg(type)
         if (type == "fixed")
@@ -466,15 +539,83 @@ getDat <- function (formula, h, data)
                 w <- .myKernHAC(gt, obj)
                 attr(w, "inv") <- TRUE
             }
-        if (type == "iid")
+        if (type == "MDS")
             {
                 w <- crossprod(gt)/n
                 attr(w, "inv") <- TRUE
             }
+        if (type == "iid")
+            {
+                if ((attr(dat, "ModelType") == "linear") & (dat$ny == 1))
+                    {
+                        e <- .residuals(tet, dat)$residuals
+                        sig <- mean(scale(e,scale=FALSE)^2)
+                        z <- dat$x[,(1+dat$ny+dat$k):ncol(dat$x)]
+                        w <- sig*crossprod(z)/length(e)
+                    } else {
+                        w <- crossprod(gt)/n
+                    }
+                attr(w, "inv") <- TRUE
+            }        
         if (type == "fct")
             {
                 w <- attr(dat, "weight")$fct(gt, attr(dat, "weight")$fctArg)
                 attr(w, "inv") <- TRUE
+            }
+        return(w)
+    }
+
+
+.weightFct_Sys<- function(tet, dat, type=c("MDS", "HAC", "CondHom", "ident", "fct", "fixed")) 
+    {
+        type <- match.arg(type)
+        if (type == "fixed")
+            {
+                w <- attr(dat, "weight")$w
+                attr(w, "inv") <- FALSE
+            } else if (type == "ident") {
+                w <- diag(attr(dat, "q"))
+                attr(w, "inv") <- FALSE
+            } else {
+                if (type == "HAC")
+                    {
+                        gt <- .momentFct_Sys(tet,dat)
+                        if(attr(dat, "weight")$centeredVcov)
+                            gt <- residuals(lm(gt~1))
+                        n <- NROW(gt)
+                        obj <- attr(dat, "weight")
+                        obj$centeredVcov <- FALSE
+                        w <- .myKernHAC(gt, obj)
+                        attr(w, "inv") <- TRUE
+                    }
+                if (type == "MDS")
+                    {
+                        gt <- .momentFct_Sys(tet,dat)
+                        n <- NROW(gt)
+                        if(attr(dat, "weight")$centeredVcov)
+                            gt <- scale(gt, scale=FALSE)
+                        w <- crossprod(gt)/n
+                        attr(w, "inv") <- TRUE
+                    }
+                if (type == "CondHom")
+                    {
+                        e <- lapply(1:length(dat), function(i) .residuals(tet[[i]], dat[[i]])$residuals)
+                        e <- do.call(cbind, e)
+                        Sig <- crossprod(scale(e, scale=FALSE))/nrow(e)
+                        Z <- lapply(1:length(dat), function(i) dat[[i]]$x[,(2+dat[[i]]$k):ncol(dat[[i]]$x)])
+                        Z <- do.call(cbind, Z)
+                        w <- crossprod(Z)/nrow(e)
+                        for (i in 1:length(dat))
+                            for (j in 1:length(dat))
+                                {
+                                    s1 <- 1+(i-1)*dat[[i]]$nh
+                                    e1 <- i*dat[[i]]$nh
+                                    s2 <- 1+(j-1)*dat[[j]]$nh
+                                    e2 <- j*dat[[j]]$nh
+                                    w[s1:e1, s2:e2] <- w[s1:e1, s2:e2]*Sig[i,j]
+                                }
+                        attr(w, "inv") <- TRUE
+                    }
             }
         return(w)
     }
@@ -496,6 +637,25 @@ getDat <- function (formula, h, data)
         yhat <- x%*%tet2
         e <- y-yhat
         return(list(residuals=e, yhat=yhat))
+    }
+                
+.diagMatrix <- function(xlist)
+    {
+        # Create block diagonal matrix from matrices with the same number of rows.
+        m <- length(xlist)
+        n <- NROW(xlist[[1]])
+        l <- sapply(1:m, function(i) dim(as.matrix(xlist[[i]])))
+        dimX <- rowSums(l)
+        X <- matrix(0, dimX[1], dimX[2])
+        for (i in 1:m)
+            {
+                s1 <- 1 + (i-1)*n
+                e1 <- n*i
+                s2 <- 1 + sum(l[2,][-(i:m)])
+                e2 <- sum(l[2,][1:i])
+                X[s1:e1, s2:e2] <- xlist[[i]]
+            }
+        X
     }
 
 

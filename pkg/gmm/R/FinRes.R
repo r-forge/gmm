@@ -23,7 +23,6 @@ FinRes.baseGmm.res <- function(z, object, ...)
         P <- object
         x <- z$dat
         n <- ifelse(is.null(nrow(z$gt)),length(z$gt),nrow(z$gt))
-        
         if (!is.null(attr(x,"eqConst")) & P$allArg$eqConstFullVcov)
             {
                 eqConst <- attr(x,"eqConst")$eqConst
@@ -109,6 +108,78 @@ FinRes.baseGmm.res <- function(z, object, ...)
         z$kernel <- P$kernel
         z$coefficients <- c(z$coefficients)
         class(z) <- "gmm"
+        return(z)
+    }
+
+FinRes.sysGmm.res <- function(z, object, ...)
+    {
+        P <- object
+        x <- z$dat
+        z$G <- z$gradv(z$coefficients, x)
+        n <- z$n
+        G <- z$G
+        v <- .weightFct_Sys(z$coefficient, x, P$vcov)
+        nk <- z$k
+        z$v <- v
+        if (P$vcov == "TrueFixed") 
+            {
+                z$vcov=try(solve(crossprod(G, P$weightsMatrix) %*% G)/n, silent = TRUE)
+                if(class(z$vcov) == "try-error")
+                    {
+                        z$vcov <- matrix(Inf,nk,nk)
+                        warning("The covariance matrix of the coefficients is singular")
+                    }
+            } else if ( (is.null(P$weightsMatrix)) & (P$wmatrix != "ident") ) {
+                z$vcov <- try(solve(crossprod(G, solve(v, G)))/n, silent = TRUE)
+                if(class(z$vcov) == "try-error")
+                    {
+                        z$vcov <- matrix(Inf,nk,nk)
+                        warning("The covariance matrix of the coefficients is singular")
+                    }
+            } else {
+                if (is.null(P$weightsMatrix))
+                    w <- .weightFct_Sys(z$coefficients, x, "ident")
+                else
+                    w <- P$weightsMatrix
+                if (dim(G)[1] == dim(G)[2]){
+                    T1 <- try(solve(G), silent=TRUE)
+                } else {
+                    T1 <- try(solve(t(G)%*%w%*%G,t(G)%*%w), silent = TRUE)
+                }
+                if(class(T1) == "try-error")
+                    {
+                        z$vcov <- matrix(Inf, nk, nk)
+                        warning("The covariance matrix of the coefficients is singular")
+                    } else {
+                        z$vcov <- T1%*%v%*%t(T1)/n
+                    }
+            }        
+        if (attr(x, "sysInfo")$commonCoef)
+            dimnames(z$vcov) <- list(P$namesCoef[[1]], P$namesCoef[[1]])
+        else
+            dimnames(z$vcov) <- list(do.call(c, P$namesCoef), do.call(c, P$namesCoef))
+        z$call <- P$call        
+        if(is.null(P$weightsMatrix))
+            {
+                if(P$wmatrix == "ident")
+                    {
+                        z$w <- .weightFct_Sys(z$coefficient, x, "ident")
+                    } else {
+                        z$w <- try(solve(v), silent = TRUE)
+                        if(class(z$w) == "try-error")
+                            warning("The covariance matrix of the moment function is singular")
+                    }
+            } else {
+                z$w <- P$weightsMatrix
+            }
+        z$weightsMatrix <- P$weightsMatrix
+        z$infVcov <- P$vcov
+        z$infWmatrix <- P$wmatrix
+        z$allArg <- P$allArg
+        z$met <- paste("System of Equations: ", P$type, sep="")
+        z$kernel <- P$kernel
+        z$coefficients <- c(z$coefficients)
+        class(z) <- c("sysGmm", "gmm")
         return(z)
     }
 

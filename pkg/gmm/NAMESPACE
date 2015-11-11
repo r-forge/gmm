@@ -12,13 +12,18 @@ export(gmm,summary.gmm,smoothG,getDat,summary.gel,getLamb,gel, estfun.gmmFct, es
        momentEstim.baseGmm.cue, getModel.baseGmm, getModel.baseGel, getModel.constGmm, getModel.constGel,
        FinRes.baseGmm.res, momentEstim.baseGel.mod, momentEstim.baseGel.modFormula,tsls,summary.tsls, print.summary.tsls,
        KTest, print.gmmTests, gmmWithConst, estfun.tsls, model.matrix.tsls,vcov.tsls, bread.tsls, evalGmm, momentEstim.baseGmm.eval,
-       momentEstim.baseGel.eval, evalGel, confint.gmm, print.confint)
+       momentEstim.baseGel.eval, evalGel, confint.gmm, print.confint, sysGmm, getModel.sysGmm, momentEstim.sysGmm.twoStep.formula,
+       momentEstim.tsls.twoStep.formula, getModel.tsls, summary.sysGmm, print.sysGmm, print.summary.sysGmm,
+       sur, threeSLS, randEffect, five)
  
 S3method(summary, gmm)
+S3method(summary, sysGmm)
 S3method(summary, tsls)
 S3method(summary, gel)
 S3method(print, gmm)
+S3method(print, sysGmm)
 S3method(print, summary.gmm)
+S3method(print, summary.sysGmm)
 S3method(coef, gmm)
 S3method(vcov, gmm)
 S3method(vcov, tsls)
@@ -45,11 +50,15 @@ S3method(print, confint)
 S3method(FinRes, baseGmm.res)
 S3method(getModel, baseGmm)
 S3method(getModel, baseGel)
+S3method(getModel, sysGmm)
 S3method(getModel, constGmm)
 S3method(getModel, constGel)
+S3method(getModel, tsls)
 S3method(momentEstim, baseGmm.twoStep)
 S3method(momentEstim, baseGmm.eval)
 S3method(momentEstim, baseGmm.twoStep.formula)
+S3method(momentEstim, tsls.twoStep.formula)
+S3method(momentEstim, sysGmm.twoStep.formula)
 S3method(momentEstim, baseGmm.iterative.formula)
 S3method(momentEstim, baseGmm.iterative)
 S3method(momentEstim, baseGmm.cue.formula)

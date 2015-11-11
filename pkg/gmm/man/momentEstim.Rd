@@ -1,6 +1,8 @@
 \name{momentEstim}
 \alias{momentEstim.baseGmm.twoStep}
 \alias{momentEstim.baseGmm.twoStep.formula}
+\alias{momentEstim.sysGmm.twoStep.formula}
+\alias{momentEstim.tsls.twoStep.formula}
 \alias{momentEstim.baseGmm.iterative.formula}
 \alias{momentEstim.baseGmm.iterative}
 \alias{momentEstim.baseGmm.cue.formula}
@@ -16,6 +18,8 @@ It estimates a model which is caracterized by the method \code{getModel} (see de
 \usage{
 \method{momentEstim}{baseGmm.twoStep}(object, ...)
 \method{momentEstim}{baseGmm.twoStep.formula}(object, ...)
+\method{momentEstim}{sysGmm.twoStep.formula}(object, ...)
+\method{momentEstim}{tsls.twoStep.formula}(object, ...)
 \method{momentEstim}{baseGmm.iterative.formula}(object, ...)
 \method{momentEstim}{baseGmm.iterative}(object, ...)
 \method{momentEstim}{baseGmm.cue.formula}(object, ...)

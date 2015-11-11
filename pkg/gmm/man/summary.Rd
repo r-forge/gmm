@@ -1,8 +1,10 @@
 \name{summary}
 \alias{summary.gmm}
+\alias{summary.sysGmm}
 \alias{summary.gel}
 \alias{summary.tsls}
 \alias{print.summary.gmm}
+\alias{print.summary.sysGmm}
 \alias{print.summary.gel}
 \alias{print.summary.tsls}
 \title{Method for object of class gmm or gel}
@@ -11,9 +13,11 @@ It presents the results from the \code{gmm} or \code{gel} estimation in the same
 }
 \usage{
 \method{summary}{gmm}(object, ...)
+\method{summary}{sysGmm}(object, ...)
 \method{summary}{gel}(object, ...)
 \method{summary}{tsls}(object, vcov = NULL, ...)
 \method{print}{summary.gmm}(x, digits = 5, ...)
+\method{print}{summary.sysGmm}(x, digits = 5, ...)
 \method{print}{summary.gel}(x, digits = 5, ...)
 \method{print}{summary.tsls}(x, digits = 5, ...)
 }

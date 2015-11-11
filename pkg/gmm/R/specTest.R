@@ -26,6 +26,7 @@ specTest.gmm <- function(x, ...)
 	ans
 	}
 
+
 print.specTest <- function(x, digits=5, ...)
 	{
 	cat("\n","## ",x$ntest," ##","\n\n")

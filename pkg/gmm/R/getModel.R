@@ -16,9 +16,16 @@ getModel <- function(object, ...)
         UseMethod("getModel")
     }
 
+getModel.tsls <- function(object, ...)
+    {
+        obj <- getModel.baseGmm(object, ...)        
+        return(obj)
+    }
+
 getModel.sysGmm <- function(object, ...)
     {
         object$allArg <- c(object, list(...))
+        object$formula <- list(g=object$g, h=object$h)
         if (!is.list(object$g))
             stop("g must be list of formulas")
         if (length(object$g) == 1)
@@ -37,52 +44,52 @@ getModel.sysGmm <- function(object, ...)
             }
         if (length(object$h) == 1)
             {
-                dat <- lapply(1:length(object$g), function(i) try(getDat(object$g[[i]], object$h[[1]], data = object$data), silent=TRUE))
+                object$h <- rep(object$h, length(object$g))
                 typeDesc <- "System Gmm with common instruments"
+                typeInst <- "Common"
             } else {
                 if (length(object$h) != length(object$g))
-                    stop("The number of formulas in h should be the same as the number of formulas in g, \nunless the instruments are the same in each equation, \nin which case the number of equation in h should be 1")                    
-                dat <- lapply(1:length(object$g), function(i) try(getDat(object$g[[i]], object$h[[i]], data = object$data), silent=TRUE))
+                    stop("The number of formulas in h should be the same as the number of formulas in g, \nunless the instruments are the same in each equation, \nin which case the number of equations in h should be 1")                    
                 typeDesc <- "System Gmm"
+                typeInst <- "nonCommon"
             }
+        if (object$commonCoef)
+            typeDesc <- paste(typeDesc, " (Common Coefficients)")
+        dat <- lapply(1:length(object$g), function(i) try(getDat(object$g[[i]], object$h[[i]], data = object$data), silent=TRUE))
+        chk <- sapply(1:length(dat), function(i) class(dat[[i]]) == "try-error")
+        chk <- which(chk)
+        mess <- vector()
+        for (i in chk)
+            {
+                mess <- paste(mess, "\nSystem of equations:", i, "\n###############\n", sep="")
+                mess <- paste(mess, attr(dat[[i]], "condition")[[1]])
+            }
+        if (length(chk)>0)
+            stop(mess)
         if (is.null(names(object$g)))
             names(dat) <- paste("System_", 1:length(dat), sep="")
         else
             names(dat) <- names(object$g)        
-#### Need to set the gradiant function ####        object$gradv <- .DmomentFct
-        if (length(object$h) == 1)
-            dat <- lapply(1:length(object$g), function(i) try(getDat(object$g[[i]], object$h[[1]], data = object$data), silent=TRUE))
-        for (i in 1:length(dat))
-            {
-                if (class(dat[[i]]) == "try-error")
-                    {
-                        cat("\nSystem of equations:", i, "\n###############\n", sep="")
-                        stop(dat[[i]])
-                    }
-            }
+        object$gradv <- .DmomentFct_Sys
+        object$formula <- list(g=object$g, h=object$h)
         if (!all(sapply(1:length(dat), function(i) dat[[i]]$ny == 1)))
             stop("The number of dependent variable must be one in every equation")
         
-#### What to do with fixed weights???        
-#                if(is.null(object$weightsMatrix))
-#                    {
-#                        clname <- paste(class(object), ".", object$type, ".formula", sep = "")
-#                    } else {    
-#                        clname <- "fixedW.formula"
-#                        object$type <- "One step GMM with fixed W"
-#                    }
-        clname <- "sysGmm.formula"
+        clname <- "sysGmm.twoStep.formula"
         object$x <- dat
         namex <- lapply(1:length(dat), function(i) colnames(dat[[i]]$x[,2:(1+dat[[i]]$k), drop=FALSE]))
-        nameh <- lapply(1:length(dat), function(i) colnames(dat[[i]]$x[,(2+dat$k):(1+dat[[i]]$k+dat[[i]]$nh), drop=FALSE]))
+        nameh <- lapply(1:length(dat), function(i) colnames(dat[[i]]$x[,(2+dat[[i]]$k):(1+dat[[i]]$k+dat[[i]]$nh), drop=FALSE]))            
         namey <- lapply(1:length(dat), function(i) colnames(dat[[i]]$x[,1, drop=FALSE]))
-        object$namesCoef <- do.call(c, namex)
-        object$namesgt <- do.call(c, nameh)
-        object$namesy <- do.call(c, namey)
+        object$namesCoef <- namex
+        namesgt <- lapply(1:length(dat), function(i) paste(namey[[i]], "_", nameh[[i]], sep=""))
+        object$namesgt <- namesgt
+        object$namesy <- namey
         attr(object$x,"ModelType") <- "linear"
-        attr(object$x, "k") <- length(object$namesCoef)
-        attr(object$x, "q") <- length(object$namesgt)
-        attr(object$x, "n") <- NROW(object$x[[1]]$x)
+       #for (i in 1:length(object$x))
+        #    attr(object$x[[i]], c("linear")) <- attr(object$x, "modelType")
+        attr(object$x, "k") <- lapply(1:length(dat), function(i) length(object$namesCoef[[i]]))
+        attr(object$x, "q") <- lapply(1:length(dat), function(i) length(object$namesgt[[i]]))
+        attr(object$x, "n") <- lapply(1:length(dat), function(i) nrow(object$x[[i]]$x))
         object$TypeGmm <- class(object)
         attr(object$x, "weight") <- list(w=object$weightsMatrix,
                                          centeredVcov=object$centeredVcov)
@@ -92,7 +99,17 @@ getModel.sysGmm <- function(object, ...)
                                                         ar.method = object$ar.method,
                                                         approx = object$approx, tol = object$tol)
         attr(object$x, "weight")$vcov <- object$vcov
-        object$g <- .momentFct
+        k <- lapply(1:length(dat), function(i) dat[[i]]$k)
+        q <- lapply(1:length(dat), function(i) dat[[i]]$nh)
+        df <- lapply(1:length(dat), function(i) dat[[i]]$nh-dat[[i]]$k)
+        if (object$commonCoef)
+            {
+                k <- do.call(c,k)
+                if (!all(k==k[1]))
+                    stop("In a common coefficient model, the number of regressors is the same in each equation")
+            }
+        attr(object$x, "sysInfo") <- list(k=k, df=df, q=q, typeInst=typeInst, typeDesc=typeDesc, commonCoef=object$commonCoef)
+        object$g <- .momentFct_Sys
         class(object)  <- clname
         return(object)
     }

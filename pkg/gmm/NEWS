@@ -1,5 +1,6 @@
 Changes in version 1.6-0
 
+o tsls is now a real 2-stage least square. Before it was a 2-step optimal GMM with HCCM weighting matrix.
 o Fixed a typo in FinRes.R file. It was preventing to compute the proper vcov matrix for a very special case (fixed weights)
 o Added Helinger distance and Exponentially tilted Helinger estimator to gel()
 o Fixed the LR test of ETEL in gel()
@@ -20,6 +21,9 @@ o confint.gxx() has been modified. It now create an object and a print method ha
 o confint.gel includes the possibility of building a confidence interval using the inversion of one of the three specification tests.
   It is therefore possible de construct an Empirical Likelihood confidence interval as described in Owen 2001. See manual.
 o On the process to create a sysGmm for system og linear equations. The function sysGmm() will do the job. Not yet working.
+o getDat is modified so that the name of the dependent variable is the one included in the formula.
+o A set of functions have been added to estimate system of linear equations (this is a beta version not tested yet).
+o A set of labor data as been added to test the sysGmm function
 
 Changes in version 1.5-2
 
