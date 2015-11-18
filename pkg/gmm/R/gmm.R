@@ -46,84 +46,6 @@ gmm <- function(g,x,t0=NULL,gradv=NULL, type=c("twoStep","cue","iterative"), wma
         z
     }
 
-five <- function(g, h, commonCoef = FALSE, data = NULL)
-    {
-        res  <- sysGmm(g, h, wmatrix = "optimal", vcov = "CondHom", commonCoef=commonCoef, data=data)
-        attr(res$dat, "sysInfo")$typeDesc <- "Full-Information IV (FIVE)"
-        res$call <- match.call()
-        res
-    }
-
-threeSLS <- function(g, h, commonCoef = FALSE, data = NULL)
-    {
-        if (!is(h, "formula"))
-            if (length(h) != 1)
-                stop("In 3SLS, h is a single equation since the same instruments are used in each equation")
-        res <- sysGmm(g, h, vcov = "CondHom", commonCoef=commonCoef, data=data)
-        attr(res$dat, "sysInfo")$typeDesc <- "3-stage Least Squares"
-        res$call <- match.call()
-        res
-    }
-sur <- function(g, commonCoef = FALSE, data = NULL)
-    {
-        if (!is.list(g))
-            stop("g must be list of formulas")
-        if (length(g) == 1)
-            stop("For single equation GMM, use the function gmm()")
-        if (!all(sapply(1:length(g), function(i) is(g[[i]], "formula"))))
-            stop("g must be a list of formulas")
-        tm <- lapply(1:length(g), function(i) terms(g[[i]]))
-        reg <- lapply(1:length(g), function(i) attr(tm[[i]], "term.labels"))
-        reg <- unique(do.call(c,reg))
-        h <- paste(reg, collapse = "+")
-        if (all(sapply(1:length(g), function(i) attr(tm[[i]], "intercept") == 0)))
-            h <- paste(h, "-1")
-        h <- as.formula(paste("~", h))
-        res <- sysGmm(g, h, vcov = "CondHom", commonCoef=commonCoef, data=data)
-        attr(res$dat, "sysInfo")$typeDesc <- "Seemingly Unrelated Regression (SUR)"
-        res$call <- match.call()        
-        res
-        }
-            
-randEffect <- function(g, data = NULL)
-    {
-        res <- sur(g, commonCoef = TRUE, data = data)
-        attr(res$dat, "sysInfo")$typeDesc <- "Random Effect Estimator"
-        res$call <- match.call()        
-        res
-    }
-
-
-sysGmm <- function(g, h, wmatrix = c("optimal","ident"),
-                   vcov=c("MDS", "HAC", "CondHom", "TrueFixed"), 
-                   kernel=c("Quadratic Spectral","Truncated", "Bartlett", "Parzen", "Tukey-Hanning"),
-                   crit=10e-7,bw = bwAndrews, prewhite = FALSE, ar.method = "ols", approx="AR(1)",tol = 1e-7,
-                   model=TRUE, X=FALSE, Y=FALSE, centeredVcov = TRUE, weightsMatrix = NULL,
-                   data, commonCoef = FALSE)
-    {
-        kernel <- match.arg(kernel)
-        vcov <- match.arg(vcov)
-        wmatrix <- match.arg(wmatrix)
-        TypeGmm = "sysGmm"
-
-        if(vcov=="TrueFixed" & is.null(weightsMatrix))
-            stop("TrueFixed vcov only for fixed weighting matrix")
-        if(!is.null(weightsMatrix))
-            wmatrix <- "optimal"
-        if(missing(data))
-            data<-NULL
-        all_args<-list(data = data, g = g, h = h, wmatrix = wmatrix, vcov = vcov, kernel = kernel,
-                       crit = crit, bw = bw, prewhite = prewhite, ar.method = ar.method, approx = approx, 
-                       weightsMatrix = weightsMatrix, centeredVcov = centeredVcov, tol = tol, 
-                       model = model, X = X, Y = Y, call = match.call(), commonCoef=commonCoef)
-        class(all_args)<-TypeGmm
-        Model_info<-getModel(all_args)
-        z <- momentEstim(Model_info)
-        z <- FinRes(z, Model_info)
-        return(z)
-    }
-
-
 evalGmm <- function(g, x, t0, tetw=NULL, gradv=NULL, wmatrix = c("optimal","ident"),  vcov=c("HAC","iid","TrueFixed"), 
                     kernel=c("Quadratic Spectral","Truncated", "Bartlett", "Parzen", "Tukey-Hanning"),crit=10e-7,bw = bwAndrews, 
                     prewhite = FALSE, ar.method = "ols", approx="AR(1)",tol = 1e-7,
@@ -191,7 +113,7 @@ tsls <- function(g,x,data)
 	w
     }
 
-getDat <- function (formula, h, data) 
+getDat <- function (formula, h, data, error=TRUE) 
 {
     cl <- match.call()
     mf <- match.call(expand.dots = FALSE)
@@ -211,6 +133,7 @@ getDat <- function (formula, h, data)
     if (inherits(h,'formula'))
         {
             tmp <- as.character(formula)
+            termsh <- terms(h)
             h <- paste(tmp[2], "~", as.character(h)[2], sep="")
             h <- as.formula(h)
             mfh <- match.call(expand.dots = FALSE)
@@ -228,23 +151,61 @@ getDat <- function (formula, h, data)
     else
         {
             h <- as.matrix(h)
-            h <- cbind(1,h)
-            if(is.null(colnames(h)))
-                colnames(h) <- c("h.(Intercept)",paste("h",1:(ncol(h)-1),sep=""))
-            else
-                attr(h,'dimnames')[[2]][1] <- "h.(Intercept)"
-            if (attr(mt,"intercept")==0)
+            chkInt <- sapply(1:ncol(h), function(i) all(h[,i]/mean(h[,i]) == 1))
+            if (sum(chkInt) > 1)
+                stop("Too many intercept in the matrix h")
+            if (any(chkInt))
                 {
-                    h <- as.matrix(h[,2:ncol(h)])
+                    h <- h[,!chkInt, drop=FALSE]
+                    h <- cbind(1,h)
+                    intercept_h <- TRUE
+                } else {
+                    if (attr(mt,"intercept")==1)
+                        {
+                            h <- cbind(1, h)
+                            intercept_h <- TRUE
+                        } else {
+                            intercept_h <- FALSE
+                        }
                 }
+            if(is.null(colnames(h)))
+                {
+                    if (intercept_h)
+                        colnames(h) <- c("(Intercept)",paste("h",1:(ncol(h)-1),sep=""))
+                    else
+                        colnames(h) <- paste("h",1:ncol(h),sep="")
+                } else {
+                    if (intercept_h)
+                        colnames(h)[1] <- "(Intercept)"
+                    coln_h <- colnames(h)
+                    coln_h <- gsub(" ", "", coln_h)
+                    chk <- which(coln_h == "")
+                    if (length(chk) >0)
+                        coln_h[chk] <- paste("h", 1:length(chk), sep="")
+                    if (any(duplicated(coln_h)))
+                        stop("colnames of the matrix h must be unique")
+                    colnames(h) <-  coln_h                    
+                }
+            if (!intercept_h)
+                {
+                    hFormula <- paste(colnames(h), collapse="+")
+                    hFormula <- as.formula(paste("~", hFormula, "-1", sep=""))
+                } else {
+                    hFormula <- paste(colnames(h)[-1], collapse="+")
+                    hFormula <- as.formula(paste("~", hFormula, sep=""))
+                }
+            termsh <- terms(hFormula)            
         }
     ny <- ncol(y)
     k <- ncol(xt)
     nh <- ncol(h)
     if (nh<k)
-        stop("The number of moment conditions must be at least equal to the number of coefficients to estimate")
+        {
+            if (error)
+                stop("The number of moment conditions must be at least equal to the number of coefficients to estimate")
+        }
     if (is.null(colnames(y)))
-                colnames(y) <- namey
+        colnames(y) <- namey
     rownames(xt) <- rownames(y)
     rownames(h) <- rownames(y)
     x <- cbind(y,xt,h)
@@ -253,10 +214,13 @@ getDat <- function (formula, h, data)
             warning("There are missing values. Associated observations have been removed")
             x <- na.omit(x)
             if (nrow(x)<=k)
-                stop("The number of observations must be greater than the number of coefficients")		
+                {
+                    if (error)
+                        stop("The number of observations must be greater than the number of coefficients")
+                }
         }
     colnames(x)<-c(colnames(y),colnames(xt),colnames(h))
-    return(list(x=x,nh=nh,ny=ny,k=k,mf=mf,mt=mt,cl=cl))
+    return(list(x=x,nh=nh,ny=ny,k=k,mf=mf,mt=mt,cl=cl,termsh=termsh,termsx=mt))
 }
 
 .tetlin <- function(dat, w, type=NULL)
@@ -284,14 +248,17 @@ getDat <- function (formula, h, data)
         if (!is.null(type))
             {            
                 if(type=="2sls")
-                    {                   
+                    {
                         if (length(includeExo) > 0)
                             {                        
                                 endo <- xm[, -includeExo, drop = FALSE]
                                 endoName <- colnames(endo)
                                 if (ncol(endo) != 0)
                                     {
-                                        restsls <- lm(endo~hm-1)
+                                        if (attr(dat$termsh, "intercept") == 1)
+                                            restsls <- lm(endo~hm[,-1])
+                                        else
+                                            restsls <- lm(endo~hm-1)
                                         fsls <- xm
                                         fsls[, -includeExo] <- restsls$fitted
                                     } else {
@@ -299,7 +266,10 @@ getDat <- function (formula, h, data)
                                         restsls <- NULL
                                     }
                             } else {
-                                restsls <- lm(xm~hm-1)
+                                if (attr(dat$termsh, "intercept") == 1)
+                                    restsls <- lm(xm~hm[,-1])
+                                else
+                                    restsls <- lm(xm~hm-1)
                                 fsls <- restsls$fitted
                                 endoName <- colnames(xm)
                             }                
@@ -363,8 +333,9 @@ getDat <- function (formula, h, data)
                     res$firstStageReg <- restsls
                 if (!is.null(restsls))
                     {
-                        res$fsRes <- summary(restsls)
-                        attr(res$fsRes, "Endo") <- endoName
+                        chk <- .chkPerfectFit(restsls)
+                        res$fsRes <- suppressWarnings(summary(restsls))[!chk]
+                        attr(res$fsRes, "Endo") <- endoName[!chk]
                     }
             }
         return(res)
@@ -411,22 +382,6 @@ getDat <- function (formula, h, data)
         return(obj)
     }	
 
-.momentFct_Sys <- function(tet, dat)
-    {
-        q <- length(dat)
-        f <- function(i, dat)
-            {
-                d <- dat[[i]]
-                attr(d, "eqConst") <- attr(dat, "eqConst")
-                attr(d, "ModelType") <- attr(dat, "ModelType")
-                attr(d,"momentfct")  <- attr(dat,"momentfct")
-                attr(d, "smooth") <- attr(dat, "smooth")
-                .momentFct(tet[[i]], d)
-            }
-        mom <- lapply(1:q, function(i) f(i, dat))
-        do.call(cbind, mom)
-    }
-
 .momentFct <- function(tet, dat)
     {
         if (!is.null(attr(dat, "eqConst")))
@@ -460,25 +415,6 @@ getDat <- function (formula, h, data)
                 gt <- smoothG(gt, bw = bw, weights = w)$smoothx
             }
         return(as.matrix(gt))
-    }
-
-.DmomentFct_Sys <- function(tet, dat, pt=NULL)
-    {
-        q <- length(dat)
-        f <- function(i, dat)
-            {
-                d <- dat[[i]]
-                attr(d, "eqConst") <- attr(dat, "eqConst")
-                attr(d, "ModelType") <- attr(dat, "ModelType")
-                attr(d,"momentfct")  <- attr(dat,"momentfct")
-                attr(d, "smooth") <- attr(dat, "smooth")
-                .DmomentFct(tet[[i]], d, pt)
-            }        
-        dmom <- lapply(1:q, function(i) f(i, dat))
-        if (attr(dat, "sysInfo")$commonCoef)
-            do.call(rbind,dmom)
-        else
-            .diagMatrix(dmom)
     }
 
 .DmomentFct <- function(tet, dat, pt=NULL)
@@ -565,61 +501,6 @@ getDat <- function (formula, h, data)
         return(w)
     }
 
-
-.weightFct_Sys<- function(tet, dat, type=c("MDS", "HAC", "CondHom", "ident", "fct", "fixed")) 
-    {
-        type <- match.arg(type)
-        if (type == "fixed")
-            {
-                w <- attr(dat, "weight")$w
-                attr(w, "inv") <- FALSE
-            } else if (type == "ident") {
-                w <- diag(attr(dat, "q"))
-                attr(w, "inv") <- FALSE
-            } else {
-                if (type == "HAC")
-                    {
-                        gt <- .momentFct_Sys(tet,dat)
-                        if(attr(dat, "weight")$centeredVcov)
-                            gt <- residuals(lm(gt~1))
-                        n <- NROW(gt)
-                        obj <- attr(dat, "weight")
-                        obj$centeredVcov <- FALSE
-                        w <- .myKernHAC(gt, obj)
-                        attr(w, "inv") <- TRUE
-                    }
-                if (type == "MDS")
-                    {
-                        gt <- .momentFct_Sys(tet,dat)
-                        n <- NROW(gt)
-                        if(attr(dat, "weight")$centeredVcov)
-                            gt <- scale(gt, scale=FALSE)
-                        w <- crossprod(gt)/n
-                        attr(w, "inv") <- TRUE
-                    }
-                if (type == "CondHom")
-                    {
-                        e <- lapply(1:length(dat), function(i) .residuals(tet[[i]], dat[[i]])$residuals)
-                        e <- do.call(cbind, e)
-                        Sig <- crossprod(scale(e, scale=FALSE))/nrow(e)
-                        Z <- lapply(1:length(dat), function(i) dat[[i]]$x[,(2+dat[[i]]$k):ncol(dat[[i]]$x)])
-                        Z <- do.call(cbind, Z)
-                        w <- crossprod(Z)/nrow(e)
-                        for (i in 1:length(dat))
-                            for (j in 1:length(dat))
-                                {
-                                    s1 <- 1+(i-1)*dat[[i]]$nh
-                                    e1 <- i*dat[[i]]$nh
-                                    s2 <- 1+(j-1)*dat[[j]]$nh
-                                    e2 <- j*dat[[j]]$nh
-                                    w[s1:e1, s2:e2] <- w[s1:e1, s2:e2]*Sig[i,j]
-                                }
-                        attr(w, "inv") <- TRUE
-                    }
-            }
-        return(w)
-    }
-
 .residuals <- function(tet, dat)
     {
         if (!is.null(attr(dat, "eqConst")))
@@ -638,24 +519,4 @@ getDat <- function (formula, h, data)
         e <- y-yhat
         return(list(residuals=e, yhat=yhat))
     }
-                
-.diagMatrix <- function(xlist)
-    {
-        # Create block diagonal matrix from matrices with the same number of rows.
-        m <- length(xlist)
-        n <- NROW(xlist[[1]])
-        l <- sapply(1:m, function(i) dim(as.matrix(xlist[[i]])))
-        dimX <- rowSums(l)
-        X <- matrix(0, dimX[1], dimX[2])
-        for (i in 1:m)
-            {
-                s1 <- 1 + (i-1)*n
-                e1 <- n*i
-                s2 <- 1 + sum(l[2,][-(i:m)])
-                e2 <- sum(l[2,][1:i])
-                X[s1:e1, s2:e2] <- xlist[[i]]
-            }
-        X
-    }
-
 

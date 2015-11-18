@@ -17,7 +17,7 @@ vcov=c("MDS", "HAC", "CondHom", "TrueFixed"),
        kernel=c("Quadratic Spectral","Truncated", "Bartlett", "Parzen", "Tukey-Hanning"),
        crit=10e-7,bw = bwAndrews, prewhite = FALSE, ar.method = "ols", approx="AR(1)",
        tol = 1e-7, model=TRUE, X=FALSE, Y=FALSE, centeredVcov = TRUE,
-       weightsMatrix = NULL, data, commonCoef = FALSE)
+       weightsMatrix = NULL, data, crossEquConst = NULL, commonCoef = FALSE)
 five(g, h, commonCoef = FALSE, data = NULL)
 threeSLS(g, h, commonCoef = FALSE, data = NULL)
 sur(g, commonCoef = FALSE, data = NULL)
@@ -59,6 +59,12 @@ randEffect(g, data = NULL)
 \item{data}{A data.frame or a matrix with column names (Optional). }
 
 \item{commonCoef}{If true, coefficients accross equations are the same}
+
+\item{crossEquConst}{Only used if the number of regressors are the same
+  in each equation. It is a vector which indicates which coefficient are
+  constant across equations. The order is 1 for Intercept and 2 to k as
+  it is formulated in the formulas \code{g}. Setting it to \code{1:k} is
+  equivalent to setting commonCoef to TRUE.}
 
 }
 
@@ -135,12 +141,17 @@ summary(res2)
 
 five(g2, h2, data=wage)
 
-
 threeSLS(g2, h2[[1]], data=wage)
 
 sur(g2, data=wage)
 
 randEffect(g2, data=wage)
+
+## Cross-Equation restrictions
+## All but the intercept are assumed to be the same
+
+res <- sysGmm(g2, h2, data=wage, crossEquConst = 2:4)
+summary(res)
 
 }
 

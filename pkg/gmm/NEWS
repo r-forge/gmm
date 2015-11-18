@@ -24,6 +24,7 @@ o On the process to create a sysGmm for system og linear equations. The function
 o getDat is modified so that the name of the dependent variable is the one included in the formula.
 o A set of functions have been added to estimate system of linear equations (this is a beta version not tested yet).
 o A set of labor data as been added to test the sysGmm function
+o A panel of  Macro data has been added.
 
 Changes in version 1.5-2
 

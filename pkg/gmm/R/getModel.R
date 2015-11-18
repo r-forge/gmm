@@ -24,7 +24,12 @@ getModel.tsls <- function(object, ...)
 
 getModel.sysGmm <- function(object, ...)
     {
-        object$allArg <- c(object, list(...))
+        if (object$commonCoef & !is.null(object$crossEquConst))
+            {
+                object$commonCoef <- FALSE
+                warning("When crossEquConst is not NULL, commonCoef=TRUE is ignore and set to FALSE")
+            }
+        object$allArg <- c(object, ...)
         object$formula <- list(g=object$g, h=object$h)
         if (!is.list(object$g))
             stop("g must be list of formulas")
@@ -55,7 +60,8 @@ getModel.sysGmm <- function(object, ...)
             }
         if (object$commonCoef)
             typeDesc <- paste(typeDesc, " (Common Coefficients)")
-        dat <- lapply(1:length(object$g), function(i) try(getDat(object$g[[i]], object$h[[i]], data = object$data), silent=TRUE))
+        dat <- lapply(1:length(object$g), function(i) try(getDat(object$g[[i]], object$h[[i]], data = object$data,
+                                                                 error=!object$commonCoef), silent=TRUE))
         chk <- sapply(1:length(dat), function(i) class(dat[[i]]) == "try-error")
         chk <- which(chk)
         mess <- vector()
@@ -102,13 +108,30 @@ getModel.sysGmm <- function(object, ...)
         k <- lapply(1:length(dat), function(i) dat[[i]]$k)
         q <- lapply(1:length(dat), function(i) dat[[i]]$nh)
         df <- lapply(1:length(dat), function(i) dat[[i]]$nh-dat[[i]]$k)
-        if (object$commonCoef)
+        k2 <- do.call(c,k)
+        if (object$commonCoef | !is.null(object$crossEquConst))
             {
-                k <- do.call(c,k)
-                if (!all(k==k[1]))
-                    stop("In a common coefficient model, the number of regressors is the same in each equation")
+                if (!all(k2==k2[1]))
+                    stop("In a common coefficient model the number of regressors is the same in each equation")
+                if (object$commonCoef)
+                    totK <- k2[1]
+                else
+                    totK <- length(dat)*(k2[1]-length(object$crossEquConst)) + length(object$crossEquConst)
+                if (sum(do.call(c,q))<totK)
+                    stop("The number of moment conditions is less than the number of coefficients")
+                if (!is.null(object$crossEquConst))
+                    {
+                        object$crossEquConst <- sort(object$crossEquConst)
+                        if (length(object$crossEquConst) == k2[1])
+                            if (all(object$crossEquConst==(1:k2[1])))
+                                {
+                                    object$crossEquConst <- NULL
+                                    object$commonCoef <- TRUE
+                                }
+                    }
             }
-        attr(object$x, "sysInfo") <- list(k=k, df=df, q=q, typeInst=typeInst, typeDesc=typeDesc, commonCoef=object$commonCoef)
+        attr(object$x, "sysInfo") <- list(k=k, df=df, q=q, typeInst=typeInst, typeDesc=typeDesc, commonCoef=object$commonCoef,
+                                          crossEquConst=object$crossEquConst)
         object$g <- .momentFct_Sys
         class(object)  <- clname
         return(object)

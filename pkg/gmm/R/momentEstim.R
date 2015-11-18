@@ -19,77 +19,39 @@ momentEstim <- function(object, ...)
 
 momentEstim.sysGmm.twoStep.formula <- function(object, ...)
     {
-        dat <- object$x        
+        dat <- object$x
+        y <- lapply(1:length(dat), function(i) dat[[i]]$x[,1])
+        y <- do.call(c, y)
+        z <- lapply(1:length(dat), function(i)
+            dat[[i]]$x[,(2+dat[[i]]$k):ncol(dat[[i]]$x)])
+        z <- .diagMatrix(z)
+        x <- lapply(1:length(dat), function(i) dat[[i]]$x[,2:(dat[[i]]$k+1)])
         if (attr(dat, "sysInfo")$commonCoef)
             {
-                ## Getting first step estimate ##                
-                y <- lapply(1:length(dat), function(i) dat[[i]]$x[,1])
-                y <- do.call(c, y)
-                x <- lapply(1:length(dat), function(i) dat[[i]]$x[,2:(dat[[i]]$k+1)])
                 x <- do.call(rbind, x)
-                z <- lapply(1:length(dat), function(i)
-                    dat[[i]]$x[,(2+dat[[i]]$k):ncol(dat[[i]]$x)])
-                z <- .diagMatrix(z)
-                names(y) <- dimnames(x) <- dimnames(z) <- NULL
-                data <- list(y=y, x=x, z=z)
-                dat2 <- getDat(y~x-1, ~z-1, data=data)
-                attr(dat2, "ModelType") <- "linear"
-                res0 <- .tetlin(dat2, 1, "2sls")
-                tet0 <- res0$par
-                fsRes <- res0$Res
-                #tet0 <- tsls(y~x-1, ~z-1, data=data)$coefficients
-                tet0 <- rep(list(tet0), length(dat))
-                ## Getting the weights                
-                w <- .weightFct_Sys(tet=tet0, dat=dat, type=object$vcov)
-                res <- .tetlin(dat2, w)
-                res$par <- c(res$par)
-                par <- list()
-                for (i in 1:length(dat))
-                    {
-                        par[[i]] <- res$par
-                        names(par[[i]]) <- object$namesCoef[[i]]
-                    }
-                names(par) <- names(dat)
-                df <- ncol(z) - ncol(x)
-                k <- ncol(x)
-                q <- ncol(z)
-                n <- nrow(dat[[1]]$x)
-                df.residuals <- n - k
+            } else if (!is.null(attr(dat, "sysInfo")$crossEquConst)) {
+                k <- attr(dat, "k")[[1]]
+                x <- .diagMatrix(x, (1:k)[-attr(dat, "sysInfo")$crossEquConst])
             } else {
-                ## Getting first step estimate ##
-                res0 <- lapply(1:length(dat), function(i) tsls(object$formula$g[[i]], object$formula$h[[i]], data=object$data))
-                tet0 <- lapply(1:length(dat), function(i) res0[[i]]$coefficients)
-                fsRes <- lapply(1:length(dat), function(i) res0[[i]]$fsRes)
-                                        # Getting the weights
-                w <- .weightFct_Sys(tet=tet0, dat=dat, type=object$vcov)
-                y <- lapply(1:length(dat), function(i) dat[[i]]$x[,1])
-                y <- do.call(c, y)
-                x <- lapply(1:length(dat), function(i) dat[[i]]$x[,2:(dat[[i]]$k+1)])
                 x <- .diagMatrix(x)
-                z <- lapply(1:length(dat), function(i)
-                    dat[[i]]$x[,(2+dat[[i]]$k):ncol(dat[[i]]$x)])
-                z <- .diagMatrix(z)
-                names(y) <- dimnames(x) <- dimnames(z) <- NULL
-                data <- list(y=y, x=x, z=z)
-                dat2 <- getDat(y~x-1, ~z-1, data=data)
-                attr(dat2, "ModelType") <- "linear"
-                res <- .tetlin(dat2, w)
-                par <- list()
-                k <- attr(dat, "sysInfo")$k
-                for (i in 1:length(dat))
-                    {
-                        par[[i]] <- res$par[1:k[[i]]]
-                        names(par[[i]]) <- object$namesCoef[[i]]
-                        res$par <- res$par[-(1:k[[i]])]
-                    }
-                names(par) <- names(dat)
-                df <- ncol(z) - ncol(x)
-                k <- ncol(x)
-                q <- ncol(z)
-                n <- nrow(dat[[1]]$x)
-                df.residuals <- n - k                
             }
-        z = list(coefficients = par, objective = res$value, dat=dat, k=k, q=q, df=df, df.residual=df.residual, n=n)	
+        names(y) <- rownames(x) <- rownames(z) <- 1:length(y)
+        data <- list(y=y, x=x, z=z)
+        dat2 <- getDat(y~x-1, ~z-1, data=data)
+        attr(dat2, "ModelType") <- "linear"
+        res0 <- .tetlin(dat2, 1, "2sls")
+        tet0 <- .getThetaList(res0$par, dat)
+        fsRes <- res0$fsRes
+        w <- .weightFct_Sys(tet=tet0, dat=dat, type=object$vcov)
+        res <- .tetlin(dat2, w)
+        par <- .getThetaList(res$par, dat)
+        names(par) <- names(dat)
+        df <- ncol(z) - ncol(x)
+        k <- ncol(x)
+        q <- ncol(z)
+        n <- nrow(x)
+        df.residuals <- n - k
+        z = list(coefficients = par, objective = res$value, dat=dat, k=k, q=q, df=df, df.residual=df.residual, n=n)
         z$gt <- object$g(z$coefficients, dat)
         z$initTheta <- tet0
         tmp <- lapply(1:length(dat), function(i) .residuals(z$coefficients[[i]], dat[[i]]))
@@ -105,7 +67,7 @@ momentEstim.sysGmm.twoStep.formula <- function(object, ...)
         z$WSpec <- object$WSpec
         z$w0 <- w
         colnames(z$gt) <- do.call(c, object$namesgt)
-        z$fsRes <- fsRes        
+        z$fsRes <- fsRes
         class(z) <- "sysGmm.res"
         z$specMod <- object$specMod
         return(z)	        
@@ -341,11 +303,11 @@ momentEstim.baseGmm.twoStep.formula <- function(object, ...)
                 initTheta <- res1$par
                 gmat <- g(res1$par, dat)
                 w <- .weightFct(res1$par, dat, P$vcov)
-                res2 <- .tetlin(dat, w)	
+                res2 <- .tetlin(dat, w)
                 res2$firstStageReg <- res1$firstStageReg
                 res2$fsRes <- res1$fsRes
                 z = list(coefficients = res2$par, objective = res2$value, dat=dat, k=k, k2=k2,
-                    n=n, q=q, df=df, initTheta = initTheta, df.residual = (n-k))	
+                    n=n, q=q, df=df, initTheta = initTheta, df.residual = (n-k))
             }
         z$gt <- g(z$coefficients, dat) 
         b <- z$coefficients
