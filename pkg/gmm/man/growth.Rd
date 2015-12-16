@@ -20,6 +20,8 @@ A data frame containing 9 vectors.
   real GDP}
   \item{LagSavRate}{SavRate of the previous period}
   \item{Country}{Country names}
+  \item{Pop}{Population in thousands}
+  \item{LagPop}{Population of the previous period}
 }
 }
 

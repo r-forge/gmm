@@ -158,7 +158,7 @@ FinRes.sysGmm.res <- function(z, object, ...)
             dimnames(z$vcov) <- list(P$namesCoef[[1]], P$namesCoef[[1]])
         else
             dimnames(z$vcov) <- list(do.call(c, P$namesCoef), do.call(c, P$namesCoef))
-        z$call <- P$call        
+        z$call <- P$call
         if(is.null(P$weightsMatrix))
             {
                 if(P$wmatrix == "ident")
@@ -172,6 +172,8 @@ FinRes.sysGmm.res <- function(z, object, ...)
             } else {
                 z$w <- P$weightsMatrix
             }
+        for (i in 1:length(z$coefficients))
+            names(z$coefficients[[i]]) <- P$namesCoef[[i]]
         z$weightsMatrix <- P$weightsMatrix
         z$infVcov <- P$vcov
         z$infWmatrix <- P$wmatrix

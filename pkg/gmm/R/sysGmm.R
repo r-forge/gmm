@@ -247,7 +247,7 @@ sysGmm <- function(g, h, wmatrix = c("optimal","ident"),
                 k <- attr(dat, "k")[[1]]
                 if (length(tet) != k)
                     stop("Wrong length of tet")
-                tet2 <- rep(list(tet), neq)
+                tet2 <- rep(list(c(tet)), neq)
             } else if (!is.null(attr(dat, "sysInfo")$crossEquConst)) { 
                 k <- attr(dat, "k")[[1]]
                 cst <- attr(dat, "sysInfo")$crossEquConst
