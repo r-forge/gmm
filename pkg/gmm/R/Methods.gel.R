@@ -28,8 +28,6 @@
         if (object$df > 0)
             {
                 test0 <- specTest(object)$test[wtest,]
-                if (test0[2] < (1-level))
-                    stop("The model is rejected at the point estimate")
                 test0 <- test0[1]
             } else {
                 test0 <- 0
