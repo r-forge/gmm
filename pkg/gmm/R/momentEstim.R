@@ -227,7 +227,8 @@ momentEstim.baseGmm.twoStep <- function(object, ...)
         z$iid <- P$iid
         z$g <- P$g
         z$WSpec <- P$WSpec
-        
+        print(P$namesCoef)
+        print(z$coefficients)
         names(z$coefficients) <- P$namesCoef
         if (is.null(colnames(z$gt)))
             colnames(z$gt) <- paste("gt",1:ncol(z$gt),sep="")
@@ -542,8 +543,8 @@ momentEstim.baseGmm.cue.formula <- function(object, ...)
         k <- attr(dat, "k")  
         k2 <- k*dat$ny
         df <- q-k*dat$ny
-        P$weightMessage <- "Weights for kernel estimate of the covariance are fixed and based on the first step estimate of Theta"	
-
+        w <- .weightFct(NULL, dat, "ident")                  
+        
         if (q == k2 | P$wmatrix == "ident")
             {
                 res <- .tetlin(dat, w)
@@ -552,16 +553,17 @@ momentEstim.baseGmm.cue.formula <- function(object, ...)
             } else {
                 if (is.null(P$t0))
                     {
-                        w <- .weightFct(NULL, dat, "ident")          
                         P$t0 <- .tetlin(dat, w, type="2sls")$par
                         initTheta <- P$t0
                     } else {
                         initTheta <- P$t0
                     }
-                gt0 <- g(P$t0, dat)
-                w <- .myKernHAC(gt0, attr(dat, "weight"))
-                attr(dat, "weight")$WSpec$sandwich$bw <- attr(w,"Spec")$bw
-
+                if (P$vcov == "HAC")
+                    {
+                        w <- .weightFct(P$t0, dat, P$vcov)
+                        attr(dat, "weight")$WSpec$sandwich$bw <- attr(w,"Spec")$bw
+                        P$weightMessage <- "Weights for kernel estimate of the covariance are fixed and based on the first step estimate of Theta"
+                    }
                 if (P$optfct == "optim")
                     res2 <- optim(P$t0,.objCue, x = dat, type = P$vcov, ...)
                 if (P$optfct == "constrOptim")
@@ -613,7 +615,7 @@ momentEstim.baseGmm.cue.formula <- function(object, ...)
         z$specMod <- P$specMod
         z$cue <- list(weights=P$fixedKernW,message=P$weightMessage)
         z$WSpec <- P$WSpec
-        z$w0 <- w
+        z$w0 <- .weightFct(z$coefficients, dat, P$vcov)
         names(z$coefficients) <- P$namesCoef
         colnames(z$gt) <- P$namesgt
         
@@ -630,22 +632,26 @@ momentEstim.baseGmm.cue <- function(object, ...)
         k <- attr(x, "k")
         k2 <- k
         df <- q - k
-        w = .weightFct(NULL, x, "ident")
-
-        res <- try(gmm(P$g,P$x,P$t0,wmatrix="ident",optfct=P$optfct, ...))
-        if(class(res)=="try-error")
-            stop("Cannot get a first step estimate to compute the weights for the Kernel estimate of the covariance matrix; try different starting values")
-        initTheta <- res$coef
 
         if (q == k2 | P$wmatrix == "ident")
             {
-                z <- list(coefficients = res$coef, objective = res$objective, algoInfo = res$algoInfo, k=k, k2=k2, n=n, q=q, df=df)
+                w = .weightFct(NULL, x, "ident")
+                res <- gmm(P$g,P$x,P$t0,wmatrix="ident",optfct=P$optfct, ...)                
+                z <- list(coefficients = res$coef, objective = res$objective, algoInfo = res$algoInfo, k=k, k2=k2, n=n, q=q, df=df, initTheta=P$t0)
                 P$weightMessage <- "No CUE needed because the model if just identified or you set wmatrix=identity"
             } else {
-                gt0 <- P$g(res$coef,x) #Should we compute the weigths with the initial value provided?
-                w <- .myKernHAC(gt0, attr(x, "weight"))
-                attr(x, "weight")$WSpec$sandwich$bw <- attr(w,"Spec")$bw
-                P$weightMessage <- "Weights for kernel estimate of the covariance are fixed and based on the first step estimate of Theta"
+                w <- .weightFct(P$t0, x, P$vcov)
+                initTheta <- P$t0
+                if (P$vcov == "HAC")
+                    {
+                        res <- try(gmm(P$g,P$x,P$t0,wmatrix="ident",optfct=P$optfct, ...))
+                        if(class(res)=="try-error")
+                            stop("Cannot get a first step estimate to compute the weights for the Kernel estimate of the covariance matrix; try different starting values")
+                        gt0 <- res$gt
+                        w <- .myKernHAC(gt0, attr(x, "weight"))
+                        attr(x, "weight")$WSpec$sandwich$bw <- attr(w,"Spec")$bw
+                        P$weightMessage <- "Weights for kernel estimate of the covariance are fixed and based on the first step estimate of Theta"
+                    }
                 if (P$optfct == "optim")
                     {
                         res2 <- optim(P$t0, .objCue, x = x, type = P$vcov, ...)
@@ -687,14 +693,14 @@ momentEstim.baseGmm.cue <- function(object, ...)
         z$dat <- P$x
         z$gradv <- P$gradv
         z$gt <- P$g(z$coefficients, P$x)
+        z$w0 <- .weightFct(z$coefficients, P$x, P$vcov)        
         z$iid <- P$iid
         z$g <- P$g
         z$cue <- list(weights=P$fixedKernW,message=P$weightMessage)
         names(z$coefficients) <- P$namesCoef
         if (is.null(colnames(z$gt)))
             colnames(z$gt) <- paste("gt",1:ncol(z$gt),sep="")
-        z$WSpec <- P$WSpec
-        
+        z$WSpec <- P$WSpec        
         z$specMod <- P$specMod
         class(z) <- paste(P$TypeGmm, ".res", sep = "")	
         return(z)

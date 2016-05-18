@@ -222,10 +222,15 @@ getModel.baseGmm <- function(object, ...)
                 attr(object$x, "k") <- length(object$t0)
                 attr(object$x, "q") <- NCOL(object$g(object$t0, object$x))
                 attr(object$x, "n") <- NROW(object$x)
-                if(is.null(names(object$t0)))
-                    object$namesCoef <- paste("Theta[" ,1:attr(object$x, "k"), "]", sep = "")
-                else
-                    object$namesCoef <- names(object$t0)
+                if (object$optfct == "optimize")
+                    {
+                        object$namesCoef <- "Theta1"
+                    } else {
+                        if(is.null(names(object$t0)))
+                            object$namesCoef <- paste("Theta[" ,1:attr(object$x, "k"), "]", sep = "")
+                        else
+                            object$namesCoef <- names(object$t0)
+                    }
                 if(is.null(object$weightsMatrix))
                     {
                         clname <- paste(class(object), "." ,object$type, sep = "")

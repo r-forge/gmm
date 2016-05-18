@@ -13,7 +13,7 @@
 
 gmm <- function(g,x,t0=NULL,gradv=NULL, type=c("twoStep","cue","iterative"), wmatrix = c("optimal","ident"),  vcov=c("HAC","MDS","iid","TrueFixed"), 
                 kernel=c("Quadratic Spectral","Truncated", "Bartlett", "Parzen", "Tukey-Hanning"),crit=10e-7,bw = bwAndrews, 
-                prewhite = FALSE, ar.method = "ols", approx="AR(1)",tol = 1e-7, itermax=100,optfct=c("optim","optimize","nlminb", "constrOptim"),
+                prewhite = 1, ar.method = "ols", approx="AR(1)",tol = 1e-7, itermax=100,optfct=c("optim","optimize","nlminb", "constrOptim"),
                 model=TRUE, X=FALSE, Y=FALSE, TypeGmm = "baseGmm", centeredVcov = TRUE, weightsMatrix = NULL, traceIter = FALSE, data, eqConst = NULL, 
                 eqConstFullVcov = FALSE, ...)
     {
@@ -86,30 +86,33 @@ tsls <- function(g,x,data)
         ans$met <- "Two Stage Least Squares"
         ans$call <- match.call()
         class(ans) <- c("tsls","gmm")
+        ans$vcov <- vcov(ans, type="Classical")
         return(ans)
     }
-
 
 .myKernHAC <- function(gmat, obj)
     {
         gmat <- as.matrix(gmat)
         if(obj$centeredVcov) 
-            gmat <- lm(gmat~1)
-        else
-            class(gmat) <- "gmmFct"
+            gmat <- scale(gmat, scale=FALSE)
+        class(gmat) <- "gmmFct"
 	AllArg <- obj$WSpec$sandwich
-	AllArg$x <- gmat
+        AllArg$x <- gmat
 	if (is.function(AllArg$bw))
             {
-		bw <- AllArg$bw(gmat, order.by = AllArg$order.by, kernel = AllArg$kernel, 
-                                prewhite = AllArg$prewhite, ar.method = AllArg$ar.method)
-		AllArg$bw <- bw
+		AllArg$bw <- AllArg$bw(gmat, order.by = AllArg$order.by,
+                                       kernel = AllArg$kernel, 
+                                       prewhite = AllArg$prewhite,
+                                       ar.method = AllArg$ar.method,
+                                       approx=AllArg$approx)
             }
-	weights <- do.call(weightsAndrews,AllArg)
-	AllArg$sandwich <- FALSE
-	AllArg$weights <- weights
-	w <- do.call(vcovHAC, AllArg)
-	attr(w,"Spec") <- list(weights = weights, bw = AllArg$bw, kernel = AllArg$kernel)
+	weights <- weightsAndrews(x=gmat, bw=AllArg$bw, kernel=AllArg$kernel,
+                                  prewhite=AllArg$prewhite, tol=AllArg$tol)
+	w <- vcovHAC(x=gmat, order.by=AllArg$order.by, weights=weights,
+                     prewhite=AllArg$prewhite, sandwich=FALSE,
+                     ar.method=AllArg$ar.method)
+	attr(w,"Spec") <- list(weights = weights, bw = AllArg$bw,
+                               kernel = AllArg$kernel)
 	w
     }
 
@@ -372,13 +375,16 @@ getDat <- function (formula, h, data, error=TRUE)
         return(G)
     }
 
-.objCue <- function(thet, x, type=c("HAC", "iid", "ident", "fct", "fixed"))
+.objCue <- function(thet, x, type=c("HAC", "MDS", "iid", "ident", "fct", "fixed"))
     {
         type <- match.arg(type)
         gt <- .momentFct(thet, x)
         gbar <- as.vector(colMeans(gt))
         w <- .weightFct(thet, x, type)
-        obj <- crossprod(gbar,solve(w,gbar))
+        if (attr(w, "inv"))
+            obj <- crossprod(gbar,solve(w,gbar))
+        else
+            obj <- crossprod(gbar,w%*%gbar)
         return(obj)
     }	
 
@@ -462,10 +468,10 @@ getDat <- function (formula, h, data, error=TRUE)
             {
                 w <- diag(attr(dat, "q"))
                 attr(w, "inv") <- FALSE
-            } else { 
+            } else {
                 gt <- .momentFct(tet,dat)
                 if(attr(dat, "weight")$centeredVcov)
-                    gt <- residuals(lm(gt~1))
+                    gt <- scale(gt, scale=FALSE)
                 n <- NROW(gt)
             }
         if (type == "HAC")

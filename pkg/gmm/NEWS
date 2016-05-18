@@ -1,3 +1,10 @@
+Changes in version 1.6-1
+
+o Added the function bwWilhelm() to compute the optimal bandwidth of Wilhelm(2015).
+o The argument $vcov of tsls object is the Classical covariance matrix. vcov() must be used to obtain a different covariance
+o Changed the default value of prewhite to 1 in gmm() because it is recommended for HAC estimation
+o gmm with optfct="optimize" was generating an error message. It has been fixed
+
 Changes in version 1.6-0
 
 o tsls is now a real 2-stage least square. Before it was a 2-step optimal GMM with HCCM weighting matrix.

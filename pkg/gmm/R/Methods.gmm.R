@@ -48,8 +48,6 @@ summary.tsls <- function(object, vcov = NULL, ...)
     {
 	if (!is.null(vcov))
             object$vcov=vcov
-	else
-            object$vcov=vcov(object)
 	ans <- summary.gmm(object)
 	ans$met <- paste(ans$met, "(Meat type = ", attr(object$vcov, "vcovType"), ")",sep="")
 	k <- object$dat$k

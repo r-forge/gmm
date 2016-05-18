@@ -13,7 +13,7 @@
 gmm(g,x,t0=NULL,gradv=NULL, type=c("twoStep","cue","iterative"), 
     wmatrix = c("optimal","ident"), vcov=c("HAC","MDS","iid","TrueFixed"), 
     kernel=c("Quadratic Spectral","Truncated", "Bartlett", "Parzen", "Tukey-Hanning"),
-    crit=10e-7,bw = bwAndrews, prewhite = FALSE, ar.method = "ols", approx="AR(1)",
+    crit=10e-7,bw = bwAndrews, prewhite = 1, ar.method = "ols", approx="AR(1)",
     tol = 1e-7, itermax=100,optfct=c("optim","optimize","nlminb", "constrOptim"),
     model=TRUE, X=FALSE, Y=FALSE, TypeGmm = "baseGmm", centeredVcov = TRUE, 
     weightsMatrix = NULL, traceIter = FALSE, data, eqConst = NULL, 
