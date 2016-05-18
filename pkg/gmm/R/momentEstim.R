@@ -303,7 +303,6 @@ momentEstim.baseGmm.twoStep.formula <- function(object, ...)
             } else {
                 res1 <- .tetlin(dat, w, type="2sls")
                 initTheta <- res1$par
-                gmat <- g(res1$par, dat)
                 w <- .weightFct(res1$par, dat, P$vcov)
                 res2 <- .tetlin(dat, w)
                 res2$firstStageReg <- res1$firstStageReg
@@ -647,8 +646,7 @@ momentEstim.baseGmm.cue <- function(object, ...)
                         res <- try(gmm(P$g,P$x,P$t0,wmatrix="ident",optfct=P$optfct, ...))
                         if(class(res)=="try-error")
                             stop("Cannot get a first step estimate to compute the weights for the Kernel estimate of the covariance matrix; try different starting values")
-                        gt0 <- res$gt
-                        w <- .myKernHAC(gt0, attr(x, "weight"))
+                        w <- .weightFct(res$coefficients, x, P$vcov)
                         attr(x, "weight")$WSpec$sandwich$bw <- attr(w,"Spec")$bw
                         P$weightMessage <- "Weights for kernel estimate of the covariance are fixed and based on the first step estimate of Theta"
                     }

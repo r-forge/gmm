@@ -66,9 +66,21 @@ y <- Finance[1:300,"WMK"]
 ###############################################
 res <- gmm(y ~ f1, ~ f1 + f2 + f3)
 summary(res)
+
+
+## Set the bandwidth using the second step estimate
+################################################
 bw <- bwWilhelm(res)
 res2 <- update(res, bw=bw)
 summary(res2)
+
+## Set the bandwidth using the first-step estimate as for bwAndrews
+###################################################################
+res3 <- gmm(y ~ f1, ~ f1 + f2 + f3, bw=bwWilhelm)
+summary(res3)
+
+
+
 
 }
 

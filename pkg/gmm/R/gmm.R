@@ -100,7 +100,15 @@ tsls <- function(g,x,data)
         AllArg$x <- gmat
 	if (is.function(AllArg$bw))
             {
-		AllArg$bw <- AllArg$bw(gmat, order.by = AllArg$order.by,
+                if (identical(AllArg$bw, bwWilhelm))
+                    {
+                        G <- .DmomentFct(obj$tet, obj$dat)
+                        obj <- list(gt=gmat, G=G)
+                        class(obj) <- "gmm"
+                    } else {
+                        obj <- gmat
+                    }
+		AllArg$bw <- AllArg$bw(obj, order.by = AllArg$order.by,
                                        kernel = AllArg$kernel, 
                                        prewhite = AllArg$prewhite,
                                        ar.method = AllArg$ar.method,
@@ -478,6 +486,8 @@ getDat <- function (formula, h, data, error=TRUE)
             {
                 obj <- attr(dat, "weight")
                 obj$centeredVcov <- FALSE
+                obj$tet <- tet
+                obj$dat <- dat
                 w <- .myKernHAC(gt, obj)
                 attr(w, "inv") <- TRUE
             }

@@ -39,8 +39,8 @@ bwWilhelm <- function(x, order.by = NULL, kernel = c("Quadratic Spectral",
   
   if (p==k)
       {
-          class(x$gt) <- "gmmFct"
-          return(bwAndrews(x$gt, order.by=order.by, kernel=kernel,
+          class(umat) <- "gmmFct"
+          return(bwAndrews(umat, order.by=order.by, kernel=kernel,
                            approx=approx, weights=weights, prewhite=prewhite,
                            ar.method=ar.method, data=data))
       }
