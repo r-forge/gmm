@@ -227,8 +227,6 @@ momentEstim.baseGmm.twoStep <- function(object, ...)
         z$iid <- P$iid
         z$g <- P$g
         z$WSpec <- P$WSpec
-        print(P$namesCoef)
-        print(z$coefficients)
         names(z$coefficients) <- P$namesCoef
         if (is.null(colnames(z$gt)))
             colnames(z$gt) <- paste("gt",1:ncol(z$gt),sep="")

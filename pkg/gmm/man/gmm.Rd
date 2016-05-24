@@ -49,7 +49,12 @@ gmmWithConst(obj, which, value)
 
 \item{crit}{The stopping rule for the iterative GMM. It can be reduce to increase the precision.}
 
-\item{bw}{The method to compute the bandwidth parameter. By default it is \code{\link{bwAndrews}} which is proposed by Andrews (1991). The alternative is \code{\link{bwNeweyWest}} of Newey-West(1994).}
+\item{bw}{The method to compute the bandwidth parameter in the HAC
+  weighting matrix. The default is \code{link{bwAndrews}} (as proposed in Andrews
+  (1991)), which minimizes the MSE of the weighting matrix. Alternatives
+  are \code{link{bwWilhelm}} (as proposed in Wilhelm
+  (2015)), which minimizes the mean-square error (MSE) of the resulting
+  GMM estimator, and \code{link{bwNeweyWest}} (as proposed in Newey-West(1994)).}
 
 \item{prewhite}{logical or integer. Should the estimating functions be prewhitened? If \code{TRUE} or greater than 0 a VAR model of order \code{as.integer(prewhite)} is fitted via \code{ar} with method \code{"ols"} and \code{demean = FALSE}.}
 
