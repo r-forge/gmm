@@ -4,7 +4,9 @@
 \title{Wilhelm (2015) bandwidth selection}
 
 \description{
-It computes the optimal bandwidth for the HAC estimation of the covariance matrix of the moment conditions. 
+It computes the optimal bandwidth for the HAC estimation of the
+covariance matrix of the moment conditions. The bandwidth was shown by
+Wilhelm (2005) to be the one that minimizes the MSE of the GMM estimator. 
 }
 \usage{
 bwWilhelm(x, order.by = NULL, kernel = c("Quadratic Spectral",
