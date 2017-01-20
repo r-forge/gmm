@@ -106,7 +106,10 @@ FinRes.baseGmm.res <- function(z, object, ...)
         z$infVcov <- P$vcov
         z$infWmatrix <- P$wmatrix
         z$allArg <- P$allArg
-        z$met <- P$type
+        if (P$wmatrix=="ident")
+            z$met <- "One step GMM with W = identity"
+        else
+            z$met <- P$type
         z$kernel <- P$kernel
         z$coefficients <- c(z$coefficients)
         class(z) <- "gmm"
