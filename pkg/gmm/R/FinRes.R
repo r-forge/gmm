@@ -48,7 +48,10 @@ FinRes.baseGmm.res <- function(z, object, ...)
             }
         z$G <- z$gradv(z$coefficients, x)
         G <- z$G
-        v <- .weightFct(z$coefficient, x, P$vcov)
+        if (P$vcov == "TrueFixed")
+            v <- .weightFct(z$coefficient, x, "fixed")
+        else
+            v <- .weightFct(z$coefficient, x, P$vcov)
         z$v <- v
         if (P$vcov == "TrueFixed") 
             {
@@ -99,7 +102,6 @@ FinRes.baseGmm.res <- function(z, object, ...)
             } else {
                 z$w <- P$weightsMatrix
             }
-        
         z$weightsMatrix <- P$weightsMatrix
         z$infVcov <- P$vcov
         z$infWmatrix <- P$wmatrix
