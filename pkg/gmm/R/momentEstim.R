@@ -185,7 +185,7 @@ momentEstim.baseGmm.twoStep <- function(object, ...)
                 res <- optimize(.obj1, P$t0, x = x, w = w, ...)
                 res$par <- res$minimum
                 res$value <- res$objective
-            }	
+            }
         if (q == k2 | P$wmatrix == "ident")
             {
                 z = list(coefficients = res$par, objective = res$value, k=k, k2=k2, n=n, q=q, df=df)	

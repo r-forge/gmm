@@ -185,7 +185,6 @@ getModel.constGmm <- function(object, ...)
 
 getModel.baseGmm <- function(object, ...)
     {
-        
         object$allArg <- c(object, list(...))        
         if(is(object$g, "formula"))
             {
@@ -219,7 +218,10 @@ getModel.baseGmm <- function(object, ...)
             } else {
                 attr(object$x,"ModelType") <- "nonlinear"
                 attr(object$x, "momentfct") <- object$g
-                attr(object$x, "k") <- length(object$t0)
+                if (object$optfct == "optimize")
+                    attr(object$x, "k") <- 1
+                else
+                    attr(object$x, "k") <- length(object$t0)
                 attr(object$x, "q") <- NCOL(object$g(object$t0, object$x))
                 attr(object$x, "n") <- NROW(object$x)
                 if (object$optfct == "optimize")
