@@ -2,6 +2,7 @@ import(stats)
 importFrom(car, linearHypothesis, makeHypothesis, printHypothesis)
 importFrom(parallel, mclapply)
 importFrom(gmm, gmm, specTest, gmmWithConst, KTest)
+importFrom(graphics, plot)
 
 export(KConfid, bootGmm, plot.bootGmm, summary.bootGmm, bootJ, linearHypothesis.bootGmm, print.bootGmm)
 

@@ -1,5 +1,5 @@
 KConfid <- function(obj, which, type = c("K", "KJ"), alpha = 0.05, alphaJ = 0.01, n = 4,
-                    mc.cores=2)
+                    mc.cores=1)
 	{
         theApply <- mclapply
         if (Sys.info()[["sysname"]] == "Windows")
@@ -30,7 +30,7 @@ KConfid <- function(obj, which, type = c("K", "KJ"), alpha = 0.05, alphaJ = 0.01
 		} else {
 		if (any(which>length(obj$coefficients)) | any(which<=0))
 			stop("indices in which are not valid")
-		}
+            }
 	getUniInt <- function(tetx, obj, which, value=NULL, type , alpha, alphaJ, alphaK)
 		{
 		# value is the value of the other coefficient when we have 2 restrictions
@@ -39,7 +39,7 @@ KConfid <- function(obj, which, type = c("K", "KJ"), alpha = 0.05, alphaJ = 0.01
 		if (is.null(value))
 			value <- tetx
 		else
-			value <- c(tetx,value)
+                    value <- c(tetx,value)
 		res <- gmmWithConst(obj, which = which, value = value)
 		test <- KTest(res)
 		if (type == "K")
@@ -62,16 +62,16 @@ KConfid <- function(obj, which, type = c("K", "KJ"), alpha = 0.05, alphaJ = 0.01
 		step <- 5*sqrt(diag(vcov(obj)))[which]
 		X0 <- obj$coef[which]
 		getBoth <- function(d)
-			{
+                    {
 			res <- try(uniroot(getUniInt,c(X0,X0+d*step),
                                            obj = obj, which = which, type = type, 
                                            alpha = alpha, alphaJ = alphaJ, alphaK = alphaK,
                                            tol=1e-4), silent=TRUE)
 			if (class(res) == "try-error")
-				return(NA)
+                            return(NA)
 			else
-				return(res$root)
-			}
+                            return(res$root)
+                    }
 		res <- theApply(c(-1,1), getBoth, mc.cores=mc.cores)
 		c(res[[1]],res[[2]])
 	} else {

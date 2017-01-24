@@ -53,7 +53,6 @@
 	fT <- colSums(gt)
 	n <- nrow(gt)
 	q <- ncol(gt)
-        print(q)
 	All <- cbind(gt,qT)
 	All <- sweep(All,2,colMeans(All),FUN="-")
 	f <- function(x)

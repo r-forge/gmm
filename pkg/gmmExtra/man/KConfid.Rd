@@ -5,14 +5,17 @@
 \description{The confidence is either an interval or an ellipse.
 }
 \usage{
-KConfid(obj, which, type = c("K", "KJ"), alpha = 0.05, alphaJ = 0.01, n = 4)
+KConfid(obj, which, type = c("K", "KJ"), alpha = 0.05, alphaJ = 0.01,
+        n = 4, mc.cores=1)
 }
 \arguments{
  \item{obj}{Object of class "gmm" returned by \link{gmm} (not restricted)}
  \item{type}{Should we base the confidence interval on the K or K-J statistics.}
  \item{which}{A 2x1 vector or a scalar. The interval is computed for \code{coef(obj)[which]}. }
  \item{alpha, alphaJ}{The overall size and the size for the J-test when type is "KS".}
- \item{n}{The number of points to compute the confidence region is 4(n-1). It must be greater than 2.}
+ \item{n}{The number of points to compute the confidence region is
+   4(n-1). It must be greater than2.}
+ \item{mc.cores}{The number of cores to use in \link{mclapply}}
 }
 
 
@@ -39,10 +42,11 @@ zm <-  Finance[1:300, "rm"]-rf
 f1 <- zm
 f2 <- Finance[1:300, "hml"] - rf
 f3 <- Finance[1:300, "smb"] - rf
-res <- gmm(z ~ f1 + f2 + f3, ~ f1 + f2 + f3)
+## Kconfid fails with prewhite=1
+res <- gmm(z ~ f1 + f2 + f3, ~ f1 + f2 + f3, prewhite=0)
 
-KConfid(res,2)
-sol <- KConfid(res,c(2,3))
+KConfid(res,2, mc.cores=4)
+sol <- KConfid(res,c(2,3), mc.cores=4)
 plot(sol, main="Confidence Region")
 polygon(sol,col="grey")
 points(res$coef[2],res$coef[3],pch=21,bg=1)
