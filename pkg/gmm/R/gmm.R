@@ -471,9 +471,7 @@ getDat <- function (formula, h, data, error=TRUE)
             {
                 w <- attr(dat, "weight")$w
                 attr(w, "inv") <- FALSE
-            }
-        else if (type == "ident")
-            {
+            } else if (type == "ident") {
                 w <- diag(attr(dat, "q"))
                 attr(w, "inv") <- FALSE
             } else {
@@ -498,12 +496,17 @@ getDat <- function (formula, h, data, error=TRUE)
             }
         if (type == "iid")
             {
-                if ((attr(dat, "ModelType") == "linear") & (dat$ny == 1))
+                if (attr(dat, "ModelType") == "linear")
                     {
-                        e <- .residuals(tet, dat)$residuals
-                        sig <- mean(scale(e,scale=FALSE)^2)
-                        z <- dat$x[,(1+dat$ny+dat$k):ncol(dat$x)]
-                        w <- sig*crossprod(z)/length(e)
+                        if (dat$ny == 1)
+                            {
+                                e <- .residuals(tet, dat)$residuals
+                                sig <- mean(scale(e,scale=FALSE)^2)
+                                z <- dat$x[,(1+dat$ny+dat$k):ncol(dat$x)]
+                                w <- sig*crossprod(z)/length(e)
+                            } else {
+                                w <- crossprod(gt)/n
+                            }
                     } else {
                         w <- crossprod(gt)/n
                     }

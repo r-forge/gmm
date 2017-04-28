@@ -11,22 +11,22 @@
 #  A copy of the GNU General Public License is available at
 #  http://www.r-project.org/Licenses/
 
-.rho <- function(x, lamb, derive = 0, type = c("EL", "ET", "CUE", "HD", "ETEL", "ETHD"), k = 1)
-	{
-
+.rho <- function(x, lamb, derive = 0, type = c("EL", "ET", "CUE", "HD", "ETEL", "ETHD"),
+                 k = 1)
+    {
 	type <- match.arg(type)
 	lamb <- matrix(lamb, ncol = 1)
 	gml <- x%*%lamb*k
 	if (derive == 0)
-		{
+            {
 		if (type == "EL")
-			{
+                    {
 			if (any(gml>=1))
-				stop("Computation of Lambda fails because NAs produced by log(1-gt*l)")
+                            stop("Computation of Lambda fails because NAs produced by log(1-gt*l)")
 			rhomat <- log(1 - gml) 
-			}
+                    }
 		if (type == "ET")
-			rhomat <- -exp(gml)
+                    rhomat <- -exp(gml)
 		if (type == "CUE")
                     rhomat <- -gml -0.5*gml^2
                 if (type == "HD")
@@ -43,143 +43,154 @@
                         w <- w/sum(w)
                         rhomat <- (sqrt(w)-1/sqrt(NROW(gml)))^2
                     }
-		}
+            }
 	if (derive==1)
-		{
+            {
 		if (type == "EL")
-			rhomat <- -1/(1 - gml) 
+                    rhomat <- -1/(1 - gml) 
 		if (type == "ET")
-			rhomat <- -exp(gml)
+                    rhomat <- -exp(gml)
 		if (type == "CUE")
                     rhomat <- -1 - gml
                 if (type == "HD")
                     rhomat <- -1/((1-gml/2)^2)
                 if (any(type == c("ETEL","ETHD")))
                     rhomat <- NULL
-		}
+            }
 	if (derive==2)
-		{
+            {
 		if (type == "EL")
-			rhomat <- -1/(1 - gml)^2 			
+                    rhomat <- -1/(1 - gml)^2 			
 		if (type == "ET")
-			rhomat <- -exp(gml)		
+                    rhomat <- -exp(gml)		
 		if (type == "CUE")
                     rhomat <- -rep(1,nrow(x))
                 if (type == "HD")
                     rhomat <- -1/((1-gml/2)^3)
                 if (any(type == c("ETEL","ETHD")))
                     rhomat <- NULL                
-		}
+            }
 	return(c(rhomat))
-	}
+    }
 
-.getCgelLam <- function(gt, l0, type = c('EL', 'ET', 'CUE', "HD"), method = c("nlminb", "optim", "constrOptim"), control=list(), k = 1, alpha = 0.01)
-	{
+.getCgelLam <- function(gt, l0, type = c('EL', 'ET', 'CUE', "HD"),
+                        method = c("nlminb", "optim", "constrOptim"),
+                        control=list(), k = 1, alpha = 0.01)
+    {
 	type <- match.arg(type)
 	method <- match.arg(method)
 	fct <- function(l, X)
-		{
+            {
 		r1 <- colMeans(.rho(gt,l,derive=1,type=type,k=k)*X)
 		crossprod(r1) + alpha*crossprod(l)
-		}
+            }
 	Dfct <- function(l, X)
-		{
+            {
 		r2 <- .rho(X,l,derive=2,type=type,k=k)
 		r1 <- .rho(X,l,derive=1,type=type,k=k)
 		H <- t(X*r2)%*%X/nrow(X)
 		2*H%*%colMeans(r1*X) + 2*alpha*l
-		}
+            }
 
 	if (method == "nlminb")
-		res <- nlminb(l0, fct, Dfct, X = gt, control = control) 
+            res <- nlminb(l0, fct, Dfct, X = gt, control = control) 
 	if (method == "optim")
-		res <- optim(l0, fct, Dfct, X = gt, method="BFGS", control = control) 
+            res <- optim(l0, fct, Dfct, X = gt, method="BFGS", control = control) 
 	if (method == "constrOptim")
-		{
+            {
 		ci <- -rep(1,nrow(gt))
 		res <- constrOptim(rep(0,ncol(gt)),fct,Dfct,-gt,ci,control=control,X=gt)
-		}
+            }
 	if (method == "optim")
-		{
-		conv <- list(convergence = res$convergence, counts = res$counts, message = res$message)
-	} else {
-		conv <- list(convergence = res$convergence, counts = res$evaluations, message = res$message)
-		}
-
+            {
+		conv <- list(convergence = res$convergence,
+                             counts = res$counts, message = res$message)
+            } else {
+		conv <- list(convergence = res$convergence, counts = res$evaluations,
+                             message = res$message)
+            }
+        
 	return(list(lambda = res$par, convergence = conv, 
-			obj = mean(.rho(gt,res$par, derive=0,type=type,k=k))))	
-	}
+                    obj = mean(.rho(gt,res$par, derive=0,type=type,k=k))))	
+    }
 
-getLamb <- function(gt, l0, type = c('EL', 'ET', 'CUE', "ETEL", "HD", "ETHD"), tol_lam = 1e-7, maxiterlam = 100, tol_obj = 1e-7, 
-		k = 1, 	method = c("nlminb", "optim", "iter"), control=list())
-	{
+getLamb <- function(gt, l0, type = c('EL', 'ET', 'CUE', "ETEL", "HD", "ETHD"),
+                    tol_lam = 1e-7, maxiterlam = 100, tol_obj = 1e-7, 
+                    k = 1, method = c("nlminb", "optim", "iter"), control=list())
+    {
 	method <- match.arg(method)
 	if(is.null(dim(gt)))
-		gt <- matrix(gt,ncol=1)
-
+            gt <- matrix(gt,ncol=1)
+        
 	if (method == "iter")
-		{
+            {
 		if ((type == "ETEL") | (type == "ETHD"))
-			type = "ET"
+                    type = "ET"
 		for (i in 1:maxiterlam)
-			{
+                    {
 			r1 <- .rho(gt,l0,derive=1,type=type,k=k)
 			r2 <- .rho(gt,l0,derive=2,type=type,k=k)
 			F <- -colMeans(r1*gt)
 			J <- crossprod(r2*gt,gt)
 			if (sum(abs(F))<tol_obj)
-				{
+                            {
 				conv <- list(convergence="Tolerance for the FOC reached")
 				break
-				}
+                            }
 			P <- solve(J,F)
 			if (sum(abs(P))<tol_lam)
-				{
+                            {
 				conv <- list(convergence="Tolerance on lambda reached")	
 				break
-				}
+                            }
 			l0 <- l0 + P
 			conv <- list(convergence="maxiterlam reached")
-			}
-		}
-	 else
-		{
+                    }
+            } else {
 		fct <- function(l,X,type,k)
-			{
+                    {
 			r0 <- .rho(X,l,derive=0,type=type,k=k)
 			-mean(r0)
-			}
+                    }
 		Dfct <- function(l,X,type,k)
-			{
+                    {
 			r1 <- .rho(X,l,derive=1,type=type,k=k)
 		        -colMeans(r1*X)
-			}
+                    }
 		DDfct <- function(l,X,type,k)
-			{
+                    {
 			r2 <- .rho(X,l,derive=2,type=type,k=k)
 			-t(X*r2)%*%X/nrow(X)
-                        }
+                    }
 		if ((type == "ETEL")|(type=="ETHD"))                
-			type = "ET"
+                    type = "ET"
 		if (method=="optim")
-				{
-				if (type != "EL"){
-					res <- optim(rep(0,ncol(gt)),fct,gr=Dfct,X=gt,type=type,k=k,method="BFGS",control=control)
-				} else {	
-					ci <- -rep(1,nrow(gt))
-					res <- constrOptim(rep(0,ncol(gt)),fct,Dfct,-gt,ci,control=control,X=gt,type=type,k=k)
-				}
-			} else {
-				res <- nlminb(rep(0,ncol(gt)), fct, gradient = Dfct, hessian = DDfct, X = gt, type=type, k=k, control = control)
+                    {
+                        if (type != "EL")
+                            {
+                                res <- optim(rep(0,ncol(gt)),fct,gr=Dfct,X=gt,type=type,
+                                             k=k,method="BFGS",control=control)
+                            } else {	
+                                ci <- -rep(1,nrow(gt))
+                                res <- constrOptim(rep(0,ncol(gt)),fct,Dfct,-gt,ci,
+                                                   control=control,X=gt,type=type,k=k)
                             }
+                    } else {
+                        res <- nlminb(rep(0,ncol(gt)), fct, gradient = Dfct,
+                                      hessian = DDfct, X = gt, type=type, k=k,
+                                      control = control)
+                    }
 		l0 <- res$par
 		if (method == "optim" | method == "constrOptim")
-			conv <- list(convergence = res$convergence, counts = res$counts, message = res$message)
+                    conv <- list(convergence = res$convergence, counts = res$counts,
+                                 message = res$message)
 		if(method == "nlminb")
-			conv <- list(convergence = res$convergence, counts = res$evaluations, message = res$message)
-		}
-	return(list(lambda = l0, convergence = conv, obj = mean(.rho(gt,l0,derive=0,type=type,k=k))))
-	}
+                    conv <- list(convergence = res$convergence, counts =
+                                     res$evaluations, message = res$message)
+            }
+	return(list(lambda = l0, convergence = conv, obj =
+                        mean(.rho(gt,l0,derive=0,type=type,k=k))))
+    }
 
 smoothG <- function (x, bw = bwAndrews, prewhite = 1, ar.method = "ols", weights = weightsAndrews,
 			kernel = c("Bartlett", "Parzen", "Truncated", "Tukey-Hanning"), approx = c("AR(1)", "ARMA(1,1)"),
@@ -220,14 +231,17 @@ smoothG <- function (x, bw = bwAndrews, prewhite = 1, ar.method = "ols", weights
     }
                       
 
-gel <- function(g, x, tet0 = NULL, gradv = NULL, smooth = FALSE, type = c("EL", "ET", "CUE", "ETEL", "HD", "ETHD"), 
-                kernel = c("Truncated", "Bartlett"), bw = bwAndrews, approx = c("AR(1)", 
-    		"ARMA(1,1)"), prewhite = 1, ar.method = "ols", tol_weights = 1e-7, tol_lam = 1e-9, tol_obj = 1e-9, 
-		tol_mom = 1e-9, maxiterlam = 100, constraint = FALSE, optfct = c("optim", "optimize", "nlminb"), 
-                optlam = c("nlminb", "optim", "iter"), data, Lambdacontrol = list(), model = TRUE, X = FALSE, Y = FALSE, TypeGel = "baseGel", alpha = NULL,
+gel <- function(g, x, tet0 = NULL, gradv = NULL, smooth = FALSE,
+                type = c("EL", "ET", "CUE", "ETEL", "HD", "ETHD"), 
+                kernel = c("Truncated", "Bartlett"), bw = bwAndrews,
+                approx = c("AR(1)", "ARMA(1,1)"), prewhite = 1, ar.method = "ols",
+                tol_weights = 1e-7, tol_lam = 1e-9, tol_obj = 1e-9, 
+		tol_mom = 1e-9, maxiterlam = 100, constraint = FALSE,
+                optfct = c("optim", "optimize", "nlminb"), 
+                optlam = c("nlminb", "optim", "iter"), data, Lambdacontrol = list(),
+                model = TRUE, X = FALSE, Y = FALSE, TypeGel = "baseGel", alpha = NULL,
                 eqConst = NULL, eqConstFullVcov = FALSE, ...)
-	{
-
+    {
 	type <- match.arg(type)
 	optfct <- match.arg(optfct)
 	optlam <- match.arg(optlam)
@@ -236,47 +250,53 @@ gel <- function(g, x, tet0 = NULL, gradv = NULL, smooth = FALSE, type = c("EL", 
 	kernel <- match.arg(kernel)
         if (!is.null(eqConst))
             TypeGel <- "constGel"
-
+        
 	if(missing(data))
-		data<-NULL
-	all_args <- list(g = g, x = x, tet0 = tet0, gradv = gradv, smooth = smooth, type = type,
-                kernel = kernel, bw = bw, approx = approx, prewhite = prewhite, ar.method = ar.method, 
-		tol_weights = tol_weights, tol_lam = tol_lam, tol_obj = tol_obj, tol_mom = tol_mom, 
-		maxiterlam = maxiterlam, constraint = constraint, optfct = optfct, weights = weights,
-                         optlam = optlam, model = model, X = X, Y = Y, TypeGel = TypeGel, call = match.call(), 
-		Lambdacontrol = Lambdacontrol, alpha = alpha, data = data, eqConst = eqConst, eqConstFullVcov = eqConstFullVcov)
-
+            data<-NULL
+	all_args <- list(g = g, x = x, tet0 = tet0, gradv = gradv, smooth = smooth,
+                         type = type, kernel = kernel, bw = bw, approx = approx,
+                         prewhite = prewhite, ar.method = ar.method,
+                         tol_weights = tol_weights, tol_lam = tol_lam,
+                         tol_obj = tol_obj, tol_mom = tol_mom, maxiterlam = maxiterlam,
+                         constraint = constraint, optfct = optfct, weights = weights,
+                         optlam = optlam, model = model, X = X, Y = Y,
+                         TypeGel = TypeGel, call = match.call(),
+                         Lambdacontrol = Lambdacontrol, alpha = alpha, data = data,
+                         eqConst = eqConst, eqConstFullVcov = eqConstFullVcov)
 	class(all_args)<-TypeGel
 	Model_info<-getModel(all_args)
 	z <- momentEstim(Model_info, ...)
-
+        
 	class(z) <- "gel"
 	return(z)
 	}
 
-evalGel <- function(g, x, tet0, gradv = NULL, smooth = FALSE, type = c("EL", "ET", "CUE", "ETEL", "HD", "ETHD"), 
-                    kernel = c("Truncated", "Bartlett"), bw = bwAndrews, approx = c("AR(1)", "ARMA(1,1)"),
-                    prewhite = 1, ar.method = "ols", tol_weights = 1e-7, tol_lam = 1e-9, tol_obj = 1e-9, 
-                    tol_mom = 1e-9, maxiterlam = 100, optlam = c("nlminb", "optim", "iter"), data, Lambdacontrol = list(),
+evalGel <- function(g, x, tet0, gradv = NULL, smooth = FALSE,
+                    type = c("EL", "ET", "CUE", "ETEL", "HD", "ETHD"), 
+                    kernel = c("Truncated", "Bartlett"), bw = bwAndrews,
+                    approx = c("AR(1)", "ARMA(1,1)"), prewhite = 1,
+                    ar.method = "ols", tol_weights = 1e-7, tol_lam = 1e-9,
+                    tol_obj = 1e-9, tol_mom = 1e-9, maxiterlam = 100,
+                    optlam = c("nlminb", "optim", "iter"), data, Lambdacontrol = list(),
                     model = TRUE, X = FALSE, Y = FALSE, alpha = NULL, ...)
-	{
-
+    {
 	type <- match.arg(type)
 	optlam <- match.arg(optlam)
 	weights <- weightsAndrews
 	approx <- match.arg(approx)
 	kernel <- match.arg(kernel)
         TypeGel <- "baseGel"
-
+        
 	if(missing(data))
             data<-NULL
-	all_args <- list(g = g, x = x, tet0 = tet0, gradv = gradv, smooth = smooth, type = type,
-                         kernel = kernel, bw = bw, approx = approx, prewhite = prewhite, ar.method = ar.method, 
-                         tol_weights = tol_weights, tol_lam = tol_lam, tol_obj = tol_obj, tol_mom = tol_mom, 
-                         maxiterlam = maxiterlam, weights = weights, optlam = optlam, model = model, X = X,
-                         Y = Y, call = match.call(), Lambdacontrol = Lambdacontrol, alpha = alpha, data = data,
-                         optfct="optim")
-                         
+	all_args <- list(g = g, x = x, tet0 = tet0, gradv = gradv, smooth = smooth,
+                         type = type, kernel = kernel, bw = bw, approx = approx,
+                         prewhite = prewhite, ar.method = ar.method, 
+                         tol_weights = tol_weights, tol_lam = tol_lam,
+                         tol_obj = tol_obj, tol_mom = tol_mom, maxiterlam = maxiterlam,
+                         weights = weights, optlam = optlam, model = model, X = X,
+                         Y = Y, call = match.call(), Lambdacontrol = Lambdacontrol,
+                         alpha = alpha, data = data, optfct="optim")
 	class(all_args)<-TypeGel
 	Model_info<-getModel(all_args)
         class(Model_info) <- "baseGel.eval"
@@ -293,37 +313,46 @@ evalGel <- function(g, x, tet0, gradv = NULL, smooth = FALSE, type = c("EL", "ET
         if (((P$type=="ETEL")|(P$type=="ETHD"))&(!is.null(P$CGEL)))
             {
                 P$CGEL <- NULL
-                warning("CGEL not implemented for ETEL no for ETHD")
+                warning("CGEL not implemented for ETEL or for ETHD")
             }
         if (is.null(P$CGEL))
             {
                 if (P$optlam != "optim" & P$type == "EL") 
                     {
-                        lamb <- try(getLamb(gt, l0, type = P$type, tol_lam = P$tol_lam, maxiterlam = P$maxiterlam, 
-                                            tol_obj = P$tol_obj, k = P$k1/P$k2, control = P$Lambdacontrol, 
+                        lamb <- try(getLamb(gt, l0, type = P$type, tol_lam = P$tol_lam,
+                                            maxiterlam = P$maxiterlam, 
+                                            tol_obj = P$tol_obj, k = P$k1/P$k2,
+                                            control = P$Lambdacontrol, 
                                             method = P$optlam), silent = TRUE)
                         if(class(lamb) == "try-error")
-                            lamb <- getLamb(gt, l0, type = P$type, tol_lam = P$tol_lam, maxiterlam = P$maxiterlam, 
-                                            tol_obj = P$tol_obj, k = P$k1/P$k2, control = P$Lambdacontrol, method = "optim")
+                            lamb <- getLamb(gt, l0, type = P$type, tol_lam = P$tol_lam,
+                                            maxiterlam = P$maxiterlam, 
+                                            tol_obj = P$tol_obj, k = P$k1/P$k2,
+                                            control = P$Lambdacontrol, method = "optim")
+                    } else {
+                        lamb <- getLamb(gt, l0, type = P$type,  tol_lam = P$tol_lam,
+                                        maxiterlam = P$maxiterlam, tol_obj = P$tol_obj,
+                                        k = P$k1/P$k2, control = P$Lambdacontrol,
+                                        method = P$optlam)
                     }
-                else
-		    lamb <- getLamb(gt, l0, type = P$type,  tol_lam = P$tol_lam, maxiterlam = P$maxiterlam, 
-                                    tol_obj = P$tol_obj, k = P$k1/P$k2, control = P$Lambdacontrol, method = P$optlam)
-            }
-        else
-            {
-                lamb <- try(.getCgelLam(gt, l0, type = P$type, method = "nlminb", control=P$Lambdacontrol, 
-                                        k = P$k1/P$k2, alpha = P$CGEL),silent=TRUE)
+            } else {
+                lamb <- try(.getCgelLam(gt, l0, type = P$type, method = "nlminb",
+                                        control=P$Lambdacontrol, k = P$k1/P$k2,
+                                        alpha = P$CGEL),silent=TRUE)
                 if (class(lamb) == "try-error")
-                    lamb <- try(.getCgelLam(gt, l0, type = P$type, method = "constrOptim", control=P$Lambdacontrol, 
+                    lamb <- try(.getCgelLam(gt, l0, type = P$type,
+                                            method = "constrOptim",
+                                            control=P$Lambdacontrol, 
                                             k = P$k1/P$k2, alpha = P$CGEL),silent=TRUE)
             }
         if (P$type != "ETHD")
-            obj <- mean(.rho(gt, lamb$lambda, type = P$type, derive = 0, k = P$k1/P$k2)-
-                            .rho(1, 0, type = P$type, derive = 0, k = P$k1/P$k2))
+            obj <- mean(.rho(gt, lamb$lambda, type = P$type, derive = 0,
+                             k = P$k1/P$k2) - .rho(1, 0, type = P$type,
+                                 derive = 0, k = P$k1/P$k2))
         else
-            obj <- sum(.rho(gt, lamb$lambda, type = P$type, derive = 0, k = P$k1/P$k2)-
-                           .rho(1, 0, type = P$type, derive = 0, k = P$k1/P$k2))
+            obj <- sum(.rho(gt, lamb$lambda, type = P$type, derive = 0,
+                            k = P$k1/P$k2) - .rho(1, 0, type = P$type, derive = 0,
+                                k = P$k1/P$k2))
         assign("l0",lamb$lambda,envir=l0Env)
         if(output == "obj")
 	    return(obj)
