@@ -382,4 +382,30 @@ evalGel <- function(g, x, tet0, gradv = NULL, smooth = FALSE,
     }
 
                 
-            
+.vcovGel <- function(gt, G, k1, k2, bw, pt=NULL,tol=1e-16)
+    {
+        q <- NCOL(gt)
+        n <- NROW(gt)
+        if (is.null(pt))
+            pt <- 1/n
+        G <- G/k1
+        gt <- gt*sqrt(pt*bw/k2)
+        qrGt <- qr(gt)
+        piv <- sort.int(qrGt$pivot, index.return=TRUE)$ix
+        R <- qr.R(qrGt)[,piv]
+        X <- forwardsolve(t(R), G)
+        Y <- forwardsolve(t(R), diag(q))
+        res <- lm.fit(X,Y)
+        u <- res$residuals
+        Sigma <- chol2inv(res$qr$qr)/n
+        diag(Sigma)[diag(Sigma)<0] <- tol
+        if (q==ncol(G))
+            {
+                SigmaLam <- matrix(0, q, q)
+            } else {
+                SigmaLam <- backsolve(R, u)/n*bw^2
+                diag(SigmaLam)[diag(SigmaLam)<0] <- tol
+            }
+        khat <- crossprod(R)
+        list(vcov_par=Sigma, vcov_lambda=SigmaLam,khat=khat)
+    }

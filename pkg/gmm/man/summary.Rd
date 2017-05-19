@@ -2,6 +2,7 @@
 \alias{summary.gmm}
 \alias{summary.sysGmm}
 \alias{summary.gel}
+\alias{summary.ategel}
 \alias{summary.tsls}
 \alias{print.summary.gmm}
 \alias{print.summary.sysGmm}
@@ -15,6 +16,7 @@ It presents the results from the \code{gmm} or \code{gel} estimation in the same
 \method{summary}{gmm}(object, ...)
 \method{summary}{sysGmm}(object, ...)
 \method{summary}{gel}(object, ...)
+\method{summary}{ategel}(object, robToMiss = TRUE, ...)
 \method{summary}{tsls}(object, vcov = NULL, ...)
 \method{print}{summary.gmm}(x, digits = 5, ...)
 \method{print}{summary.sysGmm}(x, digits = 5, ...)
@@ -25,7 +27,10 @@ It presents the results from the \code{gmm} or \code{gel} estimation in the same
  \item{object}{An object of class \code{gmm} or \code{gel} returned by the function \code{\link{gmm}} or \code{\link{gel}}}
  \item{x}{An object of class \code{summary.gmm} or \code{summary.gel} returned by the function \code{\link{summary.gmm}} \code{\link{summary.gel}}}
 \item{digits}{The number of digits to be printed}
-\item{vcov}{An alternative covariance matrix computed with \code{vcov.tsls}}
+\item{vcov}{An alternative covariance matrix computed with
+  \code{vcov.tsls}}
+\item{robToMiss}{If \code{TRUE}, it computes the robust to
+    misspecification covariance matrix}
 \item{...}{Other arguments when summary is applied to another class object}
 }
 

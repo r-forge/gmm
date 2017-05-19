@@ -46,10 +46,13 @@ gmm <- function(g,x,t0=NULL,gradv=NULL, type=c("twoStep","cue","iterative"), wma
         z
     }
 
-evalGmm <- function(g, x, t0, tetw=NULL, gradv=NULL, wmatrix = c("optimal","ident"),  vcov=c("HAC","iid","TrueFixed"), 
-                    kernel=c("Quadratic Spectral","Truncated", "Bartlett", "Parzen", "Tukey-Hanning"),crit=10e-7,bw = bwAndrews, 
+evalGmm <- function(g, x, t0, tetw=NULL, gradv=NULL, wmatrix = c("optimal","ident"),
+                    vcov=c("HAC","iid","TrueFixed"), 
+                    kernel=c("Quadratic Spectral","Truncated", "Bartlett", "Parzen",
+                        "Tukey-Hanning"),crit=10e-7,bw = bwAndrews, 
                     prewhite = FALSE, ar.method = "ols", approx="AR(1)",tol = 1e-7,
-                    model=TRUE, X=FALSE, Y=FALSE,  centeredVcov = TRUE, weightsMatrix = NULL, data)
+                    model=TRUE, X=FALSE, Y=FALSE,  centeredVcov = TRUE,
+                    weightsMatrix = NULL, data)
     {
         TypeGmm = "baseGmm"
         type <- "eval"    
@@ -58,17 +61,19 @@ evalGmm <- function(g, x, t0, tetw=NULL, gradv=NULL, wmatrix = c("optimal","iden
         wmatrix <- match.arg(wmatrix)
         if (is.null(tetw) & is.null(weightsMatrix))
             stop("If the weighting matrix is not provided, you need to provide the vector of parameters tetw")
-        
         if(vcov=="TrueFixed" & is.null(weightsMatrix))
             stop("TrueFixed vcov only for fixed weighting matrix")
         if(!is.null(weightsMatrix))
             wmatrix <- "optimal"
         if(missing(data))
             data<-NULL
-        all_args<-list(data = data, g = g, x = x, t0 = t0, tetw = tetw, gradv = gradv, type = type, wmatrix = wmatrix, vcov = vcov, kernel = kernel,
-                       crit = crit, bw = bw, prewhite = prewhite, ar.method = ar.method, approx = approx, 
-                       weightsMatrix = weightsMatrix, centeredVcov = centeredVcov, tol = tol, itermax = 100, 
-                       optfct = NULL, model = model, X = X, Y = Y, call = match.call(), traceIter = NULL, 
+        all_args<-list(data = data, g = g, x = x, t0 = t0, tetw = tetw, gradv = gradv,
+                       type = type, wmatrix = wmatrix, vcov = vcov, kernel = kernel,
+                       crit = crit, bw = bw, prewhite = prewhite, ar.method = ar.method,
+                       approx = approx, weightsMatrix = weightsMatrix,
+                       centeredVcov = centeredVcov, tol = tol, itermax = 100, 
+                       model = model, X = X, Y = Y, call = match.call(),
+                       traceIter = NULL, optfct="optim",
                        eqConst = NULL, eqConstFullVcov = FALSE)
         class(all_args)<-TypeGmm
         Model_info<-getModel(all_args)
@@ -396,6 +401,7 @@ getDat <- function (formula, h, data, error=TRUE)
         return(obj)
     }	
 
+  
 .momentFct <- function(tet, dat)
     {
         if (!is.null(attr(dat, "eqConst")))

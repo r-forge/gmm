@@ -3,6 +3,7 @@ importFrom(sandwich, estfun, bread, kernHAC, weightsAndrews, vcovHAC, bwAndrews,
 importFrom(methods, is)
 importFrom(graphics, abline, legend, lines, panel.smooth, par, plot, points)
 importFrom(grDevices, dev.interactive, devAskNewPage,  extendrange)
+importFrom(utils, tail)
 
 export(gmm,summary.gmm,smoothG,getDat,summary.gel,getLamb,gel, estfun.gmmFct, estfun.gmm, estfun.gel, bread.gel, bread.gmm, 
        print.gmm,coef.gmm,vcov.gmm,print.summary.gmm, confint.gel, print.gel, print.summary.gel, vcov.gel, coef.gel, fitted.gmm, 
@@ -14,12 +15,15 @@ export(gmm,summary.gmm,smoothG,getDat,summary.gel,getLamb,gel, estfun.gmmFct, es
        KTest, print.gmmTests, gmmWithConst, estfun.tsls, model.matrix.tsls,vcov.tsls, bread.tsls, evalGmm, momentEstim.baseGmm.eval,
        momentEstim.baseGel.eval, evalGel, confint.gmm, print.confint, sysGmm, getModel.sysGmm, momentEstim.sysGmm.twoStep.formula,
        momentEstim.tsls.twoStep.formula, getModel.tsls, summary.sysGmm, print.sysGmm, print.summary.sysGmm,
-       sur, threeSLS, randEffect, five, bwWilhelm)
- 
+       sur, threeSLS, randEffect, five, bwWilhelm, getModel.ateGel, ATEgel,
+       summary.ategel, vcov.ategel, confint.ategel, marginal, marginal.ategel)
+
+S3method(marginal, ategel)
 S3method(summary, gmm)
 S3method(summary, sysGmm)
 S3method(summary, tsls)
 S3method(summary, gel)
+S3method(summary, ategel)
 S3method(print, gmm)
 S3method(print, sysGmm)
 S3method(print, summary.gmm)
@@ -28,6 +32,7 @@ S3method(coef, gmm)
 S3method(vcov, gmm)
 S3method(vcov, tsls)
 S3method(confint, gmm)
+S3method(confint, ategel)
 S3method(fitted, gmm)
 S3method(residuals, gmm)
 S3method(plot, gmm)
@@ -38,6 +43,7 @@ S3method(print, summary.tsls)
 S3method(print, gmmTests)
 S3method(coef, gel)
 S3method(vcov, gel)
+S3method(vcov, ategel)
 S3method(confint, gel)
 S3method(fitted, gel)
 S3method(residuals, gel)
@@ -54,6 +60,7 @@ S3method(getModel, sysGmm)
 S3method(getModel, constGmm)
 S3method(getModel, constGel)
 S3method(getModel, tsls)
+S3method(getModel, ateGel)
 S3method(momentEstim, baseGmm.twoStep)
 S3method(momentEstim, baseGmm.eval)
 S3method(momentEstim, baseGmm.twoStep.formula)

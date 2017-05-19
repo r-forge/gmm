@@ -779,28 +779,17 @@ momentEstim.baseGel.modFormula <- function(object, ...)
             G <- P$gradv(z$coefficients, P$x)
         else
             G <- P$gradv(z$coefficients, P$x, z$pt)
-        khat <- crossprod(c(z$pt)*z$gt,z$gt)/(P$k2)*P$bwVa
-        z$G <- G
-        G <- G/P$k1
-        kg <- solve(khat, G)
-        z$vcov_par <- try(solve(crossprod(G, kg))/n, silent=TRUE)
-        if (class(z$vcov_par) == "try-error")
+        allVcov <- try(.vcovGel(gt, G, P$k1, P$k2, P$bwVal, z$pt),
+                       silent=TRUE)
+        if (class(allVcov) == "try-error")
             {
-                warning("Cannot compute the covariance matrix of the coefficients; matrix singular")
                 z$vcov_par <- matrix(NA, length(z$coefficients), length(z$coefficients))
-            }
-        if (dim(G)[1] == dim(G)[2])
-            {
-                z$vcov_lambda <- matrix(0, dim(G)[1], dim(G)[2])
+                z$vcov_lambda <- matrix(NA, length(z$lambda), length(z$lambda))
+                z$khat <- NULL
+                warning("Cannot compute the covariance matrices")
             } else {
-                z$vcov_lambda <- try(solve(khat, ( diag(ncol(khat)) - G %*% (z$vcov_par*n) %*% t(kg) ))/n*P$bwVal^2, silent=TRUE)
-                if (class(z$vcov_lambda) == "try-error")
-                    {
-                        warning("Cannot compute the covariance matrix of the lambdas; matrix singular")
-                        z$vcov_lambda <- matrix(NA, length(z$lambda), length(z$lambda))
-                    }
-            }
-  
+                z <- c(z, allVcov)
+            }        
         z$weights <- P$w
         z$bwVal <- P$bwVal
         names(z$bwVal) <- "Bandwidth"
@@ -814,7 +803,6 @@ momentEstim.baseGel.modFormula <- function(object, ...)
         if(P$model) z$model <- P$x$mf
         if(P$X) z$x <- as.matrix(P$x$x[,(P$x$ny+1):(P$x$ny+P$x$k)])
         if(P$Y) z$y <- as.matrix(P$x$x[,1:P$x$ny])  
-        z$khat <- khat
         class(z) <- paste(P$TypeGel, ".res", sep = "")
         z$allArg <- P$allArg
         return(z)
@@ -883,43 +871,31 @@ momentEstim.baseGel.mod <- function(object, ...)
                 attr(x,"eqConst") <- NULL
                 z$specMod <- paste(z$specMod, "** Note: Covariance matrix computed for all coefficients based on restricted values \n   Tests non-valid**\n\n")
             }
-
         if(P$gradvf)
             G <- P$gradv(z$coefficients, x)
         else
             G <- P$gradv(z$coefficients, x, z$pt)
         z$G <- G
-        khat <- crossprod(c(z$pt)*z$gt, z$gt)/(P$k2)*P$bwVal
-        G <- G/P$k1
-        kg <- solve(khat, G)
-        z$vcov_par <- try(solve(crossprod(G, kg))/n, silent=TRUE)
-        if (class(z$vcov_par) == "try-error")
+        allVcov <- try(.vcovGel(gt, G, P$k1, P$k2, P$bwVal, z$pt),
+                         silent=TRUE)
+        if (class(allVcov) == "try-error")
             {
-                warning("Cannot compute the covariance matrix of the coefficients; matrix singular")
                 z$vcov_par <- matrix(NA, length(z$coefficients), length(z$coefficients))
-            }
-        if (dim(G)[1] == dim(G)[2])
-            {
-                z$vcov_lambda <- matrix(0, dim(G)[1], dim(G)[2])
+                z$vcov_lambda <- matrix(NA, length(z$lambda), length(z$lambda))
+                z$khat <- NULL
+                warning("Cannot compute the covariance matrices")
             } else {
-                z$vcov_lambda <- try(solve(khat, ( diag(ncol(khat)) - G %*% (z$vcov_par*n) %*% t(kg) ))/n*P$bwVal^2, silent=TRUE)
-                if (class(z$vcov_lambda) == "try-error")
-                    {
-                        warning("Cannot compute the covariance matrix of the lambdas; matrix singular")
-                        z$vcov_lambda <- matrix(NA, length(z$lambda), length(z$lambda))
-                    }
-            }
+                z <- c(z, allVcov)
+            } 
         z$weights <- P$w
         z$bwVal <- P$bwVal
         names(z$bwVal) <- "Bandwidth"
- 
         dimnames(z$vcov_par) <- list(names(z$coefficients), names(z$coefficients))
         dimnames(z$vcov_lambda) <- list(names(z$lambda), names(z$lambda))
         if(P$X) z$x <- x
         z$call <- P$call
         z$k1 <- P$k1
         z$k2 <- P$k2
-        z$khat <- khat
         z$CGEL <- P$CGEL
         z$typeDesc <- P$typeDesc
         z$allArg <- P$allArg        
@@ -1108,17 +1084,9 @@ momentEstim.baseGel.eval <- function(object, ...)
             G <- P$gradv(z$coefficients, P$x)
         else
             G <- P$gradv(z$coefficients, P$x, z$pt)
-        khat <- crossprod(c(z$pt)*z$gt,z$gt)/(P$k2)*P$bwVa
-
         z$G <- G
-        G <- G/P$k1
-        kg <- solve(khat, G)
-        z$vcov_par <- solve(crossprod(G, kg))/n
-        if (dim(G)[1] == dim(G)[2])
-            z$vcov_lambda <- matrix(0, dim(G)[1], dim(G)[2])
-        else
-            z$vcov_lambda <- solve(khat, ( diag(ncol(khat)) - G %*% (z$vcov_par*n) %*% t(kg) ))/n*P$bwVal^2
-        
+        allVcov <- .vcovGel(gt, G, P$k1, P$k2, P$bwVal, z$pt)
+        z <- c(z, allVcov)       
         z$weights <- P$w
         z$bwVal <- P$bwVal
         names(z$bwVal) <- "Bandwidth"
@@ -1134,7 +1102,6 @@ momentEstim.baseGel.eval <- function(object, ...)
                 if(P$X) z$x <- as.matrix(P$x$x[,(P$x$ny+1):(P$x$ny+P$x$k)])
                 if(P$Y) z$y <- as.matrix(P$x$x[,1:P$x$ny])
             } 
-        z$khat <- khat
         return(z)
     }
 

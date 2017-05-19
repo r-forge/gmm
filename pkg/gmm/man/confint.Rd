@@ -1,5 +1,6 @@
 \name{confint}
 \alias{confint.gel}
+\alias{confint.ategel}
 \alias{confint.gmm}
 \alias{print.confint}
 \title{Confidence intervals for GMM or GEL}
@@ -11,6 +12,9 @@ It produces confidence intervals for the coefficients from \code{gel} or \code{g
                         type = c("Wald", "invLR", "invLM", "invJ"),
                         fact = 3, corr = NULL, ...)
 \method{confint}{gmm}(object, parm, level = 0.95, ...)
+\method{confint}{ategel}(object, parm, level = 0.95, lambda = FALSE,
+                            type = c("Wald", "invLR", "invLM", "invJ"), fact = 3,
+                            corr = NULL, robToMiss=TRUE, ...)
 \method{print}{confint}(x, digits = 5, ...)
 }
 \arguments{
@@ -30,6 +34,8 @@ It produces confidence intervals for the coefficients from \code{gel} or \code{g
   the model (See Owen; 2001)}
 \item{x}{An object of class \code{confint} produced by \code{confint.gel} and \code{confint.gmm}}
 \item{digits}{The number of digits to be printed}
+\item{robToMiss}{If \code{TRUE}, the confidence interval is based on the
+  standard errors that are robust to  misspecification}
 \item{...}{Other arguments when \code{confint} is applied to another classe object}
 }
 

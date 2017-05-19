@@ -205,8 +205,10 @@ getModel.baseGmm <- function(object, ...)
                 if (dat$ny > 1)
                     {
                         namey <- colnames(dat$x[,1:dat$ny, drop=FALSE])
-                        object$namesCoef <- paste(rep(namey, dat$k), "_", rep(namex, rep(dat$ny, dat$k)), sep = "")
-                        object$namesgt <- paste(rep(namey, dat$nh), "_", rep(nameh, rep(dat$ny, dat$nh)), sep = "")
+                        object$namesCoef <- paste(rep(namey, dat$k), "_",
+                                                  rep(namex, rep(dat$ny, dat$k)), sep = "")
+                        object$namesgt <- paste(rep(namey, dat$nh), "_",
+                                                rep(nameh, rep(dat$ny, dat$nh)), sep = "")
                     } else {
                         object$namesCoef <- namex
                         object$namesgt <- nameh
@@ -422,6 +424,112 @@ getModel.baseGel <- function(object, ...)
         object$g <- .momentFct
         object$CGEL <- object$alpha
         object$typeDesc <- object$type
+        class(object) <- clname
+        return(object)
+    }
+
+getModel.ateGel <- function(object, ...)
+    {
+        object$allArg <- c(object, list(...))
+        object$allArg$weights <- NULL
+        object$allArg$call <- NULL
+        if(is(object$g, "formula"))
+            {
+                dat <- getDat(object$g, object$x, data = object$data)
+                if (dat$ny>1 | dat$ny==0)
+                    stop("You need one and only one dependent variable")
+                k <- dat$k
+                if (k>2 & object$momType=="ATT")
+                    stop("Cannot compute ATT with multiple treatments")
+                if (attr(dat$mt, "intercept")!=1)
+                    stop("An intercept is needed to compute the treatment effect")
+                if (!all(dat$x[,3:(k+1)] %in% c(0,1)))
+                    stop("The treatment indicators can only take values 0 or 1")
+                if (colnames(dat$x)[k+2] == "(Intercept)")
+                    {
+                        dat$x <- dat$x[,-(k+2)]
+                        dat$nh <- dat$nh-1
+                    }
+                if (!is.null(object$popMom))
+                    {
+                        if (length(object$popMom)!=dat$nh)
+                            stop("The dim. of the population moments does not match the dim. of the vector of covariates")                                 
+                    }
+                if (is.null(object$tet0))
+                    {
+                        tet0 <- lm(dat$x[,1]~dat$x[,3:(k+1)])$coef
+                        tet0 <- c(tet0, colMeans(dat$x[,3:(k+1),drop=FALSE]))
+                        names(tet0) <- NULL
+                        object$tet0 <- tet0
+                    } else {
+                        if (length(object$tet0) != (2*k-1))
+                            stop("tet0 should have a length equal to 2x(number of treatments)+1")
+                    }
+                if (object$family != "linear")
+                    {
+                        if (any(!(dat$x[,1]%in%c(0,1))))
+                            stop("For logit or probit, Y can only take 0s and 1s")
+                        family <- binomial(link=object$family)
+                        if (object$family == "logit")
+                            family$mu.eta2 <- function(x, family) family$mu.eta(x)*(1-2*family$linkinv(x))
+                        else
+                            family$mu.eta2 <- function(x, family) -x*family$mu.eta(x)
+                        
+                    } else {
+                        family <- NULL
+                    }
+                q <- dat$nh + 2*k+1
+                if (object$momType != "bal" | !is.null(object$popMom))
+                    q  <- q+dat$nh
+                object$gradv <- .DmomentFctATE
+                object$x <- dat
+                object$gradvf <- FALSE
+                object$gform<-object$g                
+                namex <- colnames(dat$x[,2:(k+1)])
+                nameh <- colnames(dat$x[,(k+2):ncol(dat$x), drop=FALSE])
+                namesCoef <- c(namex, paste("TreatProb", 1:(k-1), sep=""))
+                namesgt <- paste(rep(paste("Treat", 1:(k-1), sep=""), rep(dat$nh, k-1)), "_", rep(nameh, k-1), sep="")
+                object$namesgt <- c(namesCoef,namesgt)
+                if (object$momType != "bal" | !is.null(object$popMom))
+                    object$namesgt <- c(object$namesgt, paste("bal_", nameh, sep=""))
+                if (is.null(names(object$tet0)))
+                    object$namesCoef <- namesCoef
+                else
+                    object$namesCoef <- names(object$tet0)
+                attr(object$x,"ModelType") <- "linear"
+                attr(object$x, "k") <- k
+                attr(object$x, "q") <- q
+                attr(object$x, "n") <- nrow(dat$x)
+                attr(object$x, "momType") <- object$momType
+                attr(object$x, "popMom") <- object$popMom
+                attr(object$x, "family") <- family
+            } else {
+                stop("Not implemented yet for nonlinear regression")
+            }
+        if (object$momType == "ATT")
+            metname <- "ATT"
+        else
+            metname <- "ATE"
+        if (!is.null(object$popMom))
+            {
+                metname2 <- " with balancing based on population moments"
+            } else {
+                if (object$momType == "balSample")
+                    metname2 <- " with balancing based on the sample moments"
+                else
+                    metname2 <- " with unrestricted balancing"
+            }
+        metname3 <- paste("\nMethod: ", object$type, sep="")
+        if (!is.null(family))
+            metname3 <- paste(metname3, ", Family: Binomial with ", family$link, " link", sep="")
+        clname <- "baseGel.mod"
+        object$k1 <- 1
+        object$k2 <- 1
+        object$w <- kernel(1)
+        object$bwVal <- 1
+        object$g <- .momentFctATE
+        object$CGEL <- object$alpha
+        object$typeDesc <- paste(metname, metname2, metname3, sep="")
         class(object) <- clname
         return(object)
     }
