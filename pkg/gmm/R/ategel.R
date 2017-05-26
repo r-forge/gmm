@@ -52,7 +52,7 @@ ATEgel <- function(g, balm, y=NULL, treat=NULL, tet0=NULL,momType=c("bal","balSa
             {
                 if (attr(dat, "momType") == "balSample")
                     {
-                        momB <- scale(x[,-(1:(k+1))], scale=FALSE)
+                        momB <- scale(x[,-(1:(k+1)),drop=FALSE], scale=FALSE)
                         gt <- cbind(gt, momB)
                     }
                 if (attr(dat, "momType") == "ATT")
@@ -88,7 +88,7 @@ ATEgel <- function(g, balm, y=NULL, treat=NULL, tet0=NULL,momType=c("bal","balSa
         G11 <- lapply(1:k, function(i) -colSums(pt*Z[,i]*tau*Z))
         G[1:k, 1:k] <- do.call(rbind, G11)
         G[(k+1):(2*k-1), (k+1):(2*k-1)] <- -sum(pt)*diag(k-1)
-        uK <- colSums(pt*x[,-(1:(k+1))])
+        uK <- colSums(pt*x[,-(1:(k+1)),drop=FALSE])
         G[(2*k):q, (k+1):(2*k-1)] <- -kronecker(diag(k-1), uK)
         if (attr(dat, "momType") != "bal" | !is.null(attr(dat, "popMom")))
             G <- rbind(G, matrix(0, dat$nh, 2*k-1))
@@ -121,7 +121,7 @@ ATEgel <- function(g, balm, y=NULL, treat=NULL, tet0=NULL,momType=c("bal","balSa
         rho2 <- .rho(x=gt, lamb=lam, derive=1, type=object$type)
         Z <- object$dat$x[,2:(k+1)]
         ZT <- c(Z%*%theta[1:k])
-        X <- object$dat$x[,-(1:(k+1))]
+        X <- object$dat$x[,-(1:(k+1)), drop=FALSE]
         family <- attr(object$dat, "family")
         momType <- attr(object$dat, "momType")
         popMom <-  attr(object$dat, "popMom")
