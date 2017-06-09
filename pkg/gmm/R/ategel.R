@@ -3,7 +3,8 @@ ATEgel <- function(g, balm, y=NULL, treat=NULL, tet0=NULL,momType=c("bal","balSa
                    type = c("EL", "ET", "CUE", "ETEL", "HD", "ETHD"),
                    tol_lam = 1e-9, tol_obj = 1e-9, tol_mom = 1e-9, maxiterlam = 100,
                    optfct = c("optim", "nlminb"), 
-                   optlam = c("nlminb", "optim", "iter"), data=NULL, Lambdacontrol = list(),
+                   optlam = c("nlminb", "optim", "iter", "Wu"),
+                   data=NULL, Lambdacontrol = list(),
                    model = TRUE, X = FALSE, Y = FALSE, ...)
     {
         type <- match.arg(type)
@@ -28,16 +29,22 @@ ATEgel <- function(g, balm, y=NULL, treat=NULL, tet0=NULL,momType=c("bal","balSa
 	Model_info<-getModel(all_args)
 	z <- momentEstim(Model_info, ...)        
         class(z) <- c("ategel", "gel")
-        res <- .vcovate(z)
-        z$vcov_par <- res$vcov_par
-        z$vcov_lambda <- res$vcov_lambda
+        res <- try(.vcovate(z), silent=TRUE)
+        if (any(class(res)=="try-error"))
+            {
+                warning("Could not compute the robust-to misspecification standard errors")
+            } else {
+                z$vcov_par <- res$vcov_par
+                z$vcov_lambda <- res$vcov_lambda
+            }
 	return(z)
     }
 
 .momentFctATE <- function(tet, dat)
     {
         x <- dat$x
-        k <- attr(dat, "k")
+        #k <- attr(dat, "k")
+        k <- dat$k
         ZT <- c(x[,2:(k+1),drop=FALSE]%*%tet[1:k])
         if (is.null(attr(dat, "family")))
             e <- x[,1] - ZT
@@ -74,7 +81,8 @@ ATEgel <- function(g, balm, y=NULL, treat=NULL, tet0=NULL,momType=c("bal","balSa
         if (is.null(pt))
             pt <- rep(1/nrow(dat$x), nrow(dat$x))
         x <- dat$x
-        k <- attr(dat, "k")
+        #k <- attr(dat, "k")
+        k <- dat$k
         q <- dat$nh*(k-1)+2*k-1
         Z <- x[,2:(k+1), drop=FALSE]
         ZT <- c(Z%*%tet[1:k])
@@ -99,7 +107,8 @@ ATEgel <- function(g, balm, y=NULL, treat=NULL, tet0=NULL,momType=c("bal","balSa
 .DmomentFctATE2 <- function(tet, dat, pt=NULL)
     {
         G <- .DmomentFctATE(tet, dat, pt)
-        k <- attr(dat, "k")
+        #k <- attr(dat, "k")
+        k <- dat$k
         q <- dat$nh*(k-1)+2*k-1
         if (is.null(pt))
             pt <- rep(1/nrow(dat$x), nrow(dat$x))
@@ -261,6 +270,7 @@ confint.ategel <- function (object, parm, level = 0.95, lambda = FALSE,
         object$allArg$treat <- NULL
         object$allArg$popMom <- NULL
         object$allArg$momType <- NULL
+        object$allArg$family <- NULL
         object$allArg$x <- object$dat        
         return(confint.gel(object, parm, level, lambda, type, fact, corr, ...))
     }

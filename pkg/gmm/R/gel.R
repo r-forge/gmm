@@ -114,14 +114,53 @@
                     obj = mean(.rho(gt,res$par, derive=0,type=type,k=k))))	
     }
 
+.Wu <- function(gt, tol_lam = 1e-8, maxiterlam = 50, K=1)
+    {
+        u <- as.matrix(gt)
+        n=length(nrow(u))
+        M=rep(0,ncol(u))
+        dif=1
+        tol=tol_lam
+        k=0
+        while(dif>tol & k<=maxiterlam)
+            {
+                D1=t(u)%*%((1/(1+u%*%M))*rep(1,n))
+                DD=-t(u)%*%(c((1/(1+u%*%M)^2))*u)
+                D2=solve(DD,D1,tol=1e-40)
+                dif=max(abs(D2))
+                rule=1
+                while(rule>0)
+                    {
+                        rule=0
+                        if(min(1+t(M-D2)%*%t(u))<=0) rule=rule+1
+                        if(rule>0) D2=D2/2
+                    }
+                M=M-D2
+                k=k+1
+            }
+        if(k>=maxiterlam)
+            {
+                M=rep(0,ncol(u))
+                conv = list(convergence=1)
+            } else {
+                conv = list(convergence=0)
+            }
+	return(list(lambda = c(-M), convergence = conv, obj =
+                        mean(.rho(gt,-M,derive=0,type="EL",k=K))))        
+    }
+
 getLamb <- function(gt, l0, type = c('EL', 'ET', 'CUE', "ETEL", "HD", "ETHD"),
                     tol_lam = 1e-7, maxiterlam = 100, tol_obj = 1e-7, 
-                    k = 1, method = c("nlminb", "optim", "iter"), control=list())
+                    k = 1, method = c("nlminb", "optim", "iter", "Wu"), control=list())
     {
 	method <- match.arg(method)
 	if(is.null(dim(gt)))
             gt <- matrix(gt,ncol=1)
-        
+
+        if (method == "Wu" & type != "EL")
+            stop("Wu (2005) method to compute Lambda is for EL only")
+        if (method == "Wu")
+            return(.Wu(gt, tol_lam, maxiterlam, k))
 	if (method == "iter")
             {
 		if ((type == "ETEL") | (type == "ETHD"))
@@ -192,9 +231,11 @@ getLamb <- function(gt, l0, type = c('EL', 'ET', 'CUE', "ETEL", "HD", "ETHD"),
                         mean(.rho(gt,l0,derive=0,type=type,k=k))))
     }
 
-smoothG <- function (x, bw = bwAndrews, prewhite = 1, ar.method = "ols", weights = weightsAndrews,
-			kernel = c("Bartlett", "Parzen", "Truncated", "Tukey-Hanning"), approx = c("AR(1)", "ARMA(1,1)"),
-			tol = 1e-7) 
+smoothG <- function (x, bw = bwAndrews, prewhite = 1, ar.method = "ols",
+                     weights = weightsAndrews,
+                     kernel = c("Bartlett", "Parzen", "Truncated", "Tukey-Hanning"),
+                     approx = c("AR(1)", "ARMA(1,1)"),
+                     tol = 1e-7) 
     {
 	kernel <- match.arg(kernel)
 	approx <- match.arg(approx)
@@ -238,7 +279,7 @@ gel <- function(g, x, tet0 = NULL, gradv = NULL, smooth = FALSE,
                 tol_weights = 1e-7, tol_lam = 1e-9, tol_obj = 1e-9, 
 		tol_mom = 1e-9, maxiterlam = 100, constraint = FALSE,
                 optfct = c("optim", "optimize", "nlminb"), 
-                optlam = c("nlminb", "optim", "iter"), data, Lambdacontrol = list(),
+                optlam = c("nlminb", "optim", "iter", "Wu"), data, Lambdacontrol = list(),
                 model = TRUE, X = FALSE, Y = FALSE, TypeGel = "baseGel", alpha = NULL,
                 eqConst = NULL, eqConstFullVcov = FALSE, ...)
     {
@@ -277,7 +318,8 @@ evalGel <- function(g, x, tet0, gradv = NULL, smooth = FALSE,
                     approx = c("AR(1)", "ARMA(1,1)"), prewhite = 1,
                     ar.method = "ols", tol_weights = 1e-7, tol_lam = 1e-9,
                     tol_obj = 1e-9, tol_mom = 1e-9, maxiterlam = 100,
-                    optlam = c("nlminb", "optim", "iter"), data, Lambdacontrol = list(),
+                    optlam = c("nlminb", "optim", "iter", "Wu"), data,
+                    Lambdacontrol = list(),
                     model = TRUE, X = FALSE, Y = FALSE, alpha = NULL, ...)
     {
 	type <- match.arg(type)

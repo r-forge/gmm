@@ -14,7 +14,7 @@ ATEgel(g, balm, y=NULL, treat=NULL, tet0=NULL,momType=c("bal","balSample","ATT")
                    type = c("EL", "ET", "CUE", "ETEL", "HD", "ETHD"),
                    tol_lam = 1e-9, tol_obj = 1e-9, tol_mom = 1e-9, maxiterlam = 100,
                    optfct = c("optim", "nlminb"), 
-                   optlam = c("nlminb", "optim", "iter"), data=NULL,
+                   optlam = c("nlminb", "optim", "iter", "Wu"), data=NULL,
                    Lambdacontrol = list(),
                    model = TRUE, X = FALSE, Y = FALSE, ...)
 }
@@ -67,7 +67,8 @@ ATEgel(g, balm, y=NULL, treat=NULL, tet0=NULL,momType=c("bal","balSample","ATT")
 
 \item{tol_mom}{It is the tolerance for the moment condition \eqn{\sum_{t=1}^n p_t g(\theta(x_t)=0}, where \eqn{p_t=\frac{1}{n}D\rho(<g_t,\lambda>)} is the implied probability. It adds a penalty if the solution diverges from its goal.}
 
-\item{optlam}{The default is "iter" which solves for \eqn{\lambda} using the Newton iterative method \code{\link{getLamb}}. If set to "numeric", the algorithm \code{\link{optim}} is used to compute \eqn{\lambda} instead.}
+\item{optlam}{Algorithm used to solve for the lagrange multiplier in
+  \code{\link{getLamb}}. The algorithm Wu is only for \code{type="EL"}. }
 
 \item{data}{A data.frame or a matrix with column names (Optional). }
 
@@ -108,6 +109,10 @@ bootstrap for GEL estimators, \emph{Journal of Econometrics},
   
 Schennach, Susanne, M. (2007), Point Estimation with Exponentially Tilted Empirical Likelihood.
 \emph{Econometrica}, \bold{35}, 634-672.
+
+Wu, C. (2005), Algorithms and R codes for the pseudo empirical
+likelihood method in survey sampling.
+\emph{Survey Methodology}, \bold{31}(2), page 239.
 
 Chausse, P. (2010), Computing Generalized Method of Moments and Generalized Empirical Likelihood with R.
  \emph{Journal of Statistical Software}, \bold{34}(11), 1--35.

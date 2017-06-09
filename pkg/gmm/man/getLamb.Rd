@@ -10,7 +10,7 @@
 \usage{
 getLamb(gt, l0, type = c("EL","ET","CUE", "ETEL", "HD","ETHD"),
         tol_lam = 1e-7, maxiterlam = 100, 
-	tol_obj = 1e-7, k = 1, method = c("nlminb", "optim", "iter"),
+	tol_obj = 1e-7, k = 1, method = c("nlminb", "optim", "iter", "Wu"),
         control = list())
 }
 \arguments{
@@ -30,7 +30,13 @@ getLamb(gt, l0, type = c("EL","ET","CUE", "ETEL", "HD","ETHD"),
 
 \item{k}{It represents the ratio k1/k2, where \eqn{k1=\int_{-\infty}^{\infty} k(s)ds} and \eqn{k2=\int_{-\infty}^{\infty} k(s)^2 ds}. See Smith(2004).}
 
-\item{method}{The iterative procedure uses a Newton method for solving the FOC. It i however recommended to use \code{optim} or \code{nlminb}. If type is set to "EL" and method to "optim", \code{\link{constrOptim}} is called to prevent \eqn{log(1-gt'\lambda)} from producing NA. The gradient and hessian is providewd to  \code{nlminb} which speed up the convergence. The latter is therefore the default value.}
+\item{method}{The iterative procedure uses a Newton method for solving
+  the FOC. It i however recommended to use \code{optim} or
+  \code{nlminb}. If type is set to "EL" and method to "optim",
+  \code{\link{constrOptim}} is called to prevent \eqn{log(1-gt'\lambda)}
+  from producing NA. The gradient and hessian is provided to
+  \code{nlminb} which speed up the convergence. The latter is therefore
+  the default value. "Wu" is for "EL" only. It uses the algorithm of Wu (2005).}
 
 \item{control}{Controls to send to \code{\link{optim}}, \code{\link{nlminb}} or \code{\link{constrOptim}}}
 }
@@ -56,6 +62,10 @@ Newey, W.K. and Smith, R.J. (2004), Higher Order Properties of GMM and
 Generalized Empirical Likelihood Estimators. \emph{Econometrica}, \bold{72}, 219-255.
 
 Smith, R.J. (2004), GEL Criteria for Moment Condition Models. \emph{Working paper, CEMMAP}.
+
+Wu, C. (2005), Algorithms and R codes for the pseudo empirical
+likelihood method in survey sampling.
+\emph{Survey Methodology}, \bold{31}(2), page 239.
 
 }
 

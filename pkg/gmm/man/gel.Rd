@@ -15,7 +15,7 @@ gel(g, x, tet0 = NULL, gradv = NULL, smooth = FALSE,
     approx = c("AR(1)", "ARMA(1,1)"), prewhite = 1, ar.method = "ols", 
     tol_weights = 1e-7, tol_lam = 1e-9, tol_obj = 1e-9, tol_mom = 1e-9, 
     maxiterlam = 100, constraint = FALSE, optfct = c("optim", "optimize", 
-    "nlminb"), optlam = c("nlminb", "optim", "iter"), data,
+    "nlminb"), optlam = c("nlminb", "optim", "iter", "Wu"), data,
     Lambdacontrol = list(), model = TRUE, X = FALSE, Y = FALSE,
     TypeGel = "baseGel", alpha = NULL, eqConst = NULL,
     eqConstFullVcov = FALSE, ...)
@@ -25,7 +25,7 @@ evalGel(g, x, tet0, gradv = NULL, smooth = FALSE,
         approx = c("AR(1)", "ARMA(1,1)"), prewhite = 1,
         ar.method = "ols", tol_weights = 1e-7, tol_lam = 1e-9, tol_obj = 1e-9, 
         tol_mom = 1e-9, maxiterlam = 100, optlam = c("nlminb", "optim",
-        "iter"), data, Lambdacontrol = list(), model = TRUE, X = FALSE,
+        "iter", "Wu"), data, Lambdacontrol = list(), model = TRUE, X = FALSE,
         Y = FALSE, alpha = NULL, ...)
 }
 \arguments{
@@ -72,7 +72,8 @@ evalGel(g, x, tet0, gradv = NULL, smooth = FALSE,
 
 \item{tol_mom}{It is the tolerance for the moment condition \eqn{\sum_{t=1}^n p_t g(\theta(x_t)=0}, where \eqn{p_t=\frac{1}{n}D\rho(<g_t,\lambda>)} is the implied probability. It adds a penalty if the solution diverges from its goal.}
 
-\item{optlam}{The default is "iter" which solves for \eqn{\lambda} using the Newton iterative method \code{\link{getLamb}}. If set to "numeric", the algorithm \code{\link{optim}} is used to compute \eqn{\lambda} instead.}
+\item{optlam}{Algorithm used to solve for the lagrange multiplier in
+  \code{\link{getLamb}}. The algorithm Wu is only for \code{type="EL"}. }
 
 \item{data}{A data.frame or a matrix with column names (Optional). }
 
@@ -180,6 +181,10 @@ Matrix Estimation. \emph{Review of Economic Studies}, \bold{61}, 631-653.
 
 Schennach, Susanne, M. (2007), Point Estimation with Exponentially Tilted Empirical Likelihood.
 \emph{Econometrica}, \bold{35}, 634-672.
+
+Wu, C. (2005), Algorithms and R codes for the pseudo empirical
+likelihood method in survey sampling.
+\emph{Survey Methodology}, \bold{31}(2), page 239.
 
 Zeileis A (2006), Object-oriented Computation of Sandwich Estimators.
 \emph{Journal of Statistical Software}, \bold{16}(9), 1--16.
