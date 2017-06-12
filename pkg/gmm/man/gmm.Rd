@@ -301,9 +301,10 @@ res4
 # Brent should be used
 
 # without named vector
-gmm(g, x, c(4, 0), grad = Dg, eqConst=1)
+# Method Brent is used because the problem is now one-dimensional
+gmm(g, x, c(4, 0), grad = Dg, eqConst=1, method="Brent", lower=-10,upper=10)
 # with named vector
-gmm(g, x, c(mu=4, sig=2), grad = Dg, eqConst="sig")
+gmm(g, x, c(mu=4, sig=2), grad = Dg, eqConst="sig", method="Brent", lower=-10,upper=10)
 
 ## End(Not run)
 
