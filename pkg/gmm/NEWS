@@ -4,6 +4,8 @@ o Added the function bwWilhelm() to compute the optimal bandwidth of Wilhelm(201
 o The argument $vcov of tsls object is the Classical covariance matrix. vcov() must be used to obtain a different covariance
 o Changed the default value of prewhite to 1 in gmm() because it is recommended for HAC estimation
 o gmm with optfct="optimize" was generating an error message. It has been fixed
+o A new set of functions to estimate the average treatment effect by GEL have been added. See ?ATEgel
+o Some other minor bugs that were reported by users were fixed.
 
 Changes in version 1.6-0
 
