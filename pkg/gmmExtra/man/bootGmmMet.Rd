@@ -53,7 +53,7 @@ getdat <- function(n)
     
 set.seed(123) 
 d <- getdat(500)
-res <- gmm(d$Y~d$X-1,~d$Z-1)
+res <- gmm(Y~X-1,~Z-1, data=d)
 # Just resampling 25 time to save time
 resB <- bootGmm(res, 25, seed = 123, niter = 2, trace = TRUE)
 resB

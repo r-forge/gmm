@@ -1,6 +1,6 @@
 Package: gmmExtra
-Version: 0.0-2
-Date: 2012-10-25
+Version: 0.0-3
+Date: 2017-06-13
 Title: Extra tools for GMM estimation
 Author: Pierre Chausse <pchausse@uwaterloo.ca>
 Maintainer: Pierre Chausse <pchausse@uwaterloo.ca>

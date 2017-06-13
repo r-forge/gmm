@@ -261,6 +261,7 @@ getModel.baseGmm <- function(object, ...)
                                                         ar.method = object$ar.method,
                                                         approx = object$approx, tol = object$tol)
         attr(object$x, "weight")$vcov <- object$vcov
+        attr(object$x, "mustar") <- object$mustar
         object$g <- .momentFct
         class(object)  <- clname
         return(object)

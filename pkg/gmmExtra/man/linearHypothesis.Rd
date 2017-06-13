@@ -47,9 +47,9 @@ getdat <- function(n)
      
 set.seed(123)
 d <- getdat(500)
-res <- gmm(d$Y~d$X-1,~d$Z-1)
+res <- gmm(Y~X-1,~Z-1, data=d)
 # Just resampling 25 time to save time
 resB <- bootGmm(res, 25, seed = 123, niter = 10, trace=TRUE)
-T <- linearHypothesis(resB, "d$X2 = 1")
+T <- linearHypothesis(resB, "X2 = 1")
 T
 }

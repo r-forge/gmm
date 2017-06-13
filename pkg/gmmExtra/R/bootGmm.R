@@ -45,29 +45,31 @@
 	}
 
 .getBlock <- function(x, l)
-	{
-	aX <- attributes(x)
-	x <- as.matrix(x)
-	n <- nrow(x)
-	b <- floor(n/l)
-	reDist <- n-b*l
-	if (reDist != 0)
-		{
-		N <- sample(1:(n-l), reDist, replace=TRUE)
-		i <- lapply(N, function(j) j:(j+l))
-		i <- simplify2array(i)
-		} else {
-		i <- vector()
-		}		
-	N <- sample(1:(n-l+1), (b-reDist), replace=TRUE)
-	i2 <- lapply(N, function(j) j:(j+l-1))
-	i2 <- simplify2array(i2)
-	xF <- x[c(i,i2),]
-	attributes(xF) <- aX
-	attr(xF,"Blocks") <- c(i,i2)
-	attr(xF,"l") <- l
-	xF
-	}
+    {
+        if (is.list(x))
+            n <- NROW(x[[1]])
+        aX <- attributes(x)
+        b <- floor(n/l)
+        reDist <- n - b * l
+        if (reDist != 0) {
+            N <- sample(1:(n - l), reDist, replace = TRUE)
+            i <- lapply(N, function(j) j:(j + l))
+            i <- simplify2array(i)
+        } else {
+            i <- vector()
+        }
+        N <- sample(1:(n - l + 1), (b - reDist), replace = TRUE)
+        i2 <- lapply(N, function(j) j:(j + l - 1))
+        i2 <- simplify2array(i2)
+        if (class(x) == "list")
+            xF <- lapply(1:length(x), function(j) as.matrix(x[[j]])[c(i,i2), ])
+        else 
+            xF <- x[c(i, i2), ]
+        attributes(xF) <- aX
+        attr(xF, "Blocks") <- c(i, i2)
+        attr(xF, "l") <- l
+        xF
+    }
 
 .getS <- function(gt, Blocks, l)
 	{
@@ -136,81 +138,52 @@
 	}
 
 bootGmm <- function(obj, N, seed = NULL, niter=8, trace=TRUE)
-	{
+    {
         if (Sys.info()[["sysname"]] == "Windows")
-            niter <- 8
-	if(!is.null(seed))
-		set.seed(seed)
-	argCall <- obj$allArg
-	argCall$call <- NULL
-	argCall$t0 <- obj$coef
-	bw <- attr(obj$w0, "Spec")$bw
-	argCall$bw <- bw
-	l <- attr(obj$w0, "Spec")$bw
-	if (!is.null(l))
-		{
-		l <- floor(l)
-		} else {
-		l <- 1
-		}
-	l <- max(l,1)
-
-	gtBlock <- na.omit(filter(obj$gt,rep(1/l,l)))
-	mustar <- colMeans(gtBlock)
-	
-	if(attr(obj$dat,"ModelType") == "linear")
-		{
-		argCall$x <- obj$dat
-		attr(argCall$x, "oldg") <- obj$g
-		dat <- obj$dat$x
-		} else {
-		dat <- argCall$x
-		attr(argCall$x, "ModelType") <- "nonlinear"
-		attr(argCall$x, "oldg") <- argCall$g
-		}
-	attr(argCall$x, "mu") <- mustar
-	
-	Newdat <- list()
-	for (i in 1:N)
-		Newdat[[i]] <- .getBlock(dat, l)
-
-	getAll <- function(i, argCall, Newdat)
-		{
-		g2 <- function(theta, x)
-			{	
-			mustar <- attr(x,"mu")
-			gt <- attr(x,"oldg")(theta, x)
-			sweep(gt, 2, mustar)
-			}
-		if (attr(argCall$x, "ModelType") == "nonlinear") {
-			argCall$x <- Newdat[[i]]
-		} else {
-			argCall$x$x <- Newdat[[i]]}
-
-		argCall$g <- g2
-		argCall$wmatrix <- "ident"
-			
-		res0 <- do.call(gmm, argCall)
-		argCall$wmatrix <- "optimal"
-		argCall$vcov <- "TrueFixed"
-		S <- .getS(res0$gt, attr(Newdat[[i]],"Blocks"), attr(Newdat[[i]],"l"))
-		argCall$weightsMatrix <- try(solve(S),silent=TRUE)
-		if (class(argCall$weightsMatrix) == "try-error")
-			{
-			stop("Singular S")
-		} else {
-			res1 <- do.call(gmm, argCall)
-			res1$S <- S	
-			res1
-		}
-		}
-	res <- .SimByBlock(getAll, niter, N, trace=trace, argCall=argCall, Newdat=Newdat)
-	chk <- sapply(1:N, function(i) !res[[i]]$bad)
-	res <- res[chk]
-	attr(res,"gmm") <- obj
-	class(res) <- "bootGmm"
-	return(res)
-	}
+            {
+                warning("mc.cores set to 1 because of the Windows OS")
+                niter <- 1
+            }
+        if (!is.null(seed)) 
+            set.seed(seed)
+        if (is.null(obj$allArg$data))
+            stop("To run bootstrap GMM, gmm() must be called with non-null data argument")  
+        l <- attr(obj$w0, "Spec")$bw
+        if (!is.null(l))
+            {
+                l <- floor(l)
+            } else {
+                l <- 1
+            }
+        l <- max(l, 1)
+        gtBlock <- na.omit(filter(obj$gt, rep(1/l, l)))
+        mustar <- colMeans(gtBlock)
+        Newdat <- list()
+        for (i in 1:N) Newdat[[i]] <- .getBlock(obj$allArg$data, l)
+        getAll <- function(i)
+            {
+                res0 <- update(obj, wmatrix="ident", bw=l, t0=obj$coef,data=Newdat[[i]],
+                               mustar=mustar) 
+                S <- .getS(res0$gt, attr(Newdat[[i]], "Blocks"),
+                           attr(Newdat[[i]], "l"))
+                weightsMatrix <- try(solve(S), silent = TRUE)
+                if (class(weightsMatrix) == "try-error") {
+                    stop("Singular S")
+                } else {
+                    res1 <- update(obj, wmatrix="optimal", vcov="TrueFixed",
+                                   weightsMatrix=weightsMatrix,
+                                   mustar=mustar, t0=obj$coef, bw=l, data=Newdat[[i]])
+                    res1$S <- S
+                }
+                res1  
+            }
+        res <- .SimByBlock(getAll, niter, N, trace = trace)
+        chk <- sapply(1:N, function(i) !res[[i]]$bad)
+        res <- res[chk]
+        attr(res, "gmm") <- obj
+        class(res) <- "bootGmm"
+        return(res)
+    }
 
 summary.bootGmm <- function(object, ...)
 	{
@@ -218,13 +191,17 @@ summary.bootGmm <- function(object, ...)
 	if (n == 0)
 		stop("The bootGmm object is empty")
 	coef <- sapply(1:n, function(i) object[[i]]$ans$coefficients)
-	coef <- t(coef)
-	conv <- sapply(1:n, function(i) object[[i]]$ans$algoInfo$convergence)
+	coef <- t(coef)              
 	cat("Summary Statistics of Boostrap Estimates (N=",n,")\n")
 	cat("#######################################################\n")
-	print(ans <- summary(coef))	
-	if (!is.null(conv[1]))
-		cat("\nThe number of estimation that did not converge is ", sum(conv),"\n")
+	print(ans <- summary(coef))
+        if (attr(object[[1]]$ans$dat, "ModelType") != "linear")
+            {
+                conv <- sapply(1:n, function(i) object[[i]]$ans$algoInfo$convergence)
+                if (!is.null(conv[1]))
+                    cat("\nThe number of estimation that did not converge is ",
+                        sum(conv),"\n")
+            }
 	cat("The original estimates are\n")
 	print(round(attr(object,"gmm")$coefficients,4))
 	}
@@ -235,21 +212,29 @@ print.bootGmm <- function(x, ...)
 	cat("#################\n")
 	cat("# GMM Bootstrap #\n")
 	cat("#################\n\n")
-	cat("Original Call:\n    ",  paste(deparse(attr(x,"gmm")$call), sep = "\n", collapse = "\n"), "\n")
+	cat("Original Call:\n    ",  paste(deparse(attr(x,"gmm")$call),
+                                           sep = "\n", collapse = "\n"), "\n")
 	cat("Number of resamplings: ", n,"\n")
-	conv <- sapply(1:n, function(i) x[[i]]$ans$algoInfo$convergence)
-	cat("Number of successful estimations (convergence): ",n-sum(conv),"\n")  
-	coef <- t(sapply(1:n, function(i) x[[i]]$ans$coefficients))
-	ansB <- rbind(colMeans(coef), apply(coef,2,sd))
-	rownames(ansB) <- c("Mean","S-dev")
-	cat("\nBootstrap results:\n") 
-	printCoefmat(ansB)
-	res <- attr(x,"gmm")
-	ans <- res$coefficients
-	ans <- rbind(ans, summary(res)$coefficients[,2])
-	cat("\nOriginal estimation:\n") 
-	rownames(ans) <- c("Estimates","S-dev")
-	printCoefmat(ans)
+        if (n>0)
+            {
+                if (attr(x[[1]]$ans$dat, "ModelType") != "linear")
+                    {
+                        conv <- sapply(1:n, function(i) x[[i]]$ans$algoInfo$convergence)
+                        cat("Number of successful estimations (convergence): ",
+                            n-sum(conv),"\n")
+                    }
+                coef <- t(sapply(1:n, function(i) x[[i]]$ans$coefficients))
+                ansB <- rbind(colMeans(coef), apply(coef,2,sd))
+                rownames(ansB) <- c("Mean","S-dev")
+                cat("\nBootstrap results:\n") 
+                printCoefmat(ansB)
+                res <- attr(x,"gmm")
+                ans <- res$coefficients
+                ans <- rbind(ans, summary(res)$coefficients[,2])
+                cat("\nOriginal estimation:\n") 
+                rownames(ans) <- c("Estimates","S-dev")
+                printCoefmat(ans)
+            }
 	}
 
 
