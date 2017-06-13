@@ -188,7 +188,7 @@ The object of class "gmm" is a list containing at least:
   1029-1054,
 
   Hansen, L.P. and Heaton, J. and Yaron, A.(1996),
-  Finit-Sample Properties of Some Alternative GMM Estimators.
+  Finite-Sample Properties of Some Alternative GMM Estimators.
   \emph{Journal of Business and Economic Statistics}, \bold{14}
   262-280.
 }
