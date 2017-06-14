@@ -45,11 +45,12 @@ f3 <- Finance[1:300, "smb"] - rf
 ## Kconfid fails with prewhite=1
 res <- gmm(z ~ f1 + f2 + f3, ~ f1 + f2 + f3, prewhite=0)
 
-KConfid(res,2, mc.cores=4)
+## To avoid errors especially with windows OS
+\dontrun{KConfid(res,2, mc.cores=4)
 sol <- KConfid(res,c(2,3), mc.cores=4)
 plot(sol, main="Confidence Region")
 polygon(sol,col="grey")
 points(res$coef[2],res$coef[3],pch=21,bg=1)
-text(res$coef[2],res$coef[3],expression(hat(theta)),pos=3)
+text(res$coef[2],res$coef[3],expression(hat(theta)),pos=3)}
 
 }
