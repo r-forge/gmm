@@ -50,6 +50,7 @@ getdat <- function(n)
 set.seed(123)
 d <- getdat(500)
 res <- gmm(Y~X-1,~Z-1,vcov="iid", data=d)
-# Just resampling 25 time to save time
-resB <- bootGmm(res, 25, seed = 123, niter = 2, trace=TRUE)
+# Just resampling 25 time to save time and using 1 core
+resB <- bootGmm(res, 25, seed = 123, niter = 1)
+resB
 }

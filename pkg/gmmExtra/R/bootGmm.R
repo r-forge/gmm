@@ -282,35 +282,34 @@ bootJ <- function(obj)
 	}	
 
 linearHypothesis.bootGmm <- function(model, hypothesis.matrix, rhs = NULL, ...)
-	{
-	obj <- model
+    {
+        obj <- model
 	n <- length(obj)
 	if (n == 0)
-		stop("The bootGmm object is empty")
-	Test0 <- linearHypothesis(attr(obj,"gmm"), hypothesis.matrix, rhs=rhs, ...)[[2]][2]
-
-	# The following is borrowed from the car::linearHypothesis.default
-	if (is.character(hypothesis.matrix)) {
-		L <- makeHypothesis(names(attr(obj,"gmm")$coefficients), hypothesis.matrix, rhs = NULL)
-		if (is.null(dim(L))) L <- t(L)
-		rhs <- L[, NCOL(L)]
-		L <- L[, -NCOL(L), drop = FALSE]
-		rownames(L) <- hypothesis.matrix
-	}
-	else {
+            stop("The bootGmm object is empty")
+	Test0 <- linearHypothesis(attr(obj,"gmm"), hypothesis.matrix, rhs=rhs,
+                                  ...)$Chisq[2]
+# The following is borrowed from the car::linearHypothesis.default
+	if (is.character(hypothesis.matrix))
+            {
+                L <- makeHypothesis(names(attr(obj,"gmm")$coefficients),
+                                    hypothesis.matrix, rhs = NULL)
+                if (is.null(dim(L))) L <- t(L)
+                rhs <- L[, NCOL(L)]
+                L <- L[, -NCOL(L), drop = FALSE]
+                rownames(L) <- hypothesis.matrix
+            } else {
 		L <- if (is.null(dim(hypothesis.matrix))) t(hypothesis.matrix)
-				else hypothesis.matrix
+                     else hypothesis.matrix
 		if (is.null(rhs)) rhs <- rep(0,nrow(L))
-	}
+            }
 	hyp <- printHypothesis(L, rhs, names(attr(obj,"gmm")$coefficients))
-	
-	##############
-	rhsB <- L%*%attr(obj,"gmm")$coefficients
-
-	Test <- sapply(1:n, function(i) linearHypothesis(obj[[i]]$ans, L, rhsB, ...)[[2]][2])
+	rhsB <- L%*%attr(obj,"gmm")$coefficients        
+	Test <- sapply(1:n, function(i) linearHypothesis(obj[[i]]$ans, L, rhsB,
+                                                         ...)$Chisq[2])
 	F <- ecdf(Test)
 	pval <- 1-F(Test0)
 	list(hyp = hyp, test = c(Stats=Test0, BootPVal=pval), TCDF = F)
-	}
+    }
 
 

@@ -45,7 +45,7 @@ getdat <- function(n)
 set.seed(123)
 d <- getdat(500)
 res <- gmm(Y~X-1,~Z-1, data=d)
-resB <- bootGmm(res, 25, seed = 123, niter = 2, trace=TRUE)
+resB <- bootGmm(res, 25, seed = 123, niter = 1)
 J <- bootJ(resB)
 J$test
 }
