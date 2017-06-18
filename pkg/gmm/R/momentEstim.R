@@ -465,15 +465,20 @@ momentEstim.baseGmm.iterative <- function(object, ...)
             {
                 z <- list(coefficients = res$par, objective = res$value, k=k, k2=k2, n=n, q=q, df=df)
                 if (chkOptim)
-                    z$algoInfo <- list(convergence = res$convergence, counts = res$counts, message = res$message)
+                    z$algoInfo <- list(convergence = res$convergence, counts = res$counts,
+                                       message = res$message)
                 else if(P$optfct == "nlminb")
-                    z$algoInfo <- list(convergence = res$convergence, counts = res$evaluations, message = res$message)
+                    z$algoInfo <- list(convergence = res$convergence, counts = res$evaluations,
+                                       message = res$message)
             } else {                
                 initTheta = res$par
+                z <- list()
                 if (chkOptim)
-                    z$initialAlgoInfo <- list(convergence = res$convergence, counts = res$counts, message = res$message)
+                    z$initialAlgoInfo <- list(convergence = res$convergence, counts = res$counts,
+                                              message = res$message)
                 else if(P$optfct == "nlminb")
-                    z$initialAlgoInfo <- list(convergence = res$convergence, counts = res$evaluations, message = res$message)                
+                    z$initialAlgoInfo <- list(convergence = res$convergence, counts = res$evaluations,
+                                              message = res$message)                
                 ch <- 100000
                 j <- 1
                 while(ch > P$crit)
@@ -507,11 +512,15 @@ momentEstim.baseGmm.iterative <- function(object, ...)
                             cat("Iter :",j,": value=",res$value,", Coef = ", res$par,"\n") 
                         j <- j+1	
                     }
-                z = list(coefficients = res$par, objective = res$value,k=k, k2=k2, n=n, q=q, df=df, initTheta=initTheta)	
+                z2 = list(coefficients = res$par, objective = res$value,k=k, k2=k2, n=n, q=q,
+                    df=df, initTheta=initTheta)
+                z <- c(z, z2)
                 if (chkOptim)
-                    z$algoInfo <- list(convergence = res$convergence, counts = res$counts, message = res$message)
+                    z$algoInfo <- list(convergence = res$convergence, counts = res$counts,
+                                       message = res$message)
                 else if(P$optfct == "nlminb")
-                    z$algoInfo <- list(convergence = res$convergence, counts = res$evaluations, message = res$message)
+                    z$algoInfo <- list(convergence = res$convergence, counts = res$evaluations,
+                                       message = res$message)
                 
             }
         z$dat <- P$x
