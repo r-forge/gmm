@@ -15,7 +15,7 @@ gmm <- function(g,x,t0=NULL,gradv=NULL, type=c("twoStep","cue","iterative"), wma
                 kernel=c("Quadratic Spectral","Truncated", "Bartlett", "Parzen", "Tukey-Hanning"),crit=10e-7,bw = bwAndrews, 
                 prewhite = 1, ar.method = "ols", approx="AR(1)",tol = 1e-7, itermax=100,optfct=c("optim","optimize","nlminb", "constrOptim"),
                 model=TRUE, X=FALSE, Y=FALSE, TypeGmm = "baseGmm", centeredVcov = TRUE, weightsMatrix = NULL, traceIter = FALSE, data, eqConst = NULL, 
-                eqConstFullVcov = FALSE, mustar = NULL, ...)
+                eqConstFullVcov = FALSE, mustar = NULL, onlyCoefficients=FALSE, ...)
     {
         type <- match.arg(type)
         kernel <- match.arg(kernel)
@@ -41,7 +41,8 @@ gmm <- function(g,x,t0=NULL,gradv=NULL, type=c("twoStep","cue","iterative"), wma
         class(all_args)<-TypeGmm
         Model_info<-getModel(all_args, ...)
         z <- momentEstim(Model_info, ...)
-
+        if (onlyCoefficients)
+            return(z[c("coefficients","objective")])
         z <- FinRes(z, Model_info)
         z
     }

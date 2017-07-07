@@ -17,7 +17,7 @@ gmm(g,x,t0=NULL,gradv=NULL, type=c("twoStep","cue","iterative"),
     tol = 1e-7, itermax=100,optfct=c("optim","optimize","nlminb", "constrOptim"),
     model=TRUE, X=FALSE, Y=FALSE, TypeGmm = "baseGmm", centeredVcov = TRUE, 
     weightsMatrix = NULL, traceIter = FALSE, data, eqConst = NULL, 
-    eqConstFullVcov = FALSE, mustar = NULL, ...)
+    eqConstFullVcov = FALSE, mustar = NULL, onlyCoefficients=FALSE, ...)
 evalGmm(g, x, t0, tetw=NULL, gradv=NULL, wmatrix = c("optimal","ident"),
     vcov=c("HAC","iid","TrueFixed"), kernel=c("Quadratic Spectral","Truncated", 
     "Bartlett", "Parzen", "Tukey-Hanning"),crit=10e-7,bw = bwAndrews,
@@ -95,6 +95,10 @@ gmmWithConst(obj, which, value)
   minimizing the objective function. It is useful to do a bootstrap
   procedure.
 }
+
+\item{onlyCoefficients}{If set to \code{TRUE}, the function only returns
+  the coefficient estimates. It may be of interest when the standard
+  errors are not needed}
 
 \item{...}{More options to give to \code{\link{optim}}.}
 }

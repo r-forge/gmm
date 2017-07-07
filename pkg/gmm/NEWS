@@ -1,3 +1,9 @@
+Changes in version 1.6-2
+
+o Fixed a bug with iterative GMM from the previous version
+o Added the option onlyCoefficients=FALSE to gmm() and gel(). If set to TRUE, no covariance matrix is computed. Only the coefficients
+  objective and the lambdas (for gel only) are returned.
+
 Changes in version 1.6-1
 
 o Added the function bwWilhelm() to compute the optimal bandwidth of Wilhelm(2015).

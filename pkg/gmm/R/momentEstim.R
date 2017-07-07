@@ -757,8 +757,11 @@ momentEstim.baseGel.modFormula <- function(object, ...)
         z$typeDesc <- P$typeDesc
         z$specMod <- P$specMod
         z$df <- df
-
         names(z$coefficients) <- object$namesCoef
+        if (P$onlyCoefficients)
+            return(z[c("coefficients","lambda","conv_lambda","conv_par","objective")])
+
+        
         if (!is.null(object$namesgt))
             {
                 colnames(z$gt) <- object$namesgt
@@ -880,6 +883,9 @@ momentEstim.baseGel.mod <- function(object, ...)
                 attr(x,"eqConst") <- NULL
                 z$specMod <- paste(z$specMod, "** Note: Covariance matrix computed for all coefficients based on restricted values \n   Tests non-valid**\n\n")
             }
+        if (P$onlyCoefficients)
+            return(z[c("coefficients", "lambda", "conv_lambda", "conv_par", "objective")])
+        
         if(P$gradvf)
             G <- P$gradv(z$coefficients, x)
         else

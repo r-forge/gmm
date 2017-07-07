@@ -24,7 +24,7 @@ ATEgel <- function(g, balm, y=NULL, treat=NULL, tet0=NULL,momType=c("bal","balSa
                          approx = "AR(1)", prewhite = 1, ar.method = "ols",
                          tol_weights = 	1e-7, alpha = NULL, eqConst = NULL,
                          eqConstFullVcov = FALSE, momType=momType, popMom=popMom,
-                         family=family)
+                         family=family, onlyCoefficients=FALSE)
 	class(all_args)<-TypeGel
 	Model_info<-getModel(all_args)
 	z <- momentEstim(Model_info, ...)        
