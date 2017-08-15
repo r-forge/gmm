@@ -642,20 +642,25 @@ momentEstim.baseGmm.cue <- function(object, ...)
         if (q == k2 | P$wmatrix == "ident")
             {
                 w = .weightFct(NULL, x, "ident")
-                res <- gmm(P$g,P$x,P$t0,wmatrix="ident",optfct=P$optfct, ...)                
-                z <- list(coefficients = res$coef, objective = res$objective, algoInfo = res$algoInfo, k=k, k2=k2, n=n, q=q, df=df, initTheta=P$t0)
+                res <- gmm(P$allArg$g,P$allArg$x,P$t0,wmatrix="ident",optfct=P$optfct, ...)
+                z <- list(coefficients = res$coef, objective = res$objective,
+                          algoInfo = res$algoInfo, k=k, k2=k2, n=n, q=q, df=df,
+                          initTheta=P$t0)
                 P$weightMessage <- "No CUE needed because the model if just identified or you set wmatrix=identity"
             } else {
                 w <- .weightFct(P$t0, x, P$vcov)
                 initTheta <- P$t0
                 if (P$vcov == "HAC")
                     {
-                        res <- try(gmm(P$g,P$x,P$t0,wmatrix="ident",optfct=P$optfct, ...))
+                        res <- try(gmm(P$allArg$g,P$allArg$x,P$t0,wmatrix="ident",
+                                       optfct=P$optfct, ...))                      
                         if(class(res)=="try-error")
                             stop("Cannot get a first step estimate to compute the weights for the Kernel estimate of the covariance matrix; try different starting values")
                         w <- .weightFct(res$coefficients, x, P$vcov)
                         attr(x, "weight")$WSpec$sandwich$bw <- attr(w,"Spec")$bw
                         P$weightMessage <- "Weights for kernel estimate of the covariance are fixed and based on the first step estimate of Theta"
+                    } else {
+                        res <- list()
                     }
                 if (P$optfct == "optim")
                     {
@@ -685,14 +690,21 @@ momentEstim.baseGmm.cue <- function(object, ...)
                         res2$par <- res2$minimum
                         res2$value <- res2$objective
                     }
-                z = list(coefficients=res2$par,objective=res2$value, k=k, k2=k2, n=n, q=q, df=df, initTheta=initTheta)
+                z = list(coefficients=res2$par,objective=res2$value, k=k, k2=k2,
+                    n=n, q=q, df=df, initTheta=initTheta)
                 if (any(P$optfct == c("optim", "constrOptim")))
                     {
-                        z$algoInfo <- list(convergence = res2$convergence, counts = res2$counts, message = res2$message)
-                        z$InitialAlgoInfo <- list(convergence = res$convergence, counts = res$counts, message = res$message)
+                        z$algoInfo <- list(convergence = res2$convergence, counts =
+                                               res2$counts, message = res2$message)
+                        z$InitialAlgoInfo <- list(convergence = res$algoInfo$convergence,
+                                                  counts = res$algoInfo$counts,
+                                                  message = res$algoInfo$message)
                     } else if (P$optfct == "nlminb") {
-                        z$algoInfo <- list(convergence = res2$convergence, counts = res2$evaluations, message = res2$message)                        
-                        z$InitialAlgoInfo <- list(convergence = res$convergence, counts = res$evaluations, message = res$message)
+                        z$algoInfo <- list(convergence = res2$convergence, counts =
+                                               res2$evaluations, message = res2$message)
+                        z$InitialAlgoInfo <- list(convergence = res$algoInfo$convergence,
+                                                  counts = res$algoInfo$evaluations,
+                                                  message = res$algoInfo$message)
                     }
             }
         z$dat <- P$x
