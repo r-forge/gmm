@@ -217,6 +217,7 @@ getModel.baseGmm <- function(object, ...)
                 attr(object$x, "k") <- object$x$k
                 attr(object$x, "q") <- object$x$ny*object$x$nh
                 attr(object$x, "n") <- NROW(object$x$x)
+                attr(object$x, "namesgt") <- object$namesgt
             } else {
                 attr(object$x,"ModelType") <- "nonlinear"
                 attr(object$x, "momentfct") <- object$g

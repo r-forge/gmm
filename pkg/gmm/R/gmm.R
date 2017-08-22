@@ -514,6 +514,8 @@ getDat <- function (formula, h, data, error=TRUE)
                 attr(w, "inv") <- FALSE
             } else {
                 gt <- .momentFct(tet,dat)
+                if (!is.null(attr(dat, "namesgt")))
+                    colnames(gt) <- attr(dat, "namesgt")
                 if(attr(dat, "weight")$centeredVcov)
                     gt <- scale(gt, scale=FALSE)
                 n <- NROW(gt)
