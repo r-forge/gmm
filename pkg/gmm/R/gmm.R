@@ -124,7 +124,7 @@ tsls <- function(g,x,data)
                                   prewhite=AllArg$prewhite, tol=AllArg$tol)
 	w <- vcovHAC(x=gmat, order.by=AllArg$order.by, weights=weights,
                      prewhite=AllArg$prewhite, sandwich=FALSE,
-                     ar.method=AllArg$ar.method)
+                     ar.method=AllArg$ar.method, adjust=FALSE)
 	attr(w,"Spec") <- list(weights = weights, bw = AllArg$bw,
                                kernel = AllArg$kernel)
 	w
