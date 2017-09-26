@@ -302,3 +302,48 @@ marginal.ategel <- function(object, ...)
                             paste("Treat", 1:(k-1) , " versus Control", sep=""))
         coef
     }
+
+checkConv <- function(obj, tolConv=1e-4,verbose=TRUE)
+    {
+        if (!any(class(obj)=="ategel"))
+            stop("The function is for ategel objects produced by ATEgel()")
+        momType <- obj$allArg$momType
+        popMom <-  obj$allArg$popMom
+        conv <- c(Lambda=obj$conv_lambda$convergence==0, Coef= obj$conv_par == 0)
+        
+        dat <- obj$dat$x
+        nZ <- attr(obj$dat, "k")-1
+        z <- dat[,3:(2+nZ),drop=FALSE]
+        x <- dat[,-(1:(2+nZ)),drop=FALSE]
+        pt <- obj$pt
+        pt1 <- lapply(1:nZ, function(i) pt[z[,i]==1]/sum(pt[z[,i]==1]))
+        pt0 <- pt[rowSums(z)==0]/sum(pt[rowSums(z)==0])
+        m0 <- colSums(x[rowSums(z)==0,,drop=FALSE]*pt0)
+        m1 <- sapply(1:nZ, function(i) colSums(x[z[,i]==1,,drop=FALSE]*pt1[[i]]))
+        mAll <- cbind(m0, m1)
+        n0 <- paste(paste(colnames(z),collapse="=", sep=""),"=0",sep="")
+        colnames(mAll) <- c(n0, paste(colnames(z),"=1",sep=""))
+        if (!is.null(popMom))
+            {
+                m <- popMom
+            } else {
+                m <- switch(momType,
+                            bal=m0,
+                            balSample=colMeans(x),
+                            ATT=c(m1))
+            }
+        chk <- all(abs(mAll-m)<tolConv)
+        conv <- c(conv, Balance=all(chk))        
+        if (verbose)
+            {
+                cat("Convergence details of the ATEgel estimation\n")
+                cat("********************************************\n")
+                cat(obj$typeDesc,"\n\n")
+                cat("Convergence of the Lambdas: ", conv["Lambda"], "\n",sep="")
+                cat("Convergence of the Coefficients: ", conv["Coef"], "\n",sep="")
+                cat("Achieved moment balancing: ", conv["Balance"], "\n\n",sep="")
+                cat("Moments for each group:\n")
+                print.default(mAll, quote=FALSE, right=TRUE)
+            }
+        return(list(conv=conv, moments=mAll))
+    }
