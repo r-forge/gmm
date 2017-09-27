@@ -10,7 +10,7 @@ Function to estimate the average treatment effect with the sample being
 balanced by GEL.
 }
 \usage{
-ATEgel(g, balm, y=NULL, treat=NULL, tet0=NULL,momType=c("bal","balSample","ATT"),
+ATEgel(g, balm, w=NULL, y=NULL, treat=NULL, tet0=NULL,momType=c("bal","balSample","ATT"),
                    popMom = NULL, family=c("linear","logit", "probit"),
                    type = c("EL", "ET", "CUE", "ETEL", "HD", "ETHD"),
                    tol_lam = 1e-9, tol_obj = 1e-9, tol_mom = 1e-9, maxiterlam = 100,
@@ -38,6 +38,10 @@ checkConv(obj, tolConv=1e-4, verbose=TRUE)
 
 \item{treat}{The treatment indicator when \code{g} is a function. Not
   implemented yet}
+
+\item{w}{A formula to add covariates to the main regression. When
+  \code{NULL}, the default value, the main regression only include
+  treatment indicators.}
 
 \item{tet0}{A \eqn{3 \times 1} vector of starting values. If not
   provided, they are obtained using an OLS regression}
