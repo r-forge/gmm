@@ -583,7 +583,7 @@ momentEstim.baseGmm.cue.formula <- function(object, ...)
                         argDots$ci <- NULL
                         allArgOptim <- list(theta = P$t0, f = .objCue, grad = NULL, ui = ui, ci = ci, x = dat, type = P$vcov)
                         allArgOptim <- c(allArgOptim,argDots)
-                        res <- do.call(constrOptim,allArgOptim)
+                        res2 <- do.call(constrOptim,allArgOptim)
                     }
                 if (P$optfct == "nlminb")
                     {
@@ -707,10 +707,10 @@ momentEstim.baseGmm.cue <- function(object, ...)
                                                   message = res$algoInfo$message)
                     }
             }
-        z$dat <- P$x
+        z$dat <- x
         z$gradv <- P$gradv
-        z$gt <- P$g(z$coefficients, P$x)
-        z$w0 <- .weightFct(z$coefficients, P$x, P$vcov)        
+        z$gt <- P$g(z$coefficients, x)
+        z$w0 <- .weightFct(z$coefficients, x, P$vcov)        
         z$iid <- P$iid
         z$g <- P$g
         z$cue <- list(weights=P$fixedKernW,message=P$weightMessage)
