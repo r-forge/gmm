@@ -5,7 +5,8 @@ Title: S4 Generalized Method of Moments
 Author: Pierre Chausse <pchausse@uwaterloo.ca>
 Maintainer: Pierre Chausse <pchausse@uwaterloo.ca>
 Description: Here is a complete restructured Gmm package using S4 only type of
-	     classes and methods.
+	     classes and methods. It is in a very early stage and suggestions are
+	     welcome. See the vignette for more details.
 Depends: R (>= 2.10.0), sandwich
 Imports: stats, methods
 Suggests: lmtest, knitr
