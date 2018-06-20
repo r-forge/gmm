@@ -1,0 +1,331 @@
+######## Methods for restricted System of Equations
+######################################################
+
+## Constructor of restricted models
+
+setMethod("restGmmModel", signature("slinearGmm"),
+          function(object, R, rhs=NULL)
+              {
+                  parNames <- paste(rep(object@eqnNames, object@k), ".",
+                                    do.call("c", object@parNames), sep = "")                 
+                  if (is.character(R))
+                      {
+                          res <- .makeHypothesis(parNames, R, rhs)
+                          R <- res$R
+                          rhs <- res$rhs
+                      } else if (is.list(R)) {
+                          nrest <- sum(sapply(R, length))
+                          R2 <- numeric()
+                          rhs <- numeric()
+                          done <- 0
+                          for (i in 1:length(R))
+                          {
+                              if (length(R[[i]]) == 0)
+                              {
+                                  R2 <- cbind(R2, matrix(0, nrest, object@k[i]))
+                              } else {
+                                  tmp <- .makeHypothesis(object@parNames[[i]], R[[i]], NULL)
+                                  rhs <- c(rhs, tmp$rhs)
+                                  tmp2 <- matrix(0, nrest, object@k[i])
+                                  tmp2[(done+1):(done+length(R[[i]])),] <- tmp$R
+                                  done <- done+length(R[[i]])
+                                  R2 <- cbind(R2, tmp2)
+                              }
+                          }
+                          R <- R2
+                      } else {
+                          if (is.null(rhs))
+                              rhs <- rep(0,nrow(R))
+                      }
+                  neqn <- length(object@eqnNames)
+                  ind <- rbind(c(1, cumsum(object@k)[-neqn]+1),
+                               cumsum(object@k))
+                  chk <- sapply(1:nrow(R), function(i)
+                      sapply(1:neqn, function(j) any(R[i,seq(ind[1,j],ind[2,j])]!=0)))
+                  res <- try(.imposeRestrict(R,rhs,parNames), silent=TRUE)
+                  if (any(class(res) == "try-error"))
+                      stop("Failed to construct restricted model from the provided restrictions can you simplify it?")
+                  res$crossEquRest <- any(colSums(chk)>1)
+                  res$eqnSelect <- ind
+                  isEndo <- object@isEndo
+                  rtet <- res$theta
+                  isEndo <- c(crossprod(do.call("c", isEndo), rtet)) != 0
+                  if (!res$crossEquRest)
+                      {
+                          res$k <- sapply(object@eqnNames,
+                                      function(en) length(grep(en, res$newParNames)))
+                          res$newParNames <- lapply(object@eqnNames, function(en)
+                              gsub(paste(en,".",sep=""), "",
+                                   res$newParNames[grep(en, res$newParNames)]))
+                          res$n <- object@n
+                          res$q <- object@q
+                          res$eqnNames <- object@eqnNames
+                          res$isEndo <- .tetReshape(isEndo, res$eqnNames, res$newParNames)
+                      } else {
+                          res$n <- object@n*length(object@eqnNames)
+                          res$q <- sum(object@q)
+                          res$eqnNames <- "combinedEqns"
+                          names(isEndo) <- res$newParNames
+                          res$isEndo <- list(isEndo)
+                          res$newParNames <- list(res$newParNames)
+                          names(res$isEndo) <- names(res$newParNames) <- res$eqnNames 
+                      }
+                  res$originParNames <- object@parNames
+                  new("rslinearGmm",  cstLHS=R, cstRHS=rhs,
+                      cstSpec=res, object)
+              })
+
+## coef
+
+setMethod("coef","rslinearGmm",
+          function (object, theta) 
+              {                  
+                  spec <- modelDims(object)
+                  if (!is.list(theta))
+                      stop("theta must be a list")
+                  if (length(theta) != length(spec$eqnNames)) 
+                      stop("Wrong number of coefficients")
+                  if (!object@cstSpec$crossEquRest)
+                      {
+                          tet <- lapply(1:length(theta), function(i)
+                              coef(object[i], theta[[i]]))
+                          names(tet) <- object@eqnNames
+                          return(tet)
+                      }
+                  theta <- coef(as(object, "rlinearGmm"), theta[[1]])
+                  theta <- .tetReshape(theta, object@eqnNames, object@parNames)
+                  theta
+              })
+
+## modelDims
+
+setMethod("modelDims", "rslinearGmm",
+          function(object) {
+              res <- object@cstSpec
+              list(k = res$k, q = res$q, n = res$n, parNames = res$newParNames, 
+                   momNames = object@momNames, eqnNames=res$eqnNames,
+                   isEndo=res$isEndo)
+          })
+
+## printRestrict
+
+setMethod("printRestrict", "rslinearGmm",
+          function(object){
+              parNames <- paste(rep(object@eqnNames, object@k), ".",
+                                do.call("c", object@parNames), sep = "")
+              cst <- .printHypothesis(object@cstLHS, object@cstRHS, parNames)
+              cat("Constraints:\n")
+              for (i in 1:length(cst))
+                  cat("\t", cst[i], "\n")
+          })
+
+## print
+
+setMethod("print", "rslinearGmm", 
+          function (x, ...) {
+              callNextMethod()
+              if (!x@cstSpec$crossEquRest)
+                  {
+                      cat("**Equation by Equation restrictions**\n")
+                      for (i in 1:length(x@eqnNames))
+                          {
+                              m <- x[i]
+                              if (inherits(m, "rlinearGmm"))
+                                  {
+                                      cat("**", x@eqnNames[i], "**\n", sep="")
+                                      printRestrict(m)
+                                      cat("\n")
+                                  }
+                          }
+                  } else {
+                      printRestrict(x)
+                  }
+          })
+
+## getRestrict
+
+setMethod("getRestrict", "sysGmmModels",
+          function(object, theta, R, rhs=NULL) {
+              robject <- restGmmModel(object, R, rhs)
+              getRestrict(robject, theta)
+          })
+
+setMethod("getRestrict", "rslinearGmm",
+          function(object, theta) {
+              theta <- do.call("c", theta)
+              R <- c(object@cstLHS%*%theta)
+              parNames <- paste(rep(object@eqnNames, object@k), ".",
+                                do.call("c", object@parNames), sep = "")
+              cst <- .printHypothesis(object@cstLHS, object@cstRHS, parNames)
+              list(dR=object@cstLHS, R=R, q=object@cstRHS, hypo=cst,
+                   orig.R=object@cstLHS, orig.rhs=object@cstRHS)
+          })
+
+### Subset
+
+setMethod("[", c("rslinearGmm", "numeric", "missing"),
+          function(x, i, j)
+          {
+              i <- as.integer(i)
+              if (length(i) > 1)
+              {
+                  warning("You can only select one equation, the first element of i is used")
+                  i <- i[1]
+              }
+              if (x@cstSpec$crossEquRest)
+                  {
+                      if (i !=1L)
+                          stop("There is only one equation with cross-equation restrictions")
+                      return(as(x, "rlinearGmm"))
+                  }
+              m <- as(x, "slinearGmm")[i]
+              sel <- x@cstSpec$eqnSelect
+              R <- x@cstLHS[, sel[1,i]:sel[2,i]]
+              chk <- apply(R, 1, function(x) all(x==0))
+              if (all(chk))
+                  return(m)
+              R <- R[!chk,,drop=FALSE]
+              rhs <- x@cstRHS[!chk]
+              restGmmModel(m, R, rhs)
+          })
+
+### model.matrix
+
+setMethod("model.matrix", "rslinearGmm",
+          function (object, type = c("regressors", "instruments")) 
+              {
+                  type <- match.arg(type)
+                  if (!object@cstSpec$crossEquRest)
+                      return(callNextMethod())
+                  if (type == "instruments")
+                      mm <- model.matrix(as(object, "slinearGmm"), type="instruments")
+                  else
+                      mm <- list(model.matrix(as(object, "rlinearGmm")))
+                  names(mm) <- modelDims(object)$eqnNames
+                  mm
+              })
+
+## modelResponse
+
+setMethod("modelResponse", "rslinearGmm",
+          function(object) {
+              if (!object@cstSpec$crossEquRest)
+                  return(callNextMethod())
+              mr <- list(modelResponse(as(object, "rlinearGmm")))
+              names(mr) <- modelDims(object)$eqnNames
+              mr
+          })
+
+## evalMoment
+
+setMethod("evalMoment", "rslinearGmm",
+          function (object, theta) 
+              {
+                  theta <- coef(object, theta)
+                  evalMoment(as(object, "slinearGmm"), theta)
+              })
+
+## evalDMoment
+
+setMethod("evalDMoment","rslinearGmm",
+          function (object, theta) 
+              {
+                  neqn <- length(object@eqnNames)
+                  if (!object@cstSpec$crossEquRest)
+                      dgt <- lapply(1:neqn, function(i) evalDMoment(object[i]))
+                  else 
+                      dgt <- list(evalDMoment(as(object, "rlinearGmm")))
+                  names(dgt) <- modelDims(object)$eqnNames
+                  dgt
+              })
+
+## residuals
+
+setMethod("residuals", "rslinearGmm",
+          function (object, theta) 
+              {
+                  theta <- coef(object, theta)
+                  residuals(as(object, "slinearGmm"), theta)
+              })
+
+## solveGmm
+
+setMethod("solveGmm", c("rslinearGmm","sysGmmWeights"),
+           function (object, wObj, theta0 = NULL) 
+               {
+                   if (object@cstSpec$crossEquRest)
+                       {
+                           res <- solveGmm(as(object, "rlinearGmm"), as(wObj, "gmmWeights"))
+                           res$theta <- list(res$theta)
+                           names(res$theta) <- modelDims(object)$eqnNames
+                           return(res)
+                       }
+                   if (wObj@type == "iid" && object@sameMom) 
+                       return(ThreeSLS(object, Sigma = wObj@Sigma, qrZ = wObj@w, 
+                                       coefOnly = TRUE))
+                   spec <- modelDims(object)
+                   Y <- modelResponse(object)
+                   Z <- model.matrix(object, type = "instruments")
+                   G <- evalDMoment(object)
+                   Syz <- lapply(1:length(Y), function(i) colMeans(Y[[i]]*Z[[i]]))
+                   Syz <- do.call("c", Syz)
+                   G <- gmm4:::.GListToMat(G)
+                   T1 <- quadra(wObj, G)
+                   T2 <- quadra(wObj, G, Syz)
+                   theta <- -solve(T1, T2)
+                   spec <- modelDims(object)
+                   theta <- gmm4:::.tetReshape(theta, object@eqnNames, spec$parNames)
+                   list(theta = theta, convergence = NULL)
+               })
+
+
+### Three Stage Least Squares
+
+setMethod("ThreeSLS","rslinearGmm",
+          function(object, coefOnly=FALSE, qrZ=NULL, Sigma=NULL) {
+              if (!object@cstSpec$crossEquRest)
+                  callNextMethod()
+              else
+                  stop("Systems with cross-equation restrictons are not considered system of equations and cannot be estimated by 3SLS")
+          })
+
+## evalWeights, we just need to transform the model with cross-equation restrictions
+## back to a system of equation first.
+
+setMethod("evalWeights", "rslinearGmm",
+          function(object, theta = NULL, w="optimal", wObj=NULL)
+              {
+                  if (object@cstSpec$crossEquRest)
+                      {
+                          if (!is.null(theta))
+                              theta <- coef(object, theta)
+                          return(evalWeights(as(object, "slinearGmm"), theta, w, wObj))
+                      }
+                  callNextMethod()
+              })
+
+ ## gmmFit. Almost like sysGmmModels method, bu we need to check a few things
+
+setMethod("gmmFit", signature("rslinearGmm"), valueClass="sgmmfit", 
+          function(object, type=c("twostep", "iter","cue", "onestep"),
+                   itertol=1e-7, initW=c("ident", "tsls", "EbyE"),
+                   weights="optimal", itermaxit=100,
+                   efficientWeights=FALSE, start=NULL, EbyE=FALSE, ...)
+              {
+                  type <- match.arg(type)
+                  initW <- match.arg(initW)
+                  if (object@cstSpec$crossEquRest)
+                      {
+                          if (EbyE || initW=="EbyE")
+                              stop("Models with cross-equation restrictions cannot be estimated equation by equation because it is not considered a system of equations")
+                          if (initW == "tsls")
+                              stop("Models with cross-equation restrictions cannot be initiated by an equation by equation 2SLS because it is not considered a system of equations")
+                          if (type=="onestep" || (is.character(weights) && weights=="ident"))
+                              {
+                              wObj <- evalWeights(object, w="ident")
+                              return(gmmFit(object, w=wObj))
+                          }
+                      }
+                  callNextMethod()
+              })
+

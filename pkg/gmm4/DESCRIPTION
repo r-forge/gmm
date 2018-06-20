@@ -1,0 +1,21 @@
+Package: gmm4
+Version: 0.0-2
+Date: 2018-05-29
+Title: S4 Generalized Method of Moments
+Author: Pierre Chausse <pchausse@uwaterloo.ca>
+Maintainer: Pierre Chausse <pchausse@uwaterloo.ca>
+Description: Here is a complete restructured Gmm package using S4 only type of
+	     classes and methods.
+Depends: R (>= 2.10.0), sandwich
+Imports: stats, methods
+Suggests: lmtest, knitr
+Collate: 'allClasses.R' 'validity.R' 'gmmData.R' 'gmmModels-methods.R'
+        'gmmfit-methods.R' 'tsls-methods.R' 'specTest-methods.R'
+        'summaryGmm-methods.R' 'gmmWeights-methods.R' 'gmmModel.R'
+        'rGmmModel-methods.R' 'gmm4.R' 'hypothesisTest-methods.R'
+        'sysGmmModel.R' 'sysGmmModels-methods.R' 'rsysGmmModels-methods.R'
+	'sgmmfit-methods.R'
+License: GPL (>= 2)
+NeedsCompilation: no
+VignetteBuilder: knitr
+Packaged: 2018-06-14 04:40:03 UTC; pierre

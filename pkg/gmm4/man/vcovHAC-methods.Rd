@@ -1,0 +1,26 @@
+\name{vcovHAC-methods}
+\docType{methods}
+\alias{vcovHAC-methods}
+\alias{vcovHAC,gmmModels-method}
+\title{ ~~ Methods for Function \code{vcovHAC} in Package \pkg{sandwich} ~~}
+\description{
+ Methods to compute the HAC covariance matrix of the moment matrix ~~
+}
+\section{Methods}{
+\describe{
+
+\item{\code{signature(x = "gmmModels")}}{
+}
+}}
+
+\examples{
+data(simData)
+theta <- c(beta0=1,beta1=2)
+model1 <- gmmModel(y~x1, ~z1+z2, data=simData)
+
+vcovHAC(model1, theta)
+
+}
+
+\keyword{methods}
+
