@@ -649,8 +649,7 @@ setMethod("ThreeSLS", "slinearGmm",
                   stop("3SLS is for slinearGmm classes")
               if (!object@sameMom)
                   stop("For 3SLS, the instruments must be the same in each equation")
-              if (object@vcov != "iid")
-                  stop("For 3SLS, the error must be homoscedastic")
+              efficientGmm <- object@vcov == "iid"
               spec <- modelDims(object)
               n <- spec$n
               neqn <- length(object@eqnNames)
@@ -699,7 +698,7 @@ setMethod("ThreeSLS", "slinearGmm",
                           HAC=list(), sameMom=TRUE, eqnNames=object@eqnNames)
               new("sgmmfit", theta=theta, convergence=NULL,
                   convIter=rep(NULL, neqn), call=Call, type=type, wObj=wObj,
-                  niter=2L, efficientGmm=TRUE,  model=object)
+                  niter=2L, efficientGmm=efficientGmm,  model=object)
           })
 
 

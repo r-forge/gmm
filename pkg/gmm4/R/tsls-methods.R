@@ -7,8 +7,10 @@ setMethod("bread", "tsls",
           function(x, ...) {
               sig <- sum(residuals(x)^2)
               X <- model.matrix(x@model)
-              Xhat <- qr.fitted(x@wObj@w, X)
-              sig*chol2inv(qr.R(qr(Xhat)))              
+              Xhat <- qr(qr.fitted(x@wObj@w, X))
+              v <- matrix(ncol=ncol(X), nrow=ncol(X))
+              v[Xhat$pivot, Xhat$pivot] <- chol2inv(qr.R(Xhat))
+              sig*v
           })
 
 ## meat

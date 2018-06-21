@@ -10,10 +10,10 @@ Computes the covariance matrix of the coefficient estimated by GMM.
 }
 \usage{
 \S4method{vcov}{gmmfit}(object, sandwich=NULL, df.adj=FALSE,
-breadOnly=FALSE)
+breadOnly=FALSE, modelVcov=NULL)
 
 \S4method{vcov}{sgmmfit}(object, sandwich=NULL, df.adj=FALSE,
-breadOnly=FALSE)
+breadOnly=FALSE, modelVcov=NULL)
 
 \S4method{vcov}{tsls}(object, sandwich=TRUE, df.adj=FALSE)
 
@@ -33,6 +33,10 @@ breadOnly=FALSE)
     HC0.}
   \item{breadOnly}{If \code{TRUE}, the covariance matrix is set to the
     bread (see details below).}
+  \item{modelVcov}{Should be one of "iid", "MDS" or "HAC". It is meant
+    to change the way the variance of the moments is computed. If it is
+    set to a different specification included in the model,
+    \code{sandwich} is set to \code{TRUE}. }
 }
 \section{Methods}{
 \describe{

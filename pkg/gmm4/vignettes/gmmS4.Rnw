@@ -448,7 +448,7 @@ The weights matrix is used to compute the vector of estimates, its covariance ma
 wObj <- evalWeights(model, theta=1:2)
 @ 
 
-Let compute $G$ and $\bar{g(\theta)}$
+Let compute $G$ and $\bar{g}(\theta)$
 
 <<>>=
 G <- evalDMoment(model, theta=1:2)
@@ -619,16 +619,22 @@ For the iterative GMM, we can control the tolerance level and the maximum number
     \item Any other sandwich estimator: $(G'WG)^{-1}G'W\hat{V}WG(G'WG)^{-1}/n$.  
     \item The argument ``breadonly'' is set to TRUE: $(G'WG)^{-1}/n$. For efficient GMM, it is asymptotically equivalent to $(G'\hat{V}^{-1}G)^{-1}/n$. It is particularly useful for efficient and fixed weighting matrices.        
     \end{itemize}
-  The method is flexible enough that you may hand up with a non-valid covariance matrix if not careful. For example, setting ``sandwich'' to FALSE would lead to non valid covariance matrix if the model was not estimated by efficient GMM. It is important to understand that we assume here that the specifications of the model are valid. If you set ``vcov'' to iid and that the errors are heteroscedastic, there is nothing you can do to get valid standard errors. You need to recreate a new gmmModels object. An example will be given below using two-stage least squares. 
+  The method is flexible enough that you may hand up with a non-valid covariance matrix if not careful. For example, setting ``sandwich'' to FALSE would lead to non valid covariance matrix if the model was not estimated by efficient GMM. It is important to understand that we assume here that the specifications of the model are valid. If you set ``vcov'' to iid and that the errors are heteroscedastic, GMM is no longer efficient and a sandwich matrix is required. But event if you set ``sandwich'' to TRUE, it will not solve the problem because the meat will be computed assuming the errors are iid. You can, however, set the argument ``modelVcov'' to ``MDS'' which will set ``sandwich'' to TRUE and compute the meat properly.
   
 The argument ``df.adj'' can be set to TRUE if degrees of freedom adjustment is needed. In that case, the covariance matrix is multiplied by $n/(n-k)$. It is only included in the package to reproduce textbook examples. This adjustment is not really justified in the GMM context. 
 
 \item \textit{specTest}: It tests the null hypothesis $\E[g_i(\theta)]=0$ using the J-test. The statistics is $n\bar{g}'\hat{V}^{-1}\bar{g}$ and it is asymptotically distributed as a $\chi^2_{q-k}$ under the null. The model must have been estimated by efficient GMM for this test to be valid. The method returns an  S4 class object.
   
 <<>>=
-mod <- gmmModel(y~x1, ~z1+z2, data=simData, vcov="MDS")
+mod <- gmmModel(y~x1, ~z1+z2+z3, data=simData, vcov="MDS")
 res <- gmmFit(mod)
 specTest(res)
+@ 
+
+It is also possible to test subsets of instruments. Suppose we suspect $z_2$ to be invalid. We would estimate the model without $z_2$ and compute the difference between the J-tests $(J_1-J_2)$, where $J_1$ is the J-test with $z_2$ and $J_2$ is the test without. The distribution is the number of instruments that we want to test, which is one in this example. To test it using the \textit{specTest} method, we specify which instrument we want to test ($z_2$ is the third instrument if we include the intercept):
+
+<<>>=
+specTest(res, 3)
 @ 
 
 \item \textit{summary}: It computes important information about the estimated model. It is an S4 class object with a \textit{print} method that shows the results in the usual way.
@@ -713,7 +719,206 @@ e <- residuals(res)
 e.r <- residuals(res.r)
 @     
 
-\item \textit{DWH}: It performs the Durbin-Wu-Hausman test. 
+\item \textit{DWH}: It performs the Durbin-Wu-Hausman test. In general, the purpose of the test is to compare an efficient estimator, $\hat{\theta}$, with an inefficient one, $\tilde{\theta}$. Under the null hypothesis, both are consistent estimators of $\theta$ and under the alternative only $\tilde{\theta}$ is consistent. It is well known in the linear GMM setup as a way of comparing OLS with GMM. We want to test if it is worth instrumenting the suspected endogenous vaiables among th regressors. The method with signature $\{gmmfit, lm\}$ performs such test.
+  
+<<>>=
+mod <- gmmModel(y~x1, ~z1+z2, data=simData, vcov="iid")
+res1 <- gmmFit(mod)
+res2 <- lm(y~x1, simData)
+DWH(res1,res2)
+@   
+  
+Used this way, the test is defined as $(\theta_{ols}-\theta_{gmm})'\Sigma (\theta_{ols}-\theta_{gmm})$, where $\Sigma$ is the generalized inverse of $[\widehat{\Var(\theta_{gmm})}-\widehat{\Var(\theta_{ols})}]$. The degrees of freedom is the rank of difference between the two covariance matrices. The argument ``tol'' is the tolerance level for the Moore-Penrose generalized inverse (for singular values less than ``tol'', their inverse is set to zero). The degrees of freedom should be 1 here because there is only one endogenous variable. That approach is therefore not too stable. Below, we consider a regression approach. The method with signature $\{gmmfit, gmmfit\}$ is used to compare two GMM estimators applied on the same regression model, using the same approach.
+
+For the signature $\{gmmfit, missing\}$, the test is done using an auxiliary regression. The fitted endogenous regressors are added to the regression model and a joint significance test on their coefficients is performed. For the example we have here, we would regress $x_1$ on $z_1$ and $z_2$ with an intercept, regress $y$ on $x_1$ and the fitted value $\hat{x}_1$ and test the coefficient of $\hat{x}_1$. Using \textit{DWH} we obtain:
+
+<<>>=
+DWH(res1)
+@ 
+
+Notice that the Wald test is robust in the sense that the covariance matrix is based on the specification of the ``gmmModels''. For example, if ``vcov'' was set to ``MDS'', an HCCM covariance matrix would be used. 
+
+\subsection{The \textit{tsls} method}
+
+This method is to estimate linear models with two-stage least squares. It returns a ``tsls'' class object which inherits from ``gmmfit''. Most ``gmmfit'' methods are the same with the eception of \textit{bread}, \textit{meatGmm} and \textit{vcov}. They just use the structure of 2LSL to make them more computationally efficient. They may be removed in future version and included in the main ``gmmfit'' methods. 
+
+If the model has iid error, \textit{gmmFit} and \textit{tsls} are numerically identical. In fact, the function is called by \textit{gmmFit} in that case. The main reason for using it is if we have a more complex variance structure but want to avoid using a fully efficient GMM, which may have worse small sample properties. Therefore, ``sandwich'' is set to TRUE in the \textit{vcov} method for ``tsls'' objects. In the following example, errors are assumed heteroscedastic, and the model is estimated by 2SLS. The \textit{summary} method returns, however, robust standard errors because ``sandwich=TRUE'' is the default in the \textit{vcov} method of ``tsls''.
+
+<<>>=
+mod <- gmmModel(y~x1, ~z1+z2+z3, data=simData, vcov="MDS")
+res <- tsls(mod)
+summary(res)@coef
+@ 
+
+\subsection{\textit{gmm4}: A function to fit them all}
+
+If you still think that the \textit{gmmFit} method is not simple enough because you have to crate a model first, the \textit{gmm4} function will do everything for you. It is the function that looks the most like its ancestor function \textit{gmm} from the gmm package. It is still required to specify the structure of variance for the moment conditions. In fact, it combines all arguments of the \textit{gmmModel} constructor and \textit{gmmFit} method. Here are a few examples.
+
+You want to estimate 
+\[
+y = \theta_0 + \theta_1 x_1 + \theta_2 x_2 + \epsilon
+\]
+using the instruments $\{x_2, z_1, z_2, z_3\}$. We do not want to assume homoscedasticity, so we want to set ``vcov'' to ``MDS''. We want to estimate the model by two-step GMM.
+
+<<>>=
+res1 <- gmm4(y~x1+x2, ~x2+z1+z2+z3, type="twostep", vcov="MDS", data=simData)
+res1
+@ 
+
+We want to compare it with iterative GMM:
+
+<<>>=
+res2 <- gmm4(y~x1+x2, ~x2+z1+z2+z3, type="iter", vcov="MDS", data=simData)
+@ 
+
+Now, we want to estimate the model with the restrictions $\theta_1=\theta_2$
+
+<<>>=
+res1.r <- gmm4(y~x1+x2, ~x2+z1+z2+z3, type="twostep", vcov="MDS", 
+               data=simData, cstLHS="x1=x2")
+res1.r
+@ 
+
+Since the function returns a ``gmmfit'' object, all methods work with the output. We for example test the restriction:
+
+<<>>=
+hypothesisTest(res1, res1.r, type="LR")
+@ 
+
+There is also a \textit{tsls} method for ``formula'', which works the same way:
+
+<<>>=
+res3 <- tsls(y~x1+x2, ~x2+z1+z2+z3, vcov="MDS", data=simData)
+res3
+@ 
+
+It is still important to specify the variance structure in order to obtain the appropriate coefficient standard errors. To estimate a nonlinear model, \textit{gmm4} will recognize it by the way the formula is set along with the names vector ``tet0''.
+
+<<>>=
+res3 <- gmm4(y~theta0+exp(theta1*x1+theta2*x2), ~x2+z1+z2+z3+z4, vcov="iid",
+             tet0=c(theta0=1, theta1=0, theta2=0), data=simData)
+res3
+@ 
+
+
+\subsection{Textbooks Applications}
+
+In this section, we cover a few examples from major textbooks. Since it is meant to help users who care less about the structure of the package, we use, when possible, the quicker functions that we just intruduced in the last section. 
+
+\subsubsection{Stock-Watson}
+In this section, we cover examples from \cite{stock-watson15}. In Chapter 12, the demand for cigarettes is estimated for 1985 using a panel. The following data change is required
+
+<<>>=
+data(CigarettesSW)
+CigarettesSW$rprice <- with(CigarettesSW, price/cpi)
+CigarettesSW$rincome <- with(CigarettesSW, income/population/cpi)
+CigarettesSW$tdiff <- with(CigarettesSW, (taxs - tax)/cpi)
+c1985 <- subset(CigarettesSW, year == "1985")
+c1995 <- subset(CigarettesSW, year == "1995")
+@ 
+
+In equation 12.15, the demand is estimated using sales tax as an instrument for price. In order to get the same standard errors, we need to assume ``MDS'',  and use a sandwich matrix with degrees of freedom adjustment. 
+
+<<>>=
+res1 <- gmm4(log(packs)~log(rprice)+log(rincome),
+             ~log(rincome)+tdiff, data = c1995, vcov="MDS")
+summary(res1, sandwich=TRUE, df.adj=TRUE)@coef
+@ 
+
+Equation 12.16, for which both cigarettes and sales taxes are used as instruments, can be reproduced using the same specifications. We also have to set ``centeredVcov'' to FALSE. We have not seen that argument yet. When set to TRUE, the moments are centered before computing the weights. For more details on when it should be centered, see \cite{hall05}. 
+
+<<>>=
+res2<- tsls(log(packs)~log(rprice)+log(rincome),
+            ~log(rincome)+tdiff+I(tax/cpi), data = c1995,
+            centeredVcov=FALSE, vcov="MDS")
+summary(res2, sandwich=TRUE, df.adj=TRUE)@coef
+@ 
+
+In Table 12.1, the long-run demand elasticity is estimated over a 10 year period. They compare a model with only sales tax as instrument, a model with cigarettes tax only and one with both. 
+
+<<echo=FALSE, message=FALSE, warning=FALSE>>=
+library(texreg)
+setMethod("extract", "gmmfit", 
+          function(model, includeJTest=TRUE, includeFTest=TRUE, ...)
+              {
+                  s <- summary(model, ...)
+                  spec <- modelDims(model@model)
+                  coefs <- s@coef
+                  names <- rownames(coefs)
+                  coef <- coefs[, 1]
+                  se <- coefs[, 2]
+                  pval <- coefs[, 4]
+                  n <- model@model@n
+                  gof <- numeric()
+                  gof.names <- character()
+                  gof.decimal <- logical()
+                  if (includeJTest) {
+                      if (spec$k == spec$q)
+                          {
+                              obj.fcn <- NA
+                              obj.pv <- NA
+                          } else {
+                              obj.fcn <- s@specTest@test[1]
+                              obj.pv <- s@specTest@test[3]
+                          }
+                      gof <- c(gof, obj.fcn, obj.pv)
+                      gof.names <- c(gof.names, "J-test Statistics", "J-test p-value")
+                      gof.decimal <- c(gof.decimal, TRUE, TRUE)
+                  }
+                  if (includeFTest) {
+                      str <- s@strength$strength
+                      if (is.null(str))
+                          {
+                              gof <- c(gof, NA)
+                              gof.names <- c(gof.names, "First Stage F-stats")
+                              gof.decimal <- c(gof.decimal, TRUE)
+                          } else {
+                              for (i in 1:nrow(str))
+                                  {
+                                      gof <- c(gof, str[i,1])
+                                      gofn <- paste("First Stage F-stats(",
+                                                    rownames(str)[i], ")", sep="")
+                                      gof.names <- c(gof.names, gofn)
+                                      gof.decimal <- c(gof.decimal, TRUE)
+                                  }
+                          }
+                  }
+                  tr <- createTexreg(coef.names = names, coef = coef, se = se, 
+                                     pvalues = pval, gof.names = gof.names, gof = gof, 
+                                     gof.decimal = gof.decimal)
+                  return(tr)
+              })
+@ 
+
+<<>>=
+data <- data.frame(dQ=log(c1995$pack/c1985$pack),
+                   dP=log(c1995$rprice/c1985$rprice),
+                   dTs=c1995$tdiff-c1985$tdiff,
+                   dT=c1995$tax/c1995$cpi-c1985$tax/c1985$cpi,
+                   dInc=log(c1995$rincome/c1985$rincome))
+res1 <- tsls(dQ~dP+dInc, ~dInc+dTs, vcov="MDS", data=data)
+res2 <- tsls(dQ~dP+dInc, ~dInc+dT, vcov="MDS", data=data)
+res3 <- tsls(dQ~dP+dInc, ~dInc+dTs+dT, vcov="MDS", data=data)
+@ 
+
+You can print the summary to see the result, but I use the texreg package of \cite{leifeld13},with an home made \textit{extact} method, to make it more compact and more like Table 12.1 of the textbook. Table \ref{tab1} presents the results. There is a small difference in the first stage F-test, which could be explained by the way they compute the covariance matrix. For the J-test, the difference a a little larger. But, we have to notice that if we assume ``MDS'', 2SLS is not efficient and the J-test is not valid. If we estimate the model by efficient GMM, the J-test gets closer to what the authors get.
+
+<<>>=
+res4 <- gmm4(dQ~dP+dInc, ~dInc+dTs+dT, vcov="MDS", data=data)
+specTest(res4)
+@ 
+
+<<echo=FALSE, results='asis'>>=
+texreg(list(res1,res2,res3), fontsize="footnotesize", label="tab1", 
+       caption="Table 12.1 of Stock and Watson textbook", df.adj=TRUE, sandwich=TRUE)
+@ 
+
+<<>>=
+res4 <- gmm4(dQ~dP+dInc, ~dInc+dTs+dT, vcov="MDS", data=data)
+@ 
+
+
+\section{Systems of Equations}
 
 \end{itemize}
 

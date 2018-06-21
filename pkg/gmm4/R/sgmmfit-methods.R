@@ -67,8 +67,16 @@ setMethod("residuals", "sgmmfit", function(object) {
 
 setMethod("vcov", "sgmmfit", 
           function (object, sandwich = NULL, df.adj = FALSE, 
-                    breadOnly = FALSE) 
+                    breadOnly = FALSE, modelVcov=NULL) 
               {
+                  if (!is.null(modelVcov))
+                      {
+                          if (modelVcov != object@model@vcov)
+                              {
+                                  slot(object@model, "vcov") <- modelVcov
+                                  sandwich <- TRUE
+                              }
+                      }
                   spec <- modelDims(object@model)
                   if (breadOnly) {
                       vcov <- bread(object)/spec$n

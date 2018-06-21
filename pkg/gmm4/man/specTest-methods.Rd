@@ -4,7 +4,7 @@
 \alias{specTest-methods}
 \alias{specTest,gmmfit,missing-method}
 \alias{specTest,sgmmfit,missing-method}
-\alias{specTest,gmmfit,integer-method}
+\alias{specTest,gmmfit,numeric-method}
 \title{ ~~ Methods for Function \code{specTest} in Package \pkg{gmm4} ~~}
 \description{
 It computes tests of specification for GMM fit.
@@ -14,7 +14,7 @@ It computes tests of specification for GMM fit.
 
 \S4method{specTest}{sgmmfit,missing}(object, which, df.adj=FALSE, wObj=NULL)
 
-\S4method{specTest}{gmmfit,integer}(object, which)
+\S4method{specTest}{gmmfit,numeric}(object, which)
 }
 \arguments{
   \item{object}{GMM fit object}
@@ -42,7 +42,7 @@ It computes tests of specification for GMM fit.
 \item{\code{signature(object = "sgmmfit", which="missing")}}{
 }
 
-\item{\code{signature(object = "gmmfit", which="integer")}}{
+\item{\code{signature(object = "gmmfit", which="numeric")}}{
 }
 }}
 
@@ -57,13 +57,8 @@ University Press.
 }
 
 \examples{
-x <- rchisq(200,5)
-z1 <- rnorm(200)
-z2 <- .2*x+rnorm(200)
-y <- x+rnorm(200)
-dat <- data.frame(y=y,z1=z1,x=x,z2=z2)
-theta <- c(beta0=1,beta1=2)
-model1 <- gmmModel(y~x, ~z1+z2, data=dat)
+data(simData)
+model1 <- gmmModel(y~x1, ~z1+z2, data=simData)
 
 res <- gmmFit(model1)
 specTest(res)
@@ -75,7 +70,7 @@ dat <- subset(Griliches, YEAR==67)
 model <- gmmModel(LW~S+EXPR+IQ, ~S+EXPR+AGE+MED, data=dat, vcov="MDS")
 res <- gmmFit(model)
 ## testing the orthogonality conditions of S
-specTest(res, 2L)
+specTest(res, 2)
 
 }
 \keyword{methods}

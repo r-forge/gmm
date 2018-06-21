@@ -1,37 +1,62 @@
 \name{gmm4}
 \alias{gmm4}
+\alias{tsls,formula-method}
+\alias{tsls,list-method}
+\alias{ThreeSLS,list-method}
 
 \title{GMM estimation
 }
 \description{
-The main function to fit any model with GMM. As opposed to
-\code{\link{gmmFit}}, the arguments are more specific.
+The main functions and methods to fit any model with GMM. As opposed to
+\code{\link{gmmFit}}, models don't need to be created. It is all done by
+the functions. It is meant to be more user friendly. This document
+needs to changed. It is just a copy and paste from the gmm package
 }
 \usage{
-gmm4(g, x, tet0 = NULL, grad = NULL, type = c("twostep", "iter", "cue",
-"onestep"), vcov = c("HAC", "MDS", "iid", "TrueFixed"), initW =
-c("tsls", "ident"), weights = "optimal", itermaxit = 50,
-kernel = c("Quadratic Spectral", "Truncated", "Bartlett", "Parzen",
-"Tukey-Hanning"), crit = 1e-06, bw = "Andrews", prewhite = 1L,
-ar.method = "ols", approx = "AR(1)", kerntol = 1e-07,
-itertol = 1e-07, centeredVcov = TRUE, data = parent.frame(), ...)
+gmm4(g, x, tet0 = NULL, grad = NULL, 
+     type = c("twostep", "iter", "cue", "onestep"),
+     vcov = c("MDS", "HAC", "iid", "TrueFixed"),
+     initW = c("ident", "tsls", "EbyE"), weights = "optimal", 
+     itermaxit = 50, cstLHS=NULL, cstRHS=NULL, 
+     kernel = c("Quadratic Spectral", "Truncated",
+                "Bartlett", "Parzen", "Tukey-Hanning"), crit = 1e-06, 
+     bw = "Andrews", prewhite = 1L, ar.method = "ols", approx = "AR(1)", 
+     kerntol = 1e-07, itertol = 1e-07, centeredVcov = TRUE,
+     data = parent.frame(), ...)
+
+\S4method{tsls}{formula}(object, x, vcov = c("iid", "HAC", "MDS"),
+         kernel = c("Quadratic Spectral", "Truncated", "Bartlett", 
+                    "Parzen", "Tukey-Hanning"), crit = 1e-06, bw = "Andrews", 
+         prewhite = 1L, ar.method = "ols", approx = "AR(1)", kerntol = 1e-07, 
+         centeredVcov = TRUE, data = parent.frame())
+
+\S4method{tsls}{list}(object, x=NULL, vcov = c("iid", "HAC", "MDS"),
+         kernel = c("Quadratic Spectral", "Truncated", "Bartlett", 
+                    "Parzen", "Tukey-Hanning"), crit = 1e-06, bw = "Andrews", 
+         prewhite = 1L, ar.method = "ols", approx = "AR(1)", kerntol = 1e-07, 
+         centeredVcov = TRUE, data = parent.frame())
+
+\S4method{ThreeSLS}{list}(object, x=NULL, vcov = c("iid", "HAC", "MDS"),
+         kernel = c("Quadratic Spectral", "Truncated", "Bartlett", 
+                    "Parzen", "Tukey-Hanning"), crit = 1e-06, bw = "Andrews", 
+         prewhite = 1L, ar.method = "ols", approx = "AR(1)", kerntol = 1e-07, 
+         centeredVcov = TRUE, data = parent.frame())
 }
 \arguments{
+\item{object}{A formula or a list of formulas.}  
 \item{g}{A function of the form \eqn{g(\theta,x)} and which returns a
   \eqn{n \times q} matrix with typical element \eqn{g_i(\theta,x_t)} for
   \eqn{i=1,...q} and \eqn{t=1,...,n}. This matrix is then used to build
   the q sample moment conditions. It can also be a formula if the model
-  is linear (see detailsbelow).}
+  is linear or nonlinear, or a list of formulas for systems of equations.}
 
 \item{x}{The matrix or vector of data from which the function
   \eqn{g(\theta,x)} is computed. If "g" is a formula, it is an \eqn{n
     \times Nh} matrix of instruments or a formula (see details below).}
 
-
 \item{tet0}{A \eqn{k \times 1} vector of starting values. It is required
-  only when "g" is a function because only then a numerical algorithm is
-  used to minimize the objective function. If the dimension of
-  \eqn{\theta} is one, see the argument "optfct".}
+  only when "g" is a function or a nonlinear equation defined by a
+  formula, in which case, it must be a named vector}
 
 \item{grad}{A function of the form \eqn{G(\theta,x)} which returns a
   \eqn{q\times k} matrix of derivatives of \eqn{\bar{g}(\theta)} with
@@ -100,8 +125,15 @@ itertol = 1e-07, centeredVcov = TRUE, data = parent.frame(), ...)
     computing its covariance matrix. Doing so may improve inference.}
   
   \item{data}{A data.frame or a matrix with column names (Optional). }
-
-  \item{\dots}{Arguments to pass to other methods. Not used for now.}
+  
+  \item{cstLHS}{The left hand side of the constraints to impose on the
+    coefficients. See \code{\link{restGmmModel}} for more details.}
+  
+  \item{cstRHS}{The right hand side of the constraints to impose on the
+    coefficients. See \code{\link{restGmmModel}} for more details.}
+  
+  \item{\dots}{Arguments to pass to \code{\link{optim}} when the model
+    is nonlinear.}
 }
 
 \value{

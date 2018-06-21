@@ -45,7 +45,16 @@ setMethod("residuals", "gmmfit", function(object) {
 
 setGeneric("vcov")
 setMethod("vcov", "gmmfit",
-          function(object, sandwich=NULL, df.adj=FALSE, breadOnly=FALSE) {
+          function(object, sandwich=NULL, df.adj=FALSE, breadOnly=FALSE,
+                   modelVcov=NULL) {
+              if (!is.null(modelVcov))
+                  {
+                      if (modelVcov != object@model@vcov)
+                          {
+                              slot(object@model, "vcov") <- modelVcov
+                              sandwich <- TRUE
+                          }
+                  }
               spec <- modelDims(object@model)
               if (breadOnly)
                   {
@@ -132,9 +141,9 @@ setMethod("specTest", signature("gmmfit", "missing"),
               ans <- new("specTest", test=j, testname=J_test)
               ans})
 
-setMethod("specTest", signature("gmmfit", "integer"),
+setMethod("specTest", signature("gmmfit", "numeric"),
           function(object, which) {
-              which <- sort(unique(which))
+              which <- sort(unique(as.integer(which)))
               spec <- modelDims(object@model)
               q <- spec$q
               if (!all(which%in%(1:q)))

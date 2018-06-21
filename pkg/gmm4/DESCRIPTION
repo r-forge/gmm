@@ -9,13 +9,13 @@ Description: Here is a complete restructured Gmm package using S4 only type of
 	     welcome. See the vignette for more details.
 Depends: R (>= 2.10.0), sandwich
 Imports: stats, methods
-Suggests: lmtest, knitr
+Suggests: lmtest, knitr, texreg
 Collate: 'allClasses.R' 'validity.R' 'gmmData.R' 'gmmModels-methods.R'
         'gmmfit-methods.R' 'tsls-methods.R' 'specTest-methods.R'
         'summaryGmm-methods.R' 'gmmWeights-methods.R' 'gmmModel.R'
-        'rGmmModel-methods.R' 'gmm4.R' 'hypothesisTest-methods.R'
+        'rGmmModel-methods.R' 'hypothesisTest-methods.R'
         'sysGmmModel.R' 'sysGmmModels-methods.R' 'rsysGmmModels-methods.R'
-	'sgmmfit-methods.R'
+	'sgmmfit-methods.R' 'gmm4.R'
 License: GPL (>= 2)
 NeedsCompilation: no
 VignetteBuilder: knitr
