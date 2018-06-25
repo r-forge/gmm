@@ -174,6 +174,7 @@ setMethod("quadra", c("sysGmmWeights", "matrixORnumeric", "missing"),
                                   v <- kronecker(isig, iw)
                                   obj <- crossprod(x,v)%*%x
                               } else {
+                                  q <- sapply(w@momNames, length)
                                   v <- .SigmaZZ(w@w, w@Sigma, q)
                                   obj <- crossprod(x, solve(v,x))
                               }
@@ -224,6 +225,7 @@ setMethod("quadra", c("sysGmmWeights", "matrixORnumeric", "matrixORnumeric"),
                                   v <- kronecker(isig, iw)
                                   obj <- crossprod(x,v)%*%y
                               } else {
+                                  q <- sapply(w@momNames, length)
                                   v <- .SigmaZZ(w@w, w@Sigma, q)
                                   obj <- crossprod(x, solve(v,y))
                               }
@@ -272,6 +274,7 @@ setMethod("quadra", c("sysGmmWeights", "missing", "missing"),
                               isig <- chol2inv(w@Sigma)
                               obj <- kronecker(isig, iw)
                           } else {
+                                  q <- sapply(w@momNames, length)
                                   v <- .SigmaZZ(w@w, w@Sigma, q)
                                   obj <- solve(v)
                           }

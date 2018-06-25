@@ -13,7 +13,17 @@
 \usepackage{amsfonts}
 \usepackage{amssymb}
 \usepackage{graphicx}
+\usepackage{hyperref}
+\hypersetup{
+  colorlinks,
+  citecolor=black,
+  filecolor=black,
+  linkcolor=black,
+  urlcolor=black
+}
+
 \bibliographystyle{plainnat}
+
 
 \author{Pierre Chauss\'e}
 \title{\textbf{Generalized Method of Moments with R}}
@@ -53,8 +63,12 @@ library(knitr)
 opts_chunk$set(size='footnotesize')
 @ 
 
-\section{Single Equation}
-\subsection{An S4 class object for GMM models}
+\newpage
+\tableofcontents
+\newpage
+
+\section{Single Equation}\label{sec:single}
+\subsection{An S4 class object for GMM models} \label{sec:gmmmodels}
 In general, GMM models are based on the moment conditions:
 \[
 \E[g_i(\theta)]=0
@@ -190,7 +204,7 @@ mod3 <- gmmModel(fct, x, theta0, grad=dfct, vcov="iid")
 mod3
 @ 
 
-\subsection{Methods for gmmModels Classes}
+\subsection{Methods for gmmModels Classes} \label{sec:gmmmodels-methods}
 
 \begin{itemize}
 \item \textit{residuals}: Only for linearGMM and nonlinearGMM, it returns $\epsilon(\theta)$:
@@ -283,7 +297,7 @@ momentStrength(mod1)
 
 Other methods will be presented below as they require to define other classes.
 
-\subsection{Restricted models}
+\subsection{Restricted models} \label{sec:gmmmodels-rest}
 We can create objects of class ``rlinearGmm'', ``rnonlinearGMM'' or ``rfunctionGMM'' using the method \textit{restGmmModel} and print the restrictions using the \textit{printRestrict} method. 
 
 Lets first create a new model with more regressors:
@@ -386,7 +400,7 @@ modelDims(R1.mod2)$parNames
 modelDims(R1.mod2)$k
 @ 
 
-\subsection{A class object for GMM Weights}
+\subsection{A class object for GMM Weights} \label{sec:gmmmodels-weights}
 
 Now that we have our model classes well defined, we need a way to construct a weighting matrix. We could simply define $W$ as a matrix and move on to the estimation section, but in an attempt to make the estimation more computationally efficient and more numerically stable, we construct the weights in a particular way depending on its structure. There is in fact an optimal choice for $W$ that minimizes the asymptotic variance of the GMM estimator. If $W=V^{-1}$, the above property becomes:
 \[
@@ -490,7 +504,7 @@ evalObjective(model, theta1, wObj)
 
 Notive that the method returns $n\bar{g}'W\bar{g}$. 
 
-\subsection{The \textit{solveGmm} Method}
+\subsection{The \textit{solveGmm} Method} \label{sec:gmmmodels-solve}
 
 We now have all we need to estimate our models. The main method to estimate a model for a given $W$ is \textit{solveGmm}. The available signatures are:
 <<>>=
@@ -555,7 +569,7 @@ The unrestricted version can be extracted using \textit{coef}.
 coef(rmod2, res2$theta)
 @ 
 
-\subsection{GMM Estimation: the \textit{gmmFit} method}
+\subsection{GMM Estimation: the \textit{gmmFit} method} \label{sec:gmmmodels-gmmfit}
 
 For most users, what we presented above will rarely be used. What they want is a way to estimate their models without worrying about how it is done. The \textit{gmmFit} method is the main method to estimate models. The only requirement is to first create a ``gmmModels''. Before going into all the details, the most important arguments to set is the object, which is a ``gmmModels'' class, and a type of GMM. The different types are: (1) ``twostep'' for two-step GMM, which is the default, (2) ``iter'' for iterative GMM, (3) ``cue'' for continuously updated GMM , or (4) ``onestep'' for th one-step GMM. 
 
@@ -604,7 +618,7 @@ print(res2, model=FALSE)
 
 For the iterative GMM, we can control the tolerance level and the maximum number of iterations with the arguments ``itertol'' and ``itermaxit''. The argument ``weights'' is equal to the character string ``optimal'', which implies that by default $W$ is set to the estimate of $V^{-1}$. If ``weights'' is set to ``ident'', \textit{gmmFit} returns the one-step GMM. Alternatively, we can provide \textit{gmmFit} with a fixed weighting matrix. It could be a matrix or a ``gmmWeights'' object. When the weighting matrix is provided, it returns a one-step GMM based on that matrix. The ``gmmfit'' object contains a slot ``efficientGmm'' of type logical. It is TRUE if the model has been estimated by efficient GMM. By default it is TRUE, since ``weights'' is set to ``optimal''. If ``weights'' takes any other value or if ``type'' is set to ``onestep'', it is set to FALSE. There is one exception. It is set to TRUE if we provide the method with a weighting matrix and we set the argument ``efficientWeights'' to TRUE. For example, the optimal weighting matrix of the  minimum distance method does not depend on any coefficient. It is probably a good idea in this case to compute it before and pass it to the \textit{gmmFit} method. The value of the ``efficientGmm'' slot will be used by the \textit{vcov} method to determine whether it should return the robust (or sandwich) covariance matrix. 
 
-\subsection{Methods for ``gmmfit'' classes}
+\subsection{Methods for ``gmmfit'' classes} \label{sec:gmmmodels-gmmfitm}
 
 \begin{itemize}
   
@@ -737,8 +751,10 @@ DWH(res1)
 @ 
 
 Notice that the Wald test is robust in the sense that the covariance matrix is based on the specification of the ``gmmModels''. For example, if ``vcov'' was set to ``MDS'', an HCCM covariance matrix would be used. 
+\end{itemize}
 
-\subsection{The \textit{tsls} method}
+
+\subsection{The \textit{tsls} method} \label{sec:gmmmodels-tsls}
 
 This method is to estimate linear models with two-stage least squares. It returns a ``tsls'' class object which inherits from ``gmmfit''. Most ``gmmfit'' methods are the same with the eception of \textit{bread}, \textit{meatGmm} and \textit{vcov}. They just use the structure of 2LSL to make them more computationally efficient. They may be removed in future version and included in the main ``gmmfit'' methods. 
 
@@ -750,7 +766,7 @@ res <- tsls(mod)
 summary(res)@coef
 @ 
 
-\subsection{\textit{gmm4}: A function to fit them all}
+\subsection{\textit{gmm4}: A function to fit them all} \label{sec:gmmmodels-gmm4}
 
 If you still think that the \textit{gmmFit} method is not simple enough because you have to crate a model first, the \textit{gmm4} function will do everything for you. It is the function that looks the most like its ancestor function \textit{gmm} from the gmm package. It is still required to specify the structure of variance for the moment conditions. In fact, it combines all arguments of the \textit{gmmModel} constructor and \textit{gmmFit} method. Here are a few examples.
 
@@ -801,11 +817,11 @@ res3
 @ 
 
 
-\subsection{Textbooks Applications}
+\subsection{Textbooks Applications} \label{sec:gmmmodels-app}
 
 In this section, we cover a few examples from major textbooks. Since it is meant to help users who care less about the structure of the package, we use, when possible, the quicker functions that we just intruduced in the last section. 
 
-\subsubsection{Stock-Watson}
+\subsubsection{Stock-Watson} \label{sec:gmmmodels-appsw}
 In this section, we cover examples from \cite{stock-watson15}. In Chapter 12, the demand for cigarettes is estimated for 1985 using a panel. The following data change is required
 
 <<>>=
@@ -836,7 +852,7 @@ summary(res2, sandwich=TRUE, df.adj=TRUE)@coef
 
 In Table 12.1, the long-run demand elasticity is estimated over a 10 year period. They compare a model with only sales tax as instrument, a model with cigarettes tax only and one with both. 
 
-<<echo=FALSE, message=FALSE, warning=FALSE>>=
+<<extract, echo=FALSE, message=FALSE, warning=FALSE>>=
 library(texreg)
 setMethod("extract", "gmmfit", 
           function(model, includeJTest=TRUE, includeFTest=TRUE, ...)
@@ -901,7 +917,7 @@ res2 <- tsls(dQ~dP+dInc, ~dInc+dT, vcov="MDS", data=data)
 res3 <- tsls(dQ~dP+dInc, ~dInc+dTs+dT, vcov="MDS", data=data)
 @ 
 
-You can print the summary to see the result, but I use the texreg package of \cite{leifeld13},with an home made \textit{extact} method, to make it more compact and more like Table 12.1 of the textbook. Table \ref{tab1} presents the results. There is a small difference in the first stage F-test, which could be explained by the way they compute the covariance matrix. For the J-test, the difference a a little larger. But, we have to notice that if we assume ``MDS'', 2SLS is not efficient and the J-test is not valid. If we estimate the model by efficient GMM, the J-test gets closer to what the authors get.
+You can print the summary to see the result, but I use the texreg package of \cite{leifeld13},with an home made \textit{extact} method (see Appendix), to make it more compact and more like Table 12.1 of the textbook. Table \ref{tab1} presents the results. There is a small difference in the first stage F-test, which could be explained by the way they compute the covariance matrix. For the J-test, the difference a a little larger. But, we have to notice that if we assume ``MDS'', 2SLS is not efficient and the J-test is not valid. If we estimate the model by efficient GMM, the J-test gets closer to what the authors get.
 
 <<>>=
 res4 <- gmm4(dQ~dP+dInc, ~dInc+dTs+dT, vcov="MDS", data=data)
@@ -917,12 +933,469 @@ texreg(list(res1,res2,res3), fontsize="footnotesize", label="tab1",
 res4 <- gmm4(dQ~dP+dInc, ~dInc+dTs+dT, vcov="MDS", data=data)
 @ 
 
+\section{Systems of Equations} \label{system}
 
-\section{Systems of Equations}
+We consider two type of system of equations. The linear system:
+\[
+Y_{ji} = X_{ji}'\theta_j + \epsilon_{ji}
+\]
+or
+\[
+Y_{ji}(\theta_j) = X_{ji}(\theta_j) + \epsilon_{ji}
+\]
+for $j=1,...,m$, the number of equations, and $i=1,...,n$, the number of observations, with $\theta_j$ being a $k_j\times 1$ vector. We assume that for each equation $j$, there is a $q_j\times 1$ vector of instruments $Z_{ji}$ that satisfies $\E[\epsilon_{ji}Z_{ji}]=0$.  The moment conditions can therefore be written as:
+\[
+E[g_i(\theta)] \equiv E\begin{bmatrix}
+\epsilon_{1i}Z_{1i}\\
+\epsilon_{2i}Z_{2i}\\
+\epsilon_{3i}Z_{3i}\\
+\vdots\\
+\epsilon_{mi}Z_{mi}\\
+\end{bmatrix}=0
+\]
+The model is just-identified if $k_j=q_j$ for all $j$, and it is over-identified if $k_j<q_j$ for ar least one $j$. For now, we offer two possible variance structures. We refer to ``iid'' models in which the errors are conditionally homoscedastic. In that case, the asymptotic variance of the moment condition is:
+\[
+Var[\sqrt(n)\bar{g}(\theta)] \conP S \equiv  \begin{pmatrix} 
+  \sigma_{1}^2E[Z_{1i}Z_{1i}'] & \sigma_{12}E[Z_{1i}Z_{2i}'] &\cdots& \sigma_{1m}E[Z_{1i}Z_{mi}']\\
+  \sigma_{21}E[Z_{2i}Z_{1i}'] & \sigma_{2}^2E[Z_{2i}Z_{2i}'] &\cdots& \sigma_{2m}E[Z_{2i}Z_{mi}']\\
+      \vdots & \vdots & \vdots & \vdots \\
+ \sigma_{m1}E[Z_{mi}Z_{1i}'] & \sigma_{m2}E[Z_{mi}Z_{2i}'] &\cdots& \sigma_{m}^2E[Z_{mi}Z_{mi}']\\  
+\end{pmatrix}
+\]
+We can estimate $E[Z_{li}Z_{ji}']$ by $\frac{1}{n}\sum_{i=1}^n Z_{li}Z_{ji}'$ and $\sigma_{lj}$ by $\frac{1}{n}\sum_{i=1}^n \hat{\epsilon}_{li}\hat{\epsilon}_{ji}$. We label this estimate $\hat{S}$.  If $Z_{li}=Z_{ji}$ for all $l$ and $j$, which implies that all equations have the same instruments, we can simplify the expression. Let $\Sigma=\E[\epsilon_i\epsilon_i']$, where $\epsilon_i=\{\epsilon_{1i}, ..., \epsilon_{mi}\}'$ and $Z_i=Z_{ji}$ for all $j=1,...,m$. The asymptotic variance can be written as:
+\[
+Var[\sqrt(n)\bar{g}(\theta)] \conP S \equiv  \Sigma \otimes E[Z_iZ_i'],
+\]
+where $\otimes$ is the kronecker product. $S$ can be estimated by $\hat{S}=\hat{\Sigma}\otimes\left[\frac{1}{n}\sum_{i=1}^n Z_iZ_i'\right]$, where $\hat{\Sigma}=\frac{1}{n}\sum_{i=1}^n \hat{\epsilon}_i\hat{\epsilon}_i'$. If we relax the homoscedasticity, the variance structure is labeled ``MDS''. In that case, the asymptotic variance of the moments are: 
+\[
+Var[\sqrt(n)\bar{g}(\theta)] \conP S \equiv  \begin{pmatrix} 
+  E[\epsilon_{1i}^2Z_{1i}Z_{1i}'] & E[\epsilon_{1i}\epsilon_{2i}Z_{1i}Z_{2i}'] &\cdots& E[\epsilon_{1i}\epsilon_{mi}Z_{1i}Z_{mi}']\\
+  E[\epsilon_{2i}\epsilon_{1i}Z_{2i}Z_{1i}'] & E[\epsilon_{2i}^2Z_{2i}Z_{2i}'] &\cdots& E[\epsilon_{2i}\epsilon_{mi}Z_{2i}Z_{mi}']\\
+      \vdots & \vdots & \vdots & \vdots \\
+ E[\epsilon_{mi}\epsilon_{1i}Z_{mi}Z_{1i}'] & E[\epsilon_{mi}\epsilon_{2i}Z_{mi}Z_{2i}'] &\cdots& E[\epsilon_{mi}^2Z_{mi}Z_{mi}']\\  
+\end{pmatrix}
+\]
+It can be estimated by 
+\[
+\hat{S} = \frac{1}{n}\sum_{i=1}^n\begin{pmatrix} 
+  \hat{\epsilon}_{1i}^2Z_{1i}Z_{1i}' & \hat{\epsilon}_{1i}\hat{\epsilon}_{2i}Z_{1i}Z_{2i}' &\cdots& \hat{\epsilon}_{1i}\hat{\epsilon}_{mi}Z_{1i}Z_{mi}'\\
+  \hat{\epsilon}_{2i}\hat{\epsilon}_{1i}Z_{2i}Z_{1i}' & \hat{\epsilon}_{2i}^2Z_{2i}Z_{2i}' &\cdots& \hat{\epsilon}_{2i}\hat{\epsilon}_{mi}Z_{2i}Z_{mi}'\\
+      \vdots & \vdots & \vdots & \vdots \\
+ \hat{\epsilon}_{mi}\hat{\epsilon}_{1i}Z_{mi}Z_{1i}' & \hat{\epsilon}_{mi}\hat{\epsilon}_{2i}Z_{mi}Z_{2i}' &\cdots& \hat{\epsilon}_{mi}^2Z_{mi}Z_{mi}'\\  
+\end{pmatrix}
+\]
+Another type of systems considered in the package  are the ones in which  each equation has the same instruments and that these instruments are the union of all regressors from all equations. This is called the SUR assumption (Seemingly Unrelated Regressions). We will compare the estimation of the different models below. Notice that there is no function type of system yet because we don't see any specific applications. Suggestions are welcome if you have examples in mind. 
+
+\subsection{A class object for System of Equations} \label{sec:sgmmmodels}
+
+The two classes are ``slinearGmm'' and ``snonlinearGmm'' and the union class is ``sgmmModels''. For most, the slots are the same with the exception that they are lists. The other difference is that the whole data.frame for all equations is store in the slot ``data''. For ``slinearGmm'', the equations and instruments are defined in the slots ``modelT'' and ``instT'', the latter being also the format for ``snonlinearGmm'' classes. They are lists of terms for each formula. There are two extra slots in system classes, ``eqnNames'', which labels each equation, and ``SUR'', which is TRUE if the SUR assumption is satisfied.The constructor is \textit{sysGmmModel} and works as the \textit{gmmModel} constructor. A \textit{show} method prints the most important specification of the system of equations. Here is an example.   
+
+<<>>=
+data(simData)
+g <- list(Supply=y1~x1+z2, Demand1=y2~x1+x2+x3, Demand2=y3~x3+x4+z1)
+h <- list(~z1+z2+z3, ~x3+z1+z2+z3+z4, ~x3+x4+z1+z2+z3)
+smod1 <- sysGmmModel(g, h, vcov="iid", data=simData)
+smod1
+@ 
+
+If we do not name the equations as we did, the default names $Eqnj$ for $j=1,...,m$ will be given. As for single equations, the ``vcov'' argument defines the assumption we make on the structure of the moment conditions variance. ``snonlinearGmm'' are constructed the same way with the exception that ``theta0'', a list of named starting coefficient vectors, must be provided. If we only provide one formula for the instruments, the same instruments will be used in all equations.
+
+<<>>=
+smod2 <- sysGmmModel(g, ~x2+x4+z1+z2+z3+z4, vcov="iid", data=simData)
+smod2
+@ 
+
+To impose the SUR assumption, we just ignore the instrument argument. In that case, instruments will be constructed using the union of all regressors.
+
+<<>>=
+smod3 <- sysGmmModel(g, vcov="iid", data=simData)
+smod3
+@ 
+
+
+\subsection{Methods for ``sgmmModels'' classes}\label{sec:sgmmmodels-methods}
+
+The methods are very similar to the ones described above for ``gmmModels'' classes. Here, we briefly describe the difference.
+
+\begin{itemize}
+\item \textit{[}: The method has two arguments. The first is an vector of integers to select the equations, and the second is a list of integers to select the instruments in each of the selected equation. For example, the following creates a system of equations from the ``smod1'' object with the first two equations, and using the first 3 instruments in the first equation and the first 4 for the second.
+  
+<<>>=
+smod1[1:2, list(1:3,1:4)]
+@ 
+
+If the second argument is missing, all instruments are selected. If only one equation is selected, the object if converted to a single equation class. We can therefore estimate each equation separately. 
+
+<<>>=
+gmmFit(smod1[1])
+@ 
+
+\item \textit{model.matrix} and \textit{modelResponse}. The methods return the model.matrix and modelResponse of each equation in a list. Basically, the following are equivalent:
+<<>>=
+mm <- model.matrix(smod1)
+mm <- lapply(1:3, function(i) model.matrix(smod1[i]))
+@   
+
+\item \textit{evalMoment}, \textit{evalDMoment}, \textit{Dresiduals}: The methods are applied to each equation and returned in a list. Notice that $theta$ must be stored in a list.
+  
+<<>>=
+theta <- list(1:3, 1:4, 1:4)
+gt <- evalMoment(smod1, theta)
+@ 
+
+\item \textit{residuals}: It returns a $n\times m$ matrix of residuals. We can therefore estimate $\Sigma$ directly:
+<<>>=
+Sigma <- crossprod(residuals(smod1, theta))/smod1@n
+@   
+
+\item \textit{momentVcov}: It returns the $Q\times Q$ matrix $\hat{S}$, where $Q=\sum_{j=1}^m q_j$. The way it is computed depends on the structure of the variance as described above. 
+
+\item \textit{merge}: The method is used to merge single equations into a system class, or to add equations to an already created system class. The ``smod1'' object could have been created this way.
+  
+<<>>=
+eq1 <- gmmModel(g[[1]], h[[1]], data=simData, vcov="iid")
+eq2 <- gmmModel(g[[2]], h[[2]], data=simData, vcov="iid")
+eq3 <- gmmModel(g[[3]], h[[3]], data=simData, vcov="iid")
+smod <- merge(eq1,eq2,eq3)
+smod
+@ 
+
+We can also add an equation to ``smod1''.
+
+<<>>=
+eq1 <- gmmModel(y~x1, ~x1+z4, data=simData, vcov="iid")
+merge(smod1, eq1)
+@ 
+
+Notice that the equations are merged to the first argument. It the ``vcov'' differes, the one from the first argument is kept.  
 
 \end{itemize}
 
+\subsection{Restricted models}\label{sec:sgmmmodels-rest}
+
+As for the single equation case, we can create an object with restrictions imposed on the coefficients. For now, only linear restrictions on linear models are implemented in the package. The class is ``rslinearGmm'' and it contains its unrestricted counterpart. Restrictions are imposed in the same way they are imposed in the single equation case. We can impose cross-equation restrictions, or simply impose restrictions equation by equation. The method \textit{restGmmModel} is used to create the restricted models. In the following example, restrictions are imposed equation by equation. 
+
+<<>>=
+R1 <- list(c("x1=-12*z2"), character(), c("x3=0.8", "z1=0.3"))
+rsmod1 <- restGmmModel(smod1, R1)
+rsmod1
+@
+
+For now, $R$ is a list of the same length as the number of equations. For equations with no restrictions, an empty character vector must be provided. (Eventually, we will allow $R$ to be a named list with the names being the equation names.) For cross-equation restrictions, we need to add to the coefficient names the equation names.
+
+<<>>=
+R2<- c("Supply.x1=1", "Demand1.x3=Demand2.x3")
+rsmod1.ce <- restGmmModel(smod1, R2)
+rsmod1.ce
+@ 
+
+Notice that the model contains only one equation in the print output. That's because we can no longer consider equations to be distinct. All methods that exist for ``sGmmModels'' can also be applied to ``rslinearGmm'' objects. When a vector of coefficient is required, the dimension of $theta$ must reflect the new number of coefficients implied by the restrictions. For example, in ``rsmod1'' there are only two coefficients in the restricted supply and demand2 equations. 
+
+<<>>=
+e <- residuals(rsmod1, theta=list(1:2, 1:4, 1:2))
+dim(e)
+@ 
+
+Notice that in order to compute the residuals in restricted models, the method converts the restricted coefficients in their unrestricted format and calls the \textit{residuals} method for the unrestricted model. The method \textit{coef} is used to do the conversion.  We could therefore reproduce what the method for ``rslinearGMM'' computes as follows:
+
+<<>>=
+(b <- coef(rsmod1, theta=list(1:2, 1:4, 1:2)))
+e <- residuals(as(rsmod1, "slinearGmm"), b)
+@ 
+
+The same is done for all methods that can be computed using the converted coefficient vector. These methods include \textit{evalMoment} and \textit{momentVcov}. All derivatives methods, however, reflect the change in the models. For example, \textit{evalDMoment} will produce lists of matrices with different dimensions:
+
+<<>>=
+evalDMoment(rsmod1, theta=list(1:2,1:4,1:2))[[1]]
+@ 
+
+The method \textit{Dresiduals} will also be affected the same way. Of course, the methods \textit{model.matrix} and \textit{modelResponse} are also affected by the restrictions because the latter modify the left and/or the right hand sides of the equations. 
+
+When cross-equation restrictions are imposed, we treat the object as being a system with one equation by providing a list with one single coefficient vector. However, the output of the methods will be the one implied by the system of equations by converting the retricted coefficient vector into its unrestricted counterpart. It is the case of \textit{residuals} and \textit{momentVcov}. For example, the residuals:
+
+<<>>=
+e <- residuals(rsmod1.ce, theta=list(1:9))
+e[1:3,]
+@ 
+
+is an $n\times m$ matrix, one column for each equation. As to the case with no cross-equation restriction, the residuals can be computed this way:
+
+<<>>=
+(b <- coef(rsmod1.ce, theta = list(1:9)))
+e <- residuals(as(rsmod1.ce, "slinearGmm"), b)
+@ 
+
+The methods \textit{evalDMoment}, \textit{Dresiduals}, \textit{model.matrix} and \textit{modelResponse} outputs are, however, lists with ony one element, the combined equations. 
+
+<<>>=
+G <- evalDMoment(rsmod1.ce, list(1:9))
+names(G)
+dim(G[[1]])
+@ 
+
+The \textit{[} method works the same way. We can therefore get the first equation as a ``rlinearGmm'' object as follows:
+  
+<<>>=
+rsmod1[1]
+@ 
+
+\subsection{A class for GMM weights}\label{sec:sgmmmodels-weights}
+
+As for the single equation case, the weighting matrices must have a particular class in order to work with all model fitting methods. The constructor is the method \textit{evalWeights}. The class for system of equations is ``sysGmmWeights''.  The simplest weighting matrix is the identity matrix and can be created as follows:
+
+<<>>=
+wObj1 <- evalWeights(smod1, w="ident")
+wObj1
+@ 
+
+The object contains slots with information about the type of moments. When the slot ``sameMom'' is TRUE, it indicates that all instruments are the same in each equation. 
+
+<<>>=
+wObj1@sameMom
+@ 
+
+This information allows the different methods to treat the weighting matrix in a more efficient way. The other slots are:
+
+<<>>=
+wObj1@type
+@ 
+
+which also help to choose an efficient way to do operations, and 
+
+<<>>=
+wObj1@eqnNames
+wObj1@momNames
+@ 
+
+There are two slots to store the weighting matrix, ``w'' and ``Sigma''.  The way it is stored depends on the ``vcov'' type of the ``sysGmmModels'' object and on the value of the argument ``w'' of \textit{evalWeights}. If we provide a fixed matrix, it must be $Q\times Q$:
+
+<<>>=
+wObj2 <- evalWeights(smod1, w=diag(16))
+@ 
+
+In that case, ``Sigma'' is NULL and the slot ``w'' is equal to the provided weighting matrix. Also, the ``type'' slot is equal to ``weights'', which indicates that operations like $G'WG$ will be computed without having to do additional oparations on $W$.  If the argument ``w'' is set to ``optimal'', which is the default, the optimal weights matrix is computed based on the slot ``vcov'' of the model.
+
+If ``vcov'' is equal to ``MDS'', we obtain the following.
+
+<<>>=
+smod1 <- sysGmmModel(g,h,vcov="MDS", data=simData)
+wObj <- evalWeights(smod1, theta=list(1:3,1:4,1:4))
+is(wObj@w)
+wObj@Sigma
+@ 
+
+In that case, there is no benefit of computing $\hat{\Sigma}$. The slot ``w'' is the QR decomposition of the $n\times Q$ matrix $g(\theta)/\sqrt{n}$ so that $R'R=\hat{S}\equiv \frac{1}{n}\sum_{i=1}^n g_i(\theta)g_i'(\theta)$, where $R$ is the upper triangular matrix from the decomposition. Stored this way, it is easy to compute, for example, $G'\hat{S}^{-1}G$.  
+
+When ``vcov'' is set to ``iid'', the format of the slot ``w'' depends on whether the instruments are the same across equations or not. In any case, the slot ``Sigma'' is equal to $\hat{\Sigma}$. When the instruments are not the same, there is no benefit of storing a QR decomposition because it cannot be used to invert the weighting matrix. In that case, the slot ``w'' is $Z'Z/n$, where $Z$ is a $n\times Q$ matrix that contains all instruments for all equations. If all instruments are the same, ``w'' is equal to the QR decomposition of the $n\times q_1$ matrix $Z_1/\sqrt{n}$, which facilitates the computation of, for example, $G'WG=G'[\hat{\Sigma}^{-1}\otimes (Z_1'Z_1/n)^{-1}]G$. Also, it is possible to set the ``wObj'' argument of \textit{evalWeights} to a previously estimated object to avoid recomputing the slot ``w''. It is particularly usefull in iterative GMM or CUE. 
+
+As for the single equation case, any operation $A'WB$ are done using the \textit{quadra} method. We can therefore compute the value of the objective function using the following operation:
+
+<<>>=
+gt <- evalMoment(smod1, theta=list(1:3, 1:4, 1:4)) ## this is a list
+gbar <- colMeans(do.call(cbind, gt))
+obj <- smod1@n*quadra(wObj, gbar)
+obj
+@ 
+
+An easier way to compute the objective function is to use the \textit{evalObjective} method.
+
+<<>>=
+evalObjective(smod1, theta=list(1:3,1:4,1:4), wObj=wObj)
+@ 
+
+\subsection{The \textit{solveGmm} method for systems of equations}\label{sec:sgmmmodels-solve}
+
+The method computes the GMM estimates for a given weighting matrix. A two-step GMM can be obtained manually this way:
+
+<<>>=
+smod1 <- sysGmmModel(g,h,vcov="MDS", data=simData)
+wObj1 <- evalWeights(smod1, w="ident")
+theta0 <- solveGmm(smod1, wObj1)$theta
+wObj2 <- evalWeights(smod1, theta=theta0)
+solveGmm(smod1, wObj2)
+@ 
+
+The method also applies to restricted models.
+
+<<>>=
+R1 <- list(c("x1=-12*z2"), character(), c("x3=0.8", "z1=0.3"))
+rsmod1 <- restGmmModel(smod1, R1)
+wObj1 <- evalWeights(rsmod1, w="ident")
+theta0 <- solveGmm(rsmod1, wObj1)$theta
+wObj2 <- evalWeights(rsmod1, theta=theta0)
+theta1 <- solveGmm(rsmod1, wObj2)$theta
+theta1
+@ 
+
+We can recover the values of the coefficients of the original equations using the \textit{coef} method.
+
+<<>>=
+coef(rsmod1, theta1)
+@ 
+
+The way we estimate models with cross-equation restrictions, is identical, but the result is a list with one element, all coefficients in a single vector. 
+
+<<>>=
+R2<- c("Supply.x1=1", "Demand1.x3=Demand2.x3")
+rsmod1<- restGmmModel(smod1, R2)
+wObj1 <- evalWeights(rsmod1, w="ident")
+theta0 <- solveGmm(rsmod1, wObj1)$theta
+wObj2 <- evalWeights(rsmod1, theta=theta0)
+theta1 <- solveGmm(rsmod1, wObj2)$theta
+theta1
+@ 
+
+Again, we can recover the equation by equation coefficients:
+
+<<>>=
+coef(rsmod1, theta1)
+@ 
+
+\subsection{The \textit{gmmFit} method for system of equations}\label{sec:sgmmmodels-gmmfit}
+
+This is the main algorithm to obtain GMM estimates of systems of equations. The method returns an object of class ``sgmmfit''. The latter has a \textit{show} method that print the essential of the model fit. We can estimate a system by two step GMM as follows:
+
+<<>>=
+smod1 <- sysGmmModel(g,h,vcov="MDS", data=simData)
+gmmFit(smod1, type="twostep")
+@ 
+
+If ``vcov'' is ``iid'' and the instruments differ across equations, we obtain the FIVE estimator (Full-Information Instrumental Variable Efficient). 
+
+<<>>=
+smod1 <- sysGmmModel(g,h,vcov="iid", data=simData)
+gmmFit(smod1, type="twostep")
+@ 
+
+If ``vcov'' is ``iid'', the instruments are the same and first step weights are obtained using an equation by equation 2SLS, it returns the 3SLS estimates. 
+
+<<>>=
+smod1 <- sysGmmModel(g,~z1+z2+z3+z4+z5,vcov="iid", data=simData)
+gmmFit(smod1, type="twostep", initW="tsls")
+@ 
+
+If, on top of that, the instruments are the union of all regressors, we get the SUR estimates.
+
+<<>>=
+smod1 <- sysGmmModel(g, vcov="iid", data=simData)
+gmmFit(smod1, type="twostep", initW="tsls")
+@ 
+
+It is also possible to obtain the first step weighting matrix using the equation by equation efficient GMM estimates
+
+<<>>=
+smod1 <- sysGmmModel(g,h,vcov="MDS", data=simData)
+res <- gmmFit(smod1, type="twostep", initW="EbyE")
+@
+
+As for the single equation case, a type ``onestep'' is a one step with the identity matrix, which is the same as setting the argument ``weights'' to ``ident''.  If the argument ``weights'' is set to a matrix or a ``sysGmmWeights'' object, the method will return a one step GMM with a fixed weighting matrix. Finally, we can obtain the equation by equation estimtes that uses a specific type, initW and weights. In the latter case, it is possible to inform the method that the weighting matrix is optimal by setting the argument ``efficientWeights'' to TRUE. 
+
+Finally, it is possible to obtain an equation by equation GMM estimates. The estimates are obtained using the same argument provided. For example, the following is a two-step efficient equation by equation GMM estimates:
+
+<<>>=
+gmmFit(smod1,  EbyE=TRUE) ## type is 'twostep' by default
+@ 
+
+As another example, the following is an equation by equation one-step GMM.
+
+<<>>=
+res <- gmmFit(smod1,  EbyE=TRUE, weights="ident")
+@ 
+
+Restricted models are estimated in exactly the same way.
+
+<<>>=
+R1 <- list(c("x1=-12*z2"), character(), c("x3=0.8", "z1=0.3"))
+rsmod1 <- restGmmModel(smod1, R1)
+gmmFit(rsmod1)@theta
+R2<- c("Supply.x1=1", "Demand1.x3=Demand2.x3")
+rsmod1<- restGmmModel(smod1, R2)
+gmmFit(rsmod1)@theta
+@ 
+
+\subsection{The \textit{tsls} and \textit{ThreeSLS} methods}
+
+A system of equation can be estimated by 2SLS equation by equation using the \textit{tsls} method.
+
+<<>>=
+smod1 <- sysGmmModel(g,h,vcov="MDS", data=simData)
+res <- tsls(smod1)
+res
+@
+
+It is also possible to estimate a system of equations using the \textit{ThreeSLS} method. This is only possible if all instruments are the same. 
+
+<<>>=
+smod2 <- sysGmmModel(g,~z1+z2+z3+z4+z5,vcov="MDS", data=simData)
+res <- ThreeSLS(smod2)
+@ 
+
+If the instruments are the union of the regressors, the function returns the SUR estimates.
+
+<<>>=
+smod2 <- sysGmmModel(g,,vcov="MDS", data=simData)
+res <- ThreeSLS(smod2)
+@ 
+
+The difference between the 3SLS and SUR using \textit{ThreeSLS} instead of \textit{gmmFit} is that the latter is an efficient GMM, while the former will only be efficient if the ``vcov'' of the model is ``iid''. Since the ``vcov'' of the above model is set to ``MDS'', the 3SLS and SUR are not efficient GMM estimates. As a result, the covariance matrix of the coefficient estimates will be computed using a sandwich matrix by deafult. If vcov is set to ``iid'', the following produce identical results.
+
+<<>>=
+smod2 <- sysGmmModel(g,~z1+z2+z3+z4+z5,vcov="iid", data=simData)
+gmmFit(smod2, initW="tsls")@theta
+ThreeSLS(smod2)@theta
+@ 
+
+The \textit{tsls} method returns an object of class ``stsls'' which inherits from ``sgmmfit'', and \textit{ThreeSLS} returns an object of class ``sgmmfit''.
+
+
+\subsection{Methods for ``sgmmfit'' class objects}
+
+\begin{itemize}
+  
+\item \textit{meatGmm}: It returns the $K\times K$ matrix $G'W\hat{V}WG$, where $G$ is the block diagonal matrix with the $j^{th}$ block being the $q_j\times k_j$ matrix $G_j=\frac{1}{n}\sum_{i=1}^n dg_{ji}(\hat{\theta}_j)/d\theta_j$ for $j=1,...,m$.  As for single equation models, if the argument ``robust'' is FALSE, it is assumed that $W=V^{-1}$ and it returns $G'\hat{V}^{-1}G/n$, where $V$ is the covariance matrix computed using the final coefficient estimates. If TRUE, is returns $G'W\hat{V}WG$, with $\hat{V}$ computed with the coefficient estimates and $W$ being the weigthing matrix used to get it. 
+  
+\item \textit{bread}: It returns $(G'WG)^{-1}$, where $W$ is the last weights used to compute the final coefficient estimates. If the model is estimated by efficient GMM, the bread is a consistent estimator of the covariance matrix of the coefficients. 
+  
+\item \textit{vcov}: It returns the covariance matrix of the vectorized coefficients. It is therefore $K\times K$. As for single equation, it returns the sandwich matrix $(G'WG)^{-1}G'W\hat{V}WG(G'WG)^{-1}/n$ (or the robust one) if the model was not estimated by efficient GMM, and $(G'\hat{V}^{-1}G)^{-1}/n$ otherwise. Alternatively, it is possible to force \textit{vcov} to return a sandwich matrix by setting the argument ``sandwich'' to TRUE, or to force it to not be a sandwich by setting the argument to FALSE. It is also possible to change the specification of the model by setting the argument ``modelVcov'' to another ``vcov'' type. If different from the fitted model, a sandwich is automatically computed. It is also possible to adjust the covariance matrix for the degrees of freedom by setting the argument ``adj.df'' to TRUE, which multiplies the covariance matrix by $n/(n-K)$,  or to compute only the bread by setting the argument ``breadOnly'' to TRUE.    
+  
+\item \textit{specTest}: As for single equation, it tests the null hypothesis that $\E[g_i(\theta)]=0$. The degrees of freedom is $Q-K$, where $Q=\sum_{i=1}^m q_i$ and $K=\sum_{i=1}^m k_i$. It returns an object of class ``specTest'' which has its own \textit{show} and \textit{print} methods. For the test to be valid, the model must be estimated by efficient GMM. The only signature available for now is (``sgmmfit'', ``missing''), so we cannot test subsets of the instruments. 
+  
+<<>>=
+smod1 <- sysGmmModel(g, h, vcov="iid", data=simData)
+res <- gmmFit(smod1)
+specTest(res)
+@ 
+
+\item \textit{summary}: Summarizes the estimation results with an equation by equation coefficient matrix, the \textit{specTest} result and an equation by equation first stage F-test. It returns an object of class ``summarySysGmm'' with its own \textit{show} and \textit{print} methods.
+  
+<<>>=
+summary(res)
+@   
+
+The method works also for restricted models.
+
+<<>>=
+smod1 <- sysGmmModel(g,h,vcov="iid", data=simData)
+R1 <- list(c("x1=-12*z2"), character(), c("x3=0.8", "z1=0.3"))
+rsmod1 <- restGmmModel(smod1, R1)
+summary(gmmFit(rsmod1))@coef
+R2<- c("Supply.x1=1", "Demand1.x3=Demand2.x3")
+rsmod1<- restGmmModel(smod1, R2)
+summary(gmmFit(rsmod1))@coef
+@ 
+\end{itemize}
+
+\subsection{Textbooks Applications} \label{sec:sgmmmodels-app}
+
 
 \bibliography{empir}
+\pagebreak
+\Large{\textbf{Appendix}}
+\appendix
+\section{Some extra codes}
+\subsection{The \textit{Extract} method}
+<<extract, eval=FALSE>>=
+@ 
+
 \end{document} 
 
