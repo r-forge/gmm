@@ -1119,6 +1119,21 @@ smod3 <- sysGmmModel(g, vcov="iid", data=simData)
 smod3
 @ 
 
+There is one other way to create a system classes. If one tries to create a ``linearGmm'' class using a matrix as the left hand side of the regression, the model will automatically converted to a system of equation with the same regressors and same instruments. Here is an example using simulated data.
+
+<<>>=
+dat <- list(y=matrix(rnorm(150),50,3),
+            x=rnorm(50), z1=rnorm(50),
+            z2=rnorm(50))
+mod <- gmmModel(y~x, ~z1+z2, data=dat, vcov="iid")
+mod
+@ 
+
+We could therefore create a multivariate regression in the following way:
+
+<<>>=
+mod <- gmmModel(y~x, ~x, vcov="iid", data=dat)
+@ 
 
 \subsection{Methods for ``sgmmModels'' classes}\label{sec:sgmmmodels-methods}
 
@@ -1490,6 +1505,33 @@ R2<- c("Supply.x1=1", "Demand1.x3=Demand2.x3")
 rsmod1<- restGmmModel(smod1, R2)
 summary(gmmFit(rsmod1))@coef
 @ 
+
+\item \textit{hypothesisTest}: For hypothesis testing, the method can test any linear restriction using either LM, LR or Wald tests. Consider the following unrestricted and restricted models.
+  
+<<>>=
+smod1 <- sysGmmModel(g, h, vcov="MDS", data=simData)
+res.u <- gmmFit(smod1)
+R1 <- list(c("x1=-12*z2"), character(), c("x3=0.8", "z1=0.3"))
+rsmod1 <- restGmmModel(smod1, R1)
+res.r <- gmmFit(rsmod1)
+@ 
+
+The methods works as for single equations. We can just provide the unrestricted model and the $R$ and $q$ to get the Wald test, provide only the restricted fit for the LR test, or provide both and choose among the three tests by setting the argument ``type'' to the appropriate value. We only show the latter case. 
+
+<<>>=
+hypothesisTest(res.u, res.r, type="Wald")
+@ 
+
+It is as easy to test cross-equation restrictions.
+
+<<>>=
+R2<- c("Supply.x1=1", "Demand1.x3=Demand2.x3")
+rsmod1<- restGmmModel(smod1, R2)
+res2.r <- gmmFit(rsmod1)
+hypothesisTest(res.u, res2.r, type="LR")
+@ 
+
+
 \end{itemize}
 
 \subsection{Direct estimation with \textit{gmm4}}\label{sec:sgmmmodels-gmm4}

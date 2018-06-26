@@ -67,11 +67,14 @@
     {
         r <- R[i,]
         t1 <- which(r!=0)
-        q[i] <- q[i]/r[t1[1]]
-        r <- r/r[t1[1]]
-        diag(theta)[t1[1]] <- 0
-        minY[t1[1]] <- q[i]
-        theta[t1[1],t1[-1]] <- -r[t1[-1]]
+        st1 <- 1
+        while (sum(theta[,t1[st1]]!=0)>1)
+            st1 <- st1+1
+        q[i] <- q[i]/r[t1[st1]]
+        r <- r/r[t1[st1]]
+        diag(theta)[t1[st1]] <- 0
+        minY[t1[st1]] <- q[i]
+        theta[t1[st1],t1[-st1]] <- -r[t1[-st1]]
     }
     theta <- theta[,apply(theta,2,function(x) any(x!=0)), drop=FALSE]
     newParNames <- .getRestNames(theta, parNames)

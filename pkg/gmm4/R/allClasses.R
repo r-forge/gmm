@@ -211,7 +211,7 @@ setAs("slinearGmm", "linearGmm",
                              v <- from@varNames[[i]]
                              chk <- "(Intercept)" %in% v
                              v <- v[v!="(Intercept)"]
-                             X <- from@data[,v]
+                             X <- from@data[,v, drop=FALSE]
                              colnames(X) <- paste(eqnNames[[i]],".", v, sep="")
                              if (chk)
                                  {
@@ -223,7 +223,7 @@ setAs("slinearGmm", "linearGmm",
                          function(i) {
                              v <- all.vars(from@instT[[i]])
                              chk <- attr(from@instT[[i]], "intercept")==1
-                             Z <- from@data[,v]
+                             Z <- from@data[,v, drop=FALSE]
                              colnames(Z) <- paste(eqnNames[[i]],".", v, sep="")
                              if (chk)
                                  {
