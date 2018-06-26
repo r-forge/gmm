@@ -1,5 +1,58 @@
 ######### Function to arrange the data for the gmmModel objects #################
 
+
+
+.multiToSys <- function(formula, h, data)
+{
+    mf <- match.call()
+    m <- match(c("formula", "data"), names(mf), 0L)
+    mf <- mf[c(1L, m)]
+    mf$drop.unused.levels <- TRUE
+    mf$na.action <- "na.pass"
+    mfh <- mf
+    mf[[1L]] <- quote(stats::model.frame)
+    modelF <- eval(mf, parent.frame())        
+    Y <- model.response(modelF)
+    modelF <- modelF[-1]
+    Yn <- formula[[2]]
+    Yn <- paste(Yn, ".", 1:ncol(Y), sep="")
+    g <- lapply(1:length(Yn), function(i) {
+        f <- formula
+        f[[2]] <- as.symbol(Yn[i])
+        f})
+    colnames(Y) <- Yn
+    modelF <- cbind(Y, modelF)
+    if (any(class(h) == "formula"))
+    {
+        mfh$formula <- h
+        mfh[[1L]] <- quote(stats::model.frame)
+        instF <- eval(mfh, parent.frame())
+    } else {
+        h <- as.data.frame(h)
+        chk <- apply(h, 2, function(x) all(x==x[1]))
+        h <- h[, !chk]
+        intercept <- any(chk)
+        if (ncol(h) == 0)
+        {                        
+            mfh$formula <- ~1
+        } else {
+            if (is.null(colnames(h)))
+                colnames(h) <- paste("h", 1:ncol(h), sep="")
+            formh <- paste(colnames(h), collapse="+")
+            if (!intercept)
+                formh <- paste(formh, "-1", sep="")
+            mfh$formula <- as.formula(paste("~",formh))
+            mfh$data <- quote(h)
+        }        
+        mfh[[1L]] <- quote(stats::model.frame)
+        instF <- eval(mfh)
+    }
+    h <- lapply(1:ncol(Y), function(i) formula(terms(instF), .GlobalEnv))
+    data <- cbind(modelF, instF)
+    data <- data[,!duplicated(colnames(data))]
+    return(.slGmmData(g,h,data))
+}
+
 .lGmmData <- function(formula, h, data)
     {
         mf <- match.call()
@@ -9,7 +62,9 @@
         mf$na.action <- "na.pass"
         mfh <- mf
         mf[[1L]] <- quote(stats::model.frame)
-        modelF <- eval(mf, parent.frame())        
+        modelF <- eval(mf, parent.frame())
+        if (is.matrix(modelF[[1]]))
+            return(.multiToSys(formula, h, data))
         parNames <- colnames(model.matrix(terms(modelF), modelF))
         k <- length(parNames)
         if (any(class(h) == "formula"))

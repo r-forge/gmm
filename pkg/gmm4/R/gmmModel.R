@@ -22,15 +22,28 @@ gmmModel <- function(g, x, tet0=NULL,grad=NULL,
                 if (length(chk) == 0 | all(!chk))
                     {
                         model <- .lGmmData(g,x,data)
-                        gmodel <- new("linearGmm", modelF=model$modelF, 
-                                      instF=model$instF,
-                                      vcov=vcov, kernel=kernel, bw=bw,
-                                      prewhite=as.integer(prewhite),
-                                      ar.method=ar.method, approx=approx, tol=tol,
-                                      centeredVcov = centeredVcov, k=model$k,
-                                      q=model$q, n=model$n, parNames=model$parNames,
-                                      momNames=model$momNames, varNames=model$varNames,
-                                      isEndo=model$isEndo)
+                        if (!is.null(model$eqnNames))
+                            gmodel <- new("slinearGmm", data = model$data, instT = model$instT, 
+                                          modelT = model$modelT, vcov = vcov, kernel = kernel, 
+                                          bw = bw, prewhite = as.integer(prewhite),
+                                          ar.method = ar.method, 
+                                          approx = approx, tol = tol, centeredVcov = centeredVcov, 
+                                          k = model$k, q = model$q, n = model$n,
+                                          parNames = model$parNames, 
+                                          momNames = model$momNames, eqnNames = model$eqnNames, 
+                                          sameMom = TRUE, SUR = FALSE,
+                                          varNames = model$varNames, 
+                                          isEndo = model$isEndo)
+                        else
+                            gmodel <- new("linearGmm", modelF=model$modelF, 
+                                          instF=model$instF,
+                                          vcov=vcov, kernel=kernel, bw=bw,
+                                          prewhite=as.integer(prewhite),
+                                          ar.method=ar.method, approx=approx, tol=tol,
+                                          centeredVcov = centeredVcov, k=model$k,
+                                          q=model$q, n=model$n, parNames=model$parNames,
+                                          momNames=model$momNames, varNames=model$varNames,
+                                          isEndo=model$isEndo)
                     } else {
                         if (!all(chk))
                             stop("All parameters in tet0 must be in g for nl Gmm")

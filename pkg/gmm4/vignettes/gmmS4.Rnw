@@ -917,7 +917,9 @@ res2 <- tsls(dQ~dP+dInc, ~dInc+dT, vcov="MDS", data=data)
 res3 <- tsls(dQ~dP+dInc, ~dInc+dTs+dT, vcov="MDS", data=data)
 @ 
 
-You can print the summary to see the result, but I use the texreg package of \cite{leifeld13},with an home made \textit{extact} method (see Appendix), to make it more compact and more like Table 12.1 of the textbook. Table \ref{tab1} presents the results. There is a small difference in the first stage F-test, which could be explained by the way they compute the covariance matrix. For the J-test, the difference a a little larger. But, we have to notice that if we assume ``MDS'', 2SLS is not efficient and the J-test is not valid. If we estimate the model by efficient GMM, the J-test gets closer to what the authors get.
+You can print the summary to see the result, but I use the texreg package of \cite{leifeld13},with an home made \textit{extact} method (see Appendix), to make it more compact and more like Table 12.1 of the textbook. Table \ref{tab1} presents the results. There is a small difference in the first stage F-test, which could be explained by the way they compute the covariance matrix. We cannot figure out our to get the same first two digits. Using \textit{lm} manually and ``HC1'' type of HCCM, the test is identical to what we get here and it is the closest we can get from their results. It is the same for the other two F-tests.  
+
+For the J-test, the difference is a little larger. But, we have to notice that if we assume ``MDS'', 2SLS is not efficient and the J-test is not valid. If we estimate the model by efficient GMM, the J-test gets closer to what the authors get.
 
 <<>>=
 res4 <- gmm4(dQ~dP+dInc, ~dInc+dTs+dT, vcov="MDS", data=data)
@@ -932,6 +934,111 @@ texreg(list(res1,res2,res3), fontsize="footnotesize", label="tab1",
 <<>>=
 res4 <- gmm4(dQ~dP+dInc, ~dInc+dTs+dT, vcov="MDS", data=data)
 @ 
+
+\subsubsection{Greene} \label{sec:gmmmodels-appg}
+
+In this section, we want to reproduce results from \cite{greene12}. 
+
+In Example 13.7, the author estimates a nonlinear model with (1) the method of moments, one-step GMM and efficient GMM. To reproduce the results, we first need to create a dataset for 1988 remove zero income observations, and scale income.
+
+<<>>=
+data(HealthRWM)
+dat88 <- subset(HealthRWM, year==1988 & hhninc>0)
+dat88$hhninc <- dat88$hhninc/10000
+@ 
+
+The model is
+
+\[
+hhninc = \exp[b_0 + b_1 age +b_2 educ + b_3 female] + \epsilon
+\]
+
+We want to reproduce Table 13.2. The NLS estimates shows that we have the same data used by the author.
+
+<<>>=
+thet0 <- c(b0=log(mean(dat88$hhninc)),b1=0,b2=0,b3=0)
+g <- hhninc~exp(b0+b1*age+b2*educ+b3*female)
+res0 <- nls(g, dat88, start=thet0, control=list(maxiter=100))
+summary(res0)$coef
+@ 
+
+The second column is the method of moment (or just identified GMM), using the regressors as instruments. 
+<<>>=
+h1 <- ~age+educ+female
+model1 <- gmmModel(g, h1, thet0, vcov="MDS", data=dat88)
+res1 <- gmmFit(model1, control=list(reltol=1e-10, abstol=1e-10))
+@ 
+
+The third column is first step GMM using the instruments $\{age, educ, female, hstat, married\}$. 
+
+<<>>=
+h2 <- ~age+educ+female+hsat+married
+model2 <- gmmModel(g, h2, thet0, vcov="MDS", data=dat88)
+res2 <- gmmFit(model2, type="onestep")
+@
+
+The third is efficient GMM using the same instruments. 
+
+<<>>=
+res3 <- gmmFit(model2)
+@ 
+
+The results (column 2 to 4 of Table 13.2) are presented in Table \ref{greene1}. The results are not identical, which is expected since results from nonlinear models depends on how the optimizer used is tuned. Only the last column cannot be explained by rounding errors or optimizer tuning. We have tried different tuning parameters in \textit{optim} and it never gets closer. Even if we start with the author's solution, \textit{optim} finds a solution with smaller value of the objective function. 
+
+<<echo=FALSE, results='asis'>>=
+texreg(list(res1, res2, res3), caption="Attempt to reproduce Table 13.2 from Greene (2012)",
+       label="greene1", fontsize='footnotesize', digits=5,
+       includeJTest=FALSE, includeFTest=FALSE)
+@ 
+
+In the Example 8.7, the author computes the Hausman test for a consumption function. The efficient estimator is the OLS estimator and the inefficient but consistent is 2SLS with lag income and consumption as instruments. We first estimate the models:
+
+<<>>=
+data(ConsumptionG)
+Y <- ConsumptionG$REALDPI
+C <- ConsumptionG$REALCONS
+n <- nrow(ConsumptionG)
+Y1 <- Y[-n]; Y <- Y[-1]
+C1 <- C[-n]; C <- C[-1]
+dat <- data.frame(Y=Y,Y1=Y1,C=C,C1=C1)
+model <- gmmModel(C~Y, ~Y1+C1, data=dat, vcov="iid")
+@ 
+
+We then estimate them with OLS and 2SLS.
+
+<<>>=
+res1 <- tsls(model)
+res2 <- lm(C~Y)
+@ 
+
+Result of the test from Example 8.7-2:
+
+<<>>=
+DWH(res1)
+@ 
+
+The difference is explained by rounding errors. We get the same as the author if we square the t ratio using only three digits. For example 8.7-1, we first try to adjust the covariance for the degrees of freedom.
+
+<<>>=
+DWH(res1, res2, df.adj=TRUE)
+@ 
+
+The result is a little different (the author reports 8.481). To reproduce the same results  we need to specify the variance.
+
+<<>>=
+X <- model.matrix(model)
+Xhat <- qr.fitted(res1@wObj@w, X)
+s2 <- sum(residuals(res2)^2)/(res2$df.residual)
+v1 <-  solve(crossprod(Xhat))*s2
+v2 <- solve(crossprod(X))*s2
+DWH(res1, res2, v1=v1, v2=v2)
+@
+
+What we do above is to assume that the variance of the 2SLS and OLS coefficients are respectively $\hat{\sigma}^2(\hat{X}'\hat{X})^{-1}$ and $\hat{\sigma}^2(X'X)^{-1}$, where $\hat{X}$ is the fitted values of the regression of $X$ on the instruments and $\hat{\sigma}^2$ is the estimated variance of the error terms using the unbiased OLS estimator. We therefore need the same estimate to obtain the same results. 
+
+\subsubsection{Wooldridge} \label{sec:gmmmodels-appw}
+
+In this section, we want to reproduce results from \cite{wooldridge16}. 
 
 \section{Systems of Equations} \label{system}
 
@@ -954,7 +1061,7 @@ E[g_i(\theta)] \equiv E\begin{bmatrix}
 \end{bmatrix}=0
 \]
 The model is just-identified if $k_j=q_j$ for all $j$, and it is over-identified if $k_j<q_j$ for ar least one $j$. For now, we offer two possible variance structures. We refer to ``iid'' models in which the errors are conditionally homoscedastic. In that case, the asymptotic variance of the moment condition is:
-\[
+1\[
 Var[\sqrt(n)\bar{g}(\theta)] \conP S \equiv  \begin{pmatrix} 
   \sigma_{1}^2E[Z_{1i}Z_{1i}'] & \sigma_{12}E[Z_{1i}Z_{2i}'] &\cdots& \sigma_{1m}E[Z_{1i}Z_{mi}']\\
   \sigma_{21}E[Z_{2i}Z_{1i}'] & \sigma_{2}^2E[Z_{2i}Z_{2i}'] &\cdots& \sigma_{2m}E[Z_{2i}Z_{mi}']\\
@@ -1384,6 +1491,37 @@ rsmod1<- restGmmModel(smod1, R2)
 summary(gmmFit(rsmod1))@coef
 @ 
 \end{itemize}
+
+\subsection{Direct estimation with \textit{gmm4}}\label{sec:sgmmmodels-gmm4}
+
+Again, we can do everything at once using the \textit{gmm4} function. For example, if we want to estimate a model by two-step GMM with ``MDS'' errors, we proceed as follows:
+
+<<>>=
+res <- gmm4(g, h, type="twostep", vcov="MDS", data=simData)
+res
+@ 
+
+It produces an object of class ``sgmmfit'' so all of its methods can be apply to the output. The function \textit{gmm4} recognizes that it is a system because the first argument is a list of formulas. You can estimate it equation by equation by setting the argument ``EbyE'' to TRUE:
+
+<<>>=
+res <- gmm4(g, h, type="twostep", vcov="MDS", EbyE=TRUE, data=simData)
+res
+@ 
+
+To estimate a model by 3SLS, or SUR, we just need the right model:
+
+<<>>=
+res <- gmm4(g, ~z1+z2+z3+z4+z5, type="twostep", vcov="iid", initW="tsls", data=simData) #3SLS
+res <- gmm4(g, NULL, type="twostep", vcov="iid", initW="tsls", data=simData) #SUR
+@ 
+
+To estimate a restricted model, simply add the restrictions
+
+<<>>=
+R1 <- list(c("x1=-12*z2"), character(), c("x3=0.8", "z1=0.3"))
+res <- gmm4(g, h, data=simData, cstLHS=R1) #two-step by default
+res
+@ 
 
 \subsection{Textbooks Applications} \label{sec:sgmmmodels-app}
 
