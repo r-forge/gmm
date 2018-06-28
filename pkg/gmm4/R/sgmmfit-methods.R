@@ -79,7 +79,7 @@ setMethod("vcov", "sgmmfit",
                       }
                   spec <- modelDims(object@model)
                   if (breadOnly) {
-                      vcov <- bread(object)/spec$n
+                      vcov <- bread(object)/object@model@n
                       attr(vcov, "type") <- list(sandwich = FALSE, df.adj = FALSE, 
                                                  breadOnly = TRUE)
                       return(vcov)
@@ -88,17 +88,17 @@ setMethod("vcov", "sgmmfit",
                       sandwich <- !object@efficientGmm
                   meat <- meatGmm(object, sandwich)
                   if (!sandwich) {
-                      vcov <- solve(meat)/spec$n
+                      vcov <- solve(meat)/object@model@n
                   } else {
                       if (all(spec$k == spec$q)) {
                           G <- evalDMoment(object@model, coef(object))
                           v <- momentVcov(object@model, coef(object))
                           b <- lapply(G, solve)
                           b <- .GListToMat(b)
-                          vcov <- b %*% v %*% t(b)/spec$n
+                          vcov <- b %*% v %*% t(b)/object@model@n
                       } else {
                           b <- bread(object)
-                          vcov <- b %*% meat %*% b/spec$n
+                          vcov <- b %*% meat %*% b/object@model@n
                       }
                   }
                   tn <- paste(rep(spec$eqnNames, spec$k), ".", 

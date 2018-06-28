@@ -234,7 +234,7 @@ setMethod("evalDMoment","rslinearGmm",
                   if (!object@cstSpec$crossEquRest)
                       dgt <- lapply(1:neqn, function(i) evalDMoment(object[i]))
                   else 
-                      dgt <- list(evalDMoment(as(object, "rlinearGmm")))
+                      dgt <- list(neqn*evalDMoment(as(object, "rlinearGmm")))
                   names(dgt) <- modelDims(object)$eqnNames
                   dgt
               })

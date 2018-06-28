@@ -591,7 +591,8 @@ setMethod("solveGmm", signature("snonlinearGmm", "sysGmmWeights"),
 
 setMethod("momentVcov", signature("sysGmmModels"),
           function(object, theta, ...){
-              q <- modelDims(object)$q
+              spec <- modelDims(object)
+              q <- spec$q
               if (object@vcov == "MDS")
                   {
                       gt <- evalMoment(object, theta)
@@ -613,7 +614,7 @@ setMethod("momentVcov", signature("sysGmmModels"),
                   } else {
                       stop("not yet implemented for HAC")
                   }
-              wn <- paste(rep(object@eqnNames, q), ".", do.call("c", object@momNames), 
+              wn <- paste(rep(spec$eqnNames, q), ".", do.call("c", spec$momNames), 
                           sep = "")
               dimnames(w) <- list(wn,wn)
               w
