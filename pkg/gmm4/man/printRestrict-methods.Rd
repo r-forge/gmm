@@ -3,6 +3,7 @@
 \alias{printRestrict}
 \alias{printRestrict-methods}
 \alias{printRestrict,rlinearGmm-method}
+\alias{printRestrict,rformulaGmm-method}
 \alias{printRestrict,rslinearGmm-method}
 \alias{printRestrict,rnonlinearGmm-method}
 \alias{printRestrict,rfunctionGmm-method}
@@ -20,6 +21,9 @@ It prints the detailed restrictions imposed on \code{gmmModels}.
 }
 
 \item{\code{signature(object = "rfunctionGmm")}}{
+}
+
+\item{\code{signature(object = "rformulaGmm")}}{
 }
 
 \item{\code{signature(object = "rslinearGmm")}}{

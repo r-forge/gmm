@@ -4,6 +4,7 @@
 \alias{subset}
 \alias{subset,regGmm-method}
 \alias{subset,functionGmm-method}
+\alias{subset,formulaGmm-method}
 \alias{subset,sysGmmModels-method}
 \alias{[,gmmWeights,numeric,missing-method}
 \alias{[,gmmWeights,missing,missing-method}
@@ -13,6 +14,7 @@
 \alias{[,gmmModels,missing,missing-method}
 \alias{[,regGmm,numeric,missing-method}
 \alias{[,functionGmm,numeric,missing-method}
+\alias{[,formulaGmm,numeric,missing-method}
 \alias{[,rfunctionGmm,numeric,missing-method}
 \alias{[,sysGmmModels,missing,list-method}
 \alias{[,snonlinearGmm,numeric,missing-method}
@@ -93,6 +95,10 @@ Returns the model without any change.
 }
 
 \item{\code{signature(x = "functionGmm", i = "numeric", j = "missing")}}{
+  It generates the same model with a subset of the moment conditions.
+}
+
+\item{\code{signature(x = "formulaGmm", i = "numeric", j = "missing")}}{
   It generates the same model with a subset of the moment conditions.
 }
 

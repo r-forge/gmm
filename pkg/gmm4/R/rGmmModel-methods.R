@@ -182,6 +182,56 @@
         list(fct=fct, dfct=dfct, parNames=parNames, theta0=theta0, k=k)
     }
 
+.imposeFORMRestrict <- function(R, object)
+    {
+        chk <- sapply(R, function(r) all(all.vars(r) %in% object@parNames))
+        if (!all(chk))
+            stop("Wrong coefficient names in some of the restrictions")
+        rest <- sapply(R, function(r) as.character(r[[2]]))
+        if (any(duplicated(rest)))
+            stop("LHS of R must not have duplicated variables")
+        if (!all(sapply(rest, function(x) length(x)==1)))
+            stop("LHS of R formulas must contain only one coefficient")
+        dR <-numeric()
+        for (r in R)
+            {
+                lhs <- sapply(object@parNames, function(pn)
+                    eval(D(r[[2]], pn), as.list(object@theta0)))
+                rhs <- sapply(object@parNames, function(pn)
+                    eval(D(r[[3]], pn), as.list(object@theta0)))
+                dR <- rbind(dR, lhs-rhs)
+            }
+        if (any(is.na(dR)) || any(!is.finite(dR)))
+            stop("The derivative of the constraints at theta0 is either infinite or NAN")
+        if (qr(dR)$rank < length(R))
+            stop("The matrix of derivatives of the constraints is not full rank")
+        rhs <- list()
+        lhs <- list()
+        for (i in 1:length(object@fRHS))
+            {
+                rhs[[i]] <- as.character(object@fRHS[[i]])
+                if (!is.null(object@fLHS[[i]]))
+                    lhs[[i]] <- as.character(object@fLHS[[i]])
+                else
+                    lhs[[i]] <- NULL      
+                for (r in R)
+                    {
+                        rhs[[i]] <- gsub(as.character(r[2]), paste("(", as.character(r[3]),
+                                                                   ")", sep=""), rhs[[i]])
+                        if (!is.null(lhs[[i]]))
+                            lhs[[i]] <- gsub(as.character(r[2]),
+                                             paste("(", as.character(r[3]),
+                                                   ")", sep=""), lhs[[i]])
+                    }
+                rhs[[i]] <- parse(text=rhs[[i]])
+                lhs[[i]] <- parse(text=lhs[[i]])
+            }
+        k <- object@k-length(R)
+        parNames <- object@parNames[!(object@parNames %in% rest)]
+        theta0 <- object@theta0[!(object@parNames %in% rest)]        
+        list(rhs=rhs, lhs=lhs, parNames=parNames, theta0=theta0, k=k)
+    }
+
 ################## model.matrix and modelResponse #################
 ### I did not make model.response as generic because it is not
 ### a method in stats and I want different arguments
@@ -227,6 +277,14 @@ setMethod("modelDims", "rlinearGmm",
               res <- object@cstSpec
               list(k=res$k, q=object@q, n=object@n, parNames=res$newParNames,
                    momNames=object@momNames, isEndo=res$isEndo)
+          })
+
+setMethod("modelDims", "rformulaGmm",
+          function(object) {
+              res <- object@cstSpec
+              list(k=res$k, q=object@q, n=object@n, parNames=res$newParNames,
+                   momNames=object@momNames, theta0=res$theta0,
+                   fRHS=res$fRHS, fLHS=res$fLHS)
           })
 
 setMethod("modelDims", "rnonlinearGmm",
@@ -301,7 +359,6 @@ setMethod("modelDims", "rfunctionGmm",
     }
     hyp
 }
-
 
 .makeHypothesis <- function (cnames, hypothesis, rhs = NULL) 
 {
@@ -394,6 +451,16 @@ setMethod("printRestrict", "rnonlinearGmm",
                   }
           })
 
+setMethod("printRestrict", "rformulaGmm",
+          function(object){
+              cat("Constraints:\n")
+              for (i in 1:length(object@R))
+                  {
+                      cat("\t")
+                      print(object@R[[i]])
+                  }
+          })
+
 setMethod("printRestrict", "rfunctionGmm",
           function(object){
               cat("Constraints:\n")
@@ -405,6 +472,13 @@ setMethod("printRestrict", "rfunctionGmm",
 ## print
 
 setMethod("print", "rlinearGmm",
+          function(x)
+          {
+              callNextMethod()
+              printRestrict(x)
+          })
+
+setMethod("print", "rformulaGmm",
           function(x)
           {
               callNextMethod()
@@ -512,6 +586,35 @@ setMethod("restGmmModel", signature("functionGmm"),
               new("rfunctionGmm", R=R, cstSpec=cstSpec, object)
           })
 
+setMethod("restGmmModel", signature("formulaGmm"),
+          function(object, R, rhs=NULL) {
+              if (!is.null(rhs))
+                  warning("rhs is ignored for nonlinear models")
+              if (is.character(R))
+                  {
+                      R2 <- list()
+                      R <- gsub("=", "~", R, fixed=TRUE)
+                      for (r in R)
+                          R2 <- c(R2, as.formula(r, .GlobalEnv))
+                      R <- R2
+                  } else {
+                      if (!is.list(R))
+                          {
+                              if(class(R) != "formula")
+                                  stop("R must be a formula or a list of formulas")
+                              R <- list(R)
+                          } else {
+                              chk <- sapply(R, function(r) class(r)=="formula")
+                              if (!all(chk))
+                                  stop("R must be a formula, a list of formulas or a vector of characters")
+                          }
+                  }
+              res <- .imposeFORMRestrict(R, object)
+              cstSpec <- list(newParNames = res$parNames,
+                              originParNames=object@parNames,
+                              k=res$k, theta0=res$theta0, fRHS=res$rhs, fLHS=res$lhs)
+              new("rformulaGmm", R=R, cstSpec=cstSpec, object)
+          })
 
 ### Get the restriction matrices
 
@@ -549,6 +652,12 @@ setMethod("getRestrict", "rnonlinearGmm",
               list(dR=dR, R=R, q=rep(0, nrow(dR)), hypo=hypo,
                    orig.R=object@R, orig.rhs=NULL)
           })
+
+setMethod("getRestrict", "rformulaGmm",
+          function(object, theta) {
+              getMethod("getRestrict", "rnonlinearGmm")(object, theta)
+          })
+
 
 setMethod("getRestrict", "rfunctionGmm",
           function(object, theta){
@@ -607,6 +716,11 @@ setMethod("coef", "rfunctionGmm",
               getMethod("coef","rnonlinearGmm")(object, theta)
           )
 
+setMethod("coef", "rformulaGmm",
+          function(object, theta)
+              getMethod("coef","rnonlinearGmm")(object, theta)
+          )
+
 
 ## Subsetting '['
 
@@ -648,6 +762,25 @@ setMethod("gmmFit", signature("rnonlinearGmm"), valueClass="gmmfit",
                   {
                       theta <- coef(object, numeric())
                       object <- as(object, "nonlinearGmm")                      
+                      if (class(weights)=="gmmWeights")
+                          wObj <- weights
+                      else
+                          wObj <- evalWeights(object, theta=theta, w=weights)
+                      return(evalGmm(object, theta, wObj))
+                  } else {
+                      callNextMethod()
+                  }
+          })
+
+setMethod("gmmFit", signature("rformulaGmm"), valueClass="gmmfit", 
+          definition = function(object, type=c("twostep", "iter","cue", "onestep"),
+              itertol=1e-7, initW=c("ident", "tsls"), weights="optimal", 
+              itermaxit=100, efficientWeights=FALSE, start=NULL, ...) {
+              cst <- object@cstSpec
+              if (cst$k==0)
+                  {
+                      theta <- coef(object, numeric())
+                      object <- as(object, "formulaGmm")                      
                       if (class(weights)=="gmmWeights")
                           wObj <- weights
                       else

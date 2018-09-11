@@ -3,6 +3,7 @@
 \alias{evalMoment}
 \alias{evalMoment-methods}
 \alias{evalMoment,functionGmm-method}
+\alias{evalMoment,formulaGmm-method}
 \alias{evalMoment,regGmm-method}
 \alias{evalMoment,sysGmmModels-method}
 \alias{evalMoment,rslinearGmm-method}
@@ -14,6 +15,9 @@ Method to evaluate the moment matrix at a given coefficient vector.
 \describe{
 
 \item{\code{signature(object = "functionGmm")}}{
+}
+
+\item{\code{signature(object = "formulaGmm")}}{
 }
 
 \item{\code{signature(object = "regGmm")}}{

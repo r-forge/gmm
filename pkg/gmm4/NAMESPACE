@@ -8,7 +8,7 @@ importFrom("stats", "ar", "as.formula", "model.matrix","vcov",
            "model.response", "na.omit", "terms", "residuals",
            "D", "numericDeriv", "sd", "optim", "lm", "pf", "coef", "update",
            "fitted", "lm.fit", "pchisq", "pnorm", "printCoefmat", "anova",
-           "model.frame", "reformulate", "formula")
+           "model.frame", "reformulate", "formula", "nlminb")
 importFrom("sandwich", "vcovHAC", "estfun","kernHAC",
            "bread","bwAndrews","bwNeweyWest","weightsAndrews",
            "weightsLumley", "vcovHC")
@@ -18,7 +18,8 @@ exportClasses("nonlinearGmm", "linearGmm", "functionGmm", "gmmModels",
               "specTest", "summaryGmm", "rlinearGmm", "hypothesisTest",
               "numericORcharacter", "tsls", "rnonlinearGmm", "rfunctionGmm",
               "slinearGmm", "snonlinearGmm", "sysGmmModels",
-              "sgmmfit","stsls", "rslinearGmm", "rsnonlinearGmm", "rsysGmmModels")
+              "sgmmfit","stsls", "rslinearGmm", "rsnonlinearGmm", "rsysGmmModels",
+              "formulaGmm","rfunctionGmm")
 exportMethods(residuals, print, show, vcovHAC, coef, vcov, bread, summary, update,
               model.matrix, hypothesisTest, "[", merge, subset)
 

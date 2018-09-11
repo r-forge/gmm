@@ -10,7 +10,7 @@ It builds the object of either class \code{"linearGmm"},
 before running any estimation algorithm.
 }
 \usage{
-gmmModel(g, x, tet0=NULL,grad=NULL,
+gmmModel(g, x=NULL, tet0=NULL,grad=NULL,
          vcov = c("HAC", "MDS", "iid"),
          kernel = c("Quadratic Spectral",  "Truncated", "Bartlett", "Parzen",
                     "Tukey-Hanning"), crit = 1e-06,

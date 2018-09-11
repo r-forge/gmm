@@ -138,6 +138,38 @@ setMethod("evalMoment", signature("functionGmm"),
               spec$fct(theta, object@X)
           })
 
+setMethod("evalMoment", signature("formulaGmm"),
+          function(object, theta) {
+              res <- modelDims(object)
+              nt <- names(theta)
+              nt0 <- names(res$theta0)
+              if (length(theta) != length(nt0))
+                  stop("The length of theta is not equal to the number of parameters")
+              if (is.null(nt))
+                  stop("theta must be a named vector")
+              if (!all(nt%in%nt0 & nt0%in%nt))
+                  stop("names in theta dont match parameter names")
+              varList <- c(as.list(theta), as.list(object@modelF))
+              sapply(1:res$q, function(i) {
+                  if (!is.null(res$fLHS[[i]]))
+                      {
+                          lhs <- try(eval(res$fLHS[[i]], varList))
+                          if (any(class(lhs)=="try-error"))
+                              stop("Cannot evaluate the LHS")
+                      } else {
+                          lhs <- 0
+                      }
+                  if (!is.null(res$fRHS[[i]]))
+                      {
+                          rhs <- try(eval(res$fRHS[[i]], varList))
+                          if (any(class(lhs)=="try-error"))
+                              stop("Cannot evaluate the RHS")
+                      } else {
+                          lhs <- 0
+                      }
+                  c(lhs-rhs)})
+          })
+
 
 ################ evalDresiduals ##########################
 
@@ -196,6 +228,14 @@ setMethod("modelDims", "functionGmm",
                    fct=object@fct, dfct=object@dfct, isEndo=object@isEndo)
           })
 
+setMethod("modelDims", "formulaGmm",
+          function(object) {
+              list(k=object@k, q=object@q, n=object@n, parNames=object@parNames,
+                   momNames=object@momNames, theta0=object@theta0,
+                   fRHS=object@fRHS, fLHS=object@fLHS, isEndo=object@isEndo,
+                   isMDE=object@isMDE)
+          })
+
 ################ evalDMoment ##########################
 
 setGeneric("evalDMoment", function(object, ...) standardGeneric("evalDMoment"))
@@ -233,6 +273,37 @@ setMethod("evalDMoment", signature("functionGmm"),
               G
               })
 
+setMethod("evalDMoment", signature("formulaGmm"),
+          function(object, theta) {
+              res <- modelDims(object)
+              nt <- names(theta)
+              nt0 <- names(res$theta0)
+              if (length(theta) != length(nt0))
+                  stop("The length of theta is not equal to the number of parameters")
+              if (is.null(nt))
+                  stop("theta must be a named vector")
+              if (!all(nt%in%nt0 & nt0%in%nt))
+                  stop("names in theta dont match parameter names")
+              varList <- c(as.list(theta), as.list(object@modelF))
+              G <- numeric()
+              for (i in nt)
+                  {
+                      lhs <- sapply(1:res$q, function(j) {
+                          if (!is.null(res$fLHS[[j]]))
+                              d <- mean(eval(D(res$fLHS[[j]], i), varList))
+                          else
+                              d <- 0
+                          c(d)})
+                      rhs <- sapply(1:res$q, function(j) {
+                          if (!is.null(res$fRHS[[j]]))
+                              d <- mean(eval(D(res$fRHS[[j]], i), varList))
+                          else
+                              d <- 0
+                          c(d)})
+                      G <- cbind(G, lhs-rhs)
+                  }
+              G
+          })
 
 ###########   estfun :  Don't like it ###############
 
@@ -295,7 +366,6 @@ setMethod("momentVcov", signature("gmmModels"),
                       attr(w, "inv") <- TRUE
                   }
               w})
-
 
 ################### weights Object and methods: Is it too much??? #################
 
@@ -387,23 +457,28 @@ setMethod("solveGmm", signature("linearGmm", "gmmWeights"),
           })
 
 setMethod("solveGmm", signature("allNLGmm", "gmmWeights"),
-          function(object, wObj, theta0=NULL, ...)
-          {
-              if (is.null(theta0))
-                  theta0 <- modelDims(object)$theta0
+          function(object, wObj, theta0=NULL, algo=c("optim","nlminb"), ...)
+              {
+                  algo <- match.arg(algo)
+                  if (is.null(theta0))
+                      theta0 <- modelDims(object)$theta0
                   g <- function(theta, wObj, object)
                       evalObjective(object, theta, wObj)
                   dg <- function(theta, wObj, object)
-                  {
-                      gt <- evalMoment(object, theta)
-                      n <- nrow(gt)
-                      gt <- colMeans(gt)
-                      G <- evalDMoment(object, theta)
-                      obj <- 2*n*quadra(wObj, G, gt)
-                      obj
-                  }
-                  res <- optim(par=theta0, fn=g, gr=dg, method="BFGS", object=object,
-                               wObj=wObj, ...)
+                      {
+                          gt <- evalMoment(object, theta)
+                          n <- nrow(gt)
+                          gt <- colMeans(gt)
+                          G <- evalDMoment(object, theta)
+                          obj <- 2*n*quadra(wObj, G, gt)
+                          obj
+                      }
+                  if (algo == "optim")
+                      res <- optim(par=theta0, fn=g, gr=dg, method="BFGS", object=object,
+                                   wObj=wObj, ...)
+                  else
+                      res <- nlminb(start=theta0, objective=g, gradient=dg,
+                                    object=object, wObj=wObj, ...)
                   theta <- res$par
                   names(theta) <- modelDims(object)$parNames
                   list(theta=theta, convergence=res$convergence)
@@ -421,6 +496,12 @@ setMethod("momentStrength", signature("nonlinearGmm"),
           })
 
 setMethod("momentStrength", signature("functionGmm"), 
+          function(object, theta=NULL, ...)
+          {
+              list(strength=NULL, mess=NULL)
+          })
+
+setMethod("momentStrength", signature("formulaGmm"), 
           function(object, theta=NULL, ...)
           {
               list(strength=NULL, mess=NULL)
@@ -513,6 +594,25 @@ setMethod("[", c("functionGmm", "numeric", "missing"),
                x@q <- length(momNames)
                x@momNames <- momNames
                x
+          })
+
+setMethod("[", c("formulaGmm", "numeric", "missing"),
+          function(x, i, j){
+              i <- unique(as.integer(i))
+              spec <- modelDims(x)
+              q <- spec$q
+              if (!all(abs(i) %in% (1:q))) 
+                  stop("SubMoment must be between 1 and q")
+               if (length(i)==q)
+                  return(x)
+               momNames <- x@momNames[i]
+               if (length(momNames)<spec$k)
+                   stop("The model is under-identified")
+              x@fRHS <- x@fRHS[i]
+              x@fLHS <- x@fLHS[i]
+              x@q <- length(momNames)
+              x@momNames <- momNames
+              x
            })
 
 setMethod("[", c("gmmModels", "missing", "missing"),
@@ -539,9 +639,39 @@ setMethod("subset", "functionGmm",
               x@n <- nrow(x@X)
               x})
 
+setMethod("subset", "formulaGmm",
+          function(x, i) {
+              x@modelF <- x@modelF[i,,drop=FALSE]
+              x@n <- nrow(x@modelF)
+              x})
+
 ## gmmFit
 
 setGeneric("gmmFit", function(object, ...) standardGeneric("gmmFit"))
+
+setMethod("gmmFit", signature("formulaGmm"), valueClass="gmmfit", 
+          definition = function(object, type=c("twostep", "iter","cue", "onestep"),
+              itertol=1e-7, initW=c("ident", "tsls"), weights="optimal", 
+              itermaxit=100, efficientWeights=FALSE, start=NULL, ...)
+              {
+                  if (object@isMDE && object@centeredVcov)
+                      {
+                          if (is.character(weights) && weights == "optimal")
+                              {
+                                  spec <- modelDims(object)
+                                  wObj <- evalWeights(object, spec$theta0, "optimal")
+                                  met <- getMethod("gmmFit", "gmmModels")
+                                  res <- met(object, weights=wObj, efficientWeights=TRUE,
+                                             ...)
+                                  res@type <- "mde"
+                                  return(res)
+                              } else {
+                                  callNextMethod()
+                              }
+                      } else {
+                          callNextMethod()
+                      }
+              })
 
 setMethod("gmmFit", signature("gmmModels"), valueClass="gmmfit", 
           definition = function(object, type=c("twostep", "iter","cue", "onestep"),
@@ -563,7 +693,10 @@ setMethod("gmmFit", signature("gmmModels"), valueClass="gmmfit",
                   spec <- modelDims(object)
                   if (spec$q==spec$k)
                       {
-                          weights <- "ident"
+                          # This allow to weight the moments in case of
+                          # large scale difference.
+                          if (!is.matrix(weights) && class(weights)!="gmmWeights")
+                              weights <- "ident"
                           type <- "onestep"
                       } else if (type == "onestep" && !is.matrix(weights)) {
                           weights <- "ident"
@@ -573,21 +706,21 @@ setMethod("gmmFit", signature("gmmModels"), valueClass="gmmfit",
                           type <- "onestep"
                       }
                   if (type == "onestep")
-                  {
-                      if (class(weights)=="gmmWeights")
-                          wObj <- weights
-                      else
-                          wObj <- evalWeights(object, w=weights)
-                      res <- solveGmm(object, wObj, start, ...)
-                      convergence <- res$convergence
-                      efficientGmm <- ifelse(is.character(weights), FALSE,
+                      {
+                          if (class(weights)=="gmmWeights")
+                              wObj <- weights
+                          else
+                              wObj <- evalWeights(object, w=weights)
+                          res <- solveGmm(object, wObj, start, ...)
+                          convergence <- res$convergence
+                          efficientGmm <- ifelse(is.character(weights), FALSE,
                                              efficientWeights)
-                      ans <- new("gmmfit", theta=res$theta,
-                                 convergence=convergence, convIter=NULL, type=type,
-                                 wObj=wObj, model=object, call=Call, niter=i,
-                                 efficientGmm=efficientGmm)
-                      return(ans)
-                  }
+                          ans <- new("gmmfit", theta=res$theta,
+                                     convergence=convergence, convIter=NULL, type=type,
+                                     wObj=wObj, model=object, call=Call, niter=i,
+                                     efficientGmm=efficientGmm)
+                          return(ans)
+                      }
                   if (class(object) == "linearGmm")
                       {
                           if (object@vcov == "iid")
@@ -603,7 +736,7 @@ setMethod("gmmFit", signature("gmmModels"), valueClass="gmmfit",
                           theta0 <- coef(tsls(object))
                       } else {
                           wObj <- evalWeights(object, NULL, "ident")
-                          theta0 <- solveGmm(object, wObj, start, ...)$theta                        
+                          theta0 <- solveGmm(object, wObj, start, ...)$theta
                       }
                   bw <- object@bw
                   if (type != "cue")
@@ -705,7 +838,7 @@ setMethod("evalGmm", signature("gmmModels"),
                           stop("You provided a named theta with wrong names")
                       theta <- theta[match(spec$parNames, names(theta))]
                   } else {
-                      if (class(object) == "nonlinearGmm")
+                      if (class(object) %in% c("formulaGmm","nonlinearGmm"))
                           stop("To evaluate nonlinear models, theta must be named")
                       names(theta) <- spec$parNames
                   }

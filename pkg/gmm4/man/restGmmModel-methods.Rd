@@ -3,6 +3,7 @@
 \alias{restGmmModel}
 \alias{restGmmModel-methods}
 \alias{restGmmModel,linearGmm-method}
+\alias{restGmmModel,formulaGmm-method}
 \alias{restGmmModel,slinearGmm-method}
 \alias{restGmmModel,nonlinearGmm-method}
 \alias{restGmmModel,functionGmm-method}
@@ -41,6 +42,10 @@ Method for object of class \code{linearGmm}.
 
 \item{\code{signature(object = "functionGmm")}}{
 Method for object of class \code{linearGmm}.
+}
+
+\item{\code{signature(object = "formulaGmm")}}{
+Method for object of class \code{formulaGmm}.
 }
 }}
 \examples{

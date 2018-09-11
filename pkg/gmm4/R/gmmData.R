@@ -106,6 +106,36 @@
              parNames=parNames, isEndo=isEndo, varNames=parNames)
     }
 
+
+
+.formGmmData <- function(formula, tet0, data)
+    {
+        res <- lapply(formula, function(f) .nlGmmData(f, ~1, tet0, data))
+        fRHS <- lapply(res, function(r) r$fRHS)
+        fLHS <- lapply(res, function(r) r$fLHS)
+        parNames <- res[[1]]$parNames
+        varNames <- do.call("c", lapply(res, function(r) r$varNames))
+        varNames <- unique(varNames)       
+        chkLHS <- sapply(fLHS, function(r) any(all.vars(r) %in% names(tet0)))
+        chkRHS <- sapply(fRHS, function(r) any(all.vars(r) %in% names(tet0)))
+        isMDE <- all(chkLHS) |  all(chkRHS)        
+        modelF <- sapply(varNames, function(n) data[[n]])
+        modelF <- as.data.frame(modelF)        
+        k <- length(tet0)
+        q <- length(formula)
+        if (is.null(names(formula)))
+            momNames <- paste("Mom_", 1:q, sep="")
+        else
+            momNames <- names(formula)
+        isEndo <- rep(FALSE, length(varNames))
+        n <- nrow(modelF)
+        list(modelF=modelF,  fRHS=fRHS, fLHS=fLHS, n=n, k=k, q=q,
+             momNames=momNames, parNames=parNames, varNames=varNames, isEndo=isEndo,
+             isMDE=isMDE)
+    }
+
+
+
 .nlGmmData <- function(formula, h, tet0, data)
     {
         varNames <- all.vars(formula)
@@ -178,17 +208,17 @@
              momNames=momNames, parNames=parNames, varNames=varNames, isEndo=isEndo)
     }
 
-.fGmmData <- function(g, x, theta0)
+.fGmmData <- function(g, x, thet0)
     {
-        mom <- try(g(theta0, x))
-        k <- length(theta0)        
-        if (is.null(names(theta0)))
+        mom <- try(g(thet0, x))
+        k <- length(thet0)        
+        if (is.null(names(thet0)))
             parNames <- paste("tet", 1:k, sep="")
         else
-            parNames <- names(theta0)
+            parNames <- names(thet0)
         if (any(class(mom)=="try-error"))
             {
-                msg <- paste("Cannot evaluate the moments at theta0\n",
+                msg <- paste("Cannot evaluate the moments at thet0\n",
                              attr(mom,"conditon"))
                 stop(msg)
             } else {

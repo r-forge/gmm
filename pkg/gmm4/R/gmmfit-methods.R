@@ -17,7 +17,8 @@ setMethod("print", "gmmfit",
               ntype <- matrix(c("Two-Step GMM", "Iterated GMM", "CUE",
                                 "One-Step GMM with fixed weights","Two-Stage Least Squares",
                                 "Evaluated at a fixed Theta; No estimation",
-                                "twostep","iter","cue","onestep","tsls", "eval"),
+                                "One-Step Efficient M.D.E.",
+                                "twostep","iter","cue","onestep","tsls", "eval","mde"),
                               ncol=2)
               type <- ntype[match(x@type, ntype[,2]),1]
               spec <- modelDims(x@model)

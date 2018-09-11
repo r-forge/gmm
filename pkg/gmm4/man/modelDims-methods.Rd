@@ -9,6 +9,8 @@
 \alias{modelDims,snonlinearGmm-method}
 \alias{modelDims,nonlinearGmm-method}
 \alias{modelDims,functionGmm-method}
+\alias{modelDims,formulaGmm-method}
+\alias{modelDims,rformulaGmm-method}
 \alias{modelDims,rlinearGmm-method}
 \alias{modelDims,rfunctionGmm-method}
 \alias{modelDims,rnonlinearGmm-method}
@@ -37,6 +39,12 @@ when restrictions have been imposed on coefficients.
 }
 
 \item{\code{signature(object = "functionGmm")}}{
+}
+
+\item{\code{signature(object = "formulaGmm")}}{
+}
+
+\item{\code{signature(object = "rformulaGmm")}}{
 }
 
 \item{\code{signature(object = "slinearGmm")}}{

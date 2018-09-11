@@ -5,9 +5,12 @@ setMethod("print", "summaryGmm",
           function(x, digits=5, ...)
           {
               print(x@model)
-              ntype <- matrix(c("Two-Step GMM", "Iterated GMM", "CUE", 
-                                "One-Step GMM with fixed weights", "Two-Stage Least Squares", 
-                                "twostep", "iter", "cue", "onestep", "tsls"), ncol = 2)
+              ntype <- matrix(c("Two-Step GMM", "Iterated GMM", "CUE",
+                                "One-Step GMM with fixed weights","Two-Stage Least Squares",
+                                "Evaluated at a fixed Theta; No estimation",
+                                "One-Step Efficient M.D.E.",
+                                "twostep","iter","cue","onestep","tsls", "eval","mde"),
+                              ncol=2)              
               type <- ntype[match(x@type, ntype[, 2]), 1]
               spec <- modelDims(x@model)
               if (spec$q == spec$k) 
@@ -53,9 +56,7 @@ setMethod("print", "summaryGmm",
 ## show
 setMethod("show", "summaryGmm", function(object) print(object)) 
 
-
 ########## System of Equations
-
 
 ## print
 

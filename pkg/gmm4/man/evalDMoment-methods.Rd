@@ -3,6 +3,7 @@
 \alias{evalDMoment}
 \alias{evalDMoment-methods}
 \alias{evalDMoment,functionGmm-method}
+\alias{evalDMoment,formulaGmm-method}
 \alias{evalDMoment,sysGmmModels-method}
 \alias{evalDMoment,rslinearGmm-method}
 \alias{evalDMoment,regGmm-method}
@@ -15,6 +16,9 @@ to the coefficients.
 \describe{
 
 \item{\code{signature(object = "functionGmm")}}{
+}
+
+\item{\code{signature(object = "formulaGmm")}}{
 }
 
 \item{\code{signature(object = "regGmm")}}{

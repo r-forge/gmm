@@ -4,6 +4,7 @@
 \alias{getRestrict-methods}
 \alias{getRestrict,gmmModels-method}
 \alias{getRestrict,rlinearGmm-method}
+\alias{getRestrict,rformulaGmm-method}
 \alias{getRestrict,rslinearGmm-method}
 \alias{getRestrict,sysGmmModels-method}
 \alias{getRestrict,rnonlinearGmm-method}
@@ -19,6 +20,8 @@ contraints. Those matrices are used to perform hypothesis tests.
 \S4method{getRestrict}{rslinearGmm}(object, theta)
 
 \S4method{getRestrict}{rnonlinearGmm}(object, theta)
+
+\S4method{getRestrict}{rformulaGmm}(object, theta)
 
 \S4method{getRestrict}{gmmModels}(object, theta, R, rhs=NULL)
 

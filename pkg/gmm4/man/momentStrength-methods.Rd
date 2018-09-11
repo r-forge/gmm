@@ -3,6 +3,7 @@
 \alias{momentStrength}
 \alias{momentStrength-methods}
 \alias{momentStrength,functionGmm-method}
+\alias{momentStrength,formulaGmm-method}
 \alias{momentStrength,linearGmm-method}
 \alias{momentStrength,rlinearGmm-method}
 \alias{momentStrength,nonlinearGmm-method}
@@ -30,6 +31,11 @@ vcovType=c("OLS","HC","HAC"))
 \describe{
 
 \item{\code{signature(object = "functionGmm")}}{
+Not implemented yet. In that case, we want some measure of the rank of
+the matrix of derivatives. 
+}
+
+\item{\code{signature(object = "formulaGmm")}}{
 Not implemented yet. In that case, we want some measure of the rank of
 the matrix of derivatives. 
 }

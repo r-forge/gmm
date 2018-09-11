@@ -8,6 +8,7 @@
 \alias{print,rlinearGmm-method}
 \alias{print,rslinearGmm-method}
 \alias{print,rfunctionGmm-method}
+\alias{print,rformulaGmm-method}
 \alias{print,rnonlinearGmm-method}
 \alias{print,summaryGmm-method}
 \alias{print,summarySysGmm-method}
@@ -44,6 +45,9 @@ Print method for all \code{"gmmModels"}, \code{"gmmfit"},
 }
 
 \item{\code{signature(x = "rlinearGmm")}}{
+}
+
+\item{\code{signature(x = "rformulaGmm")}}{
 }
 
 \item{\code{signature(x = "rslinearGmm")}}{

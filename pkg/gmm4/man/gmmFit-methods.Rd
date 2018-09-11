@@ -3,8 +3,10 @@
 \alias{gmmFit}
 \alias{gmmFit-methods}
 \alias{gmmFit,gmmModels-method}
+\alias{gmmFit,formulaGmm-method}
 \alias{gmmFit,sysGmmModels-method}
 \alias{gmmFit,rlinearGmm-method}
+\alias{gmmFit,rformulaGmm-method}
 \alias{gmmFit,rslinearGmm-method}
 \alias{gmmFit,rnonlinearGmm-method}
 \title{ ~~ Methods for Function \code{gmmFit} in Package \pkg{gmm4} ~~}
@@ -13,6 +15,11 @@ Method to fit a model using GMM, from an object of class \code{"gmmModels"}.
 }
 \usage{
 \S4method{gmmFit}{gmmModels}(object, type=c("twostep", "iter","cue",
+              "onestep"), itertol=1e-7, initW=c("ident", "tsls"),
+              weights="optimal", itermaxit=100,
+              efficientWeights=FALSE, start=NULL, \dots)
+
+\S4method{gmmFit}{formulaGmm}(object, type=c("twostep", "iter","cue",
               "onestep"), itertol=1e-7, initW=c("ident", "tsls"),
               weights="optimal", itermaxit=100,
               efficientWeights=FALSE, start=NULL, \dots)
@@ -31,6 +38,11 @@ Method to fit a model using GMM, from an object of class \code{"gmmModels"}.
               "onestep"), itertol=1e-7, initW=c("ident", "tsls"),
               weights="optimal", itermaxit=100,
               efficientWeights=FALSE, \dots)
+
+\S4method{gmmFit}{rformulaGmm}(object, type=c("twostep", "iter","cue",
+              "onestep"), itertol=1e-7, initW=c("ident", "tsls"),
+              weights="optimal", itermaxit=100,
+              efficientWeights=FALSE, start=NULL, \dots)
 
 \S4method{gmmFit}{rslinearGmm}(object, type=c("twostep", "iter","cue",
               "onestep"), itertol=1e-7, initW=c("ident", "tsls", "EbyE"),
@@ -75,6 +87,12 @@ The main method for all GMM-type models.
 }
 
 \item{\code{signature(object = "rnonlinearGmm")}}{
+It makes a difference only if the number of contraints is equal to the
+number of coefficients, in which case, the method \code{\link{evalGmm}}
+is called at the contrained vector. If not, the next method is called.
+}
+
+\item{\code{signature(object = "rformulaGmm")}}{
 It makes a difference only if the number of contraints is equal to the
 number of coefficients, in which case, the method \code{\link{evalGmm}}
 is called at the contrained vector. If not, the next method is called.

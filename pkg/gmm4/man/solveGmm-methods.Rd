@@ -17,7 +17,7 @@
 ...)
 
 \S4method{solveGmm}{allNLGmm,gmmWeights}(object, wObj, theta0=NULL,
-...)
+algo=c("optim","nlminb"), ...)
 
 \S4method{solveGmm}{rnonlinearGmm,gmmWeights}(object, wObj, theta0=NULL,
 ...)
@@ -35,7 +35,9 @@ theta0=NULL, \dots)
   \item{theta0}{The vector of coefficients for the starting values used
   in \code{\link{optim}}. If NULL, the starting values in the object if
   used. For system of equations, it is a list of vectors.}
-  \item{wObj}{An object of class \code{"gmmWeights"} or \code{"sysGmmWeights"}.}
+  \item{wObj}{An object of class \code{"gmmWeights"} or
+    \code{"sysGmmWeights"}.}
+  \item{algo}{The numerical algorithm to minimize the objective function.}
   \item{\dots}{Arguments to pass to \code{\link{optim}}.}
   }
 \section{Methods}{

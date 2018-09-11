@@ -6,6 +6,7 @@
 \alias{coef,rlinearGmm-method}
 \alias{coef,rslinearGmm-method}
 \alias{coef,rfunctionGmm-method}
+\alias{coef,rformulaGmm-method}
 \alias{coef,gmmModels-method}
 \alias{coef,rnonlinearGmm-method}
 \title{ ~~ Methods for Function \code{coef} in Package \pkg{stats} ~~}
@@ -33,6 +34,10 @@ It gives the unrestricted representation of a restricted model.
 }
 
 \item{\code{signature(object = "rfunctionGmm")}}{
+It gives the unrestricted representation of a restricted model. See examples.  
+}
+
+\item{\code{signature(object = "rformulaGmm")}}{
 It gives the unrestricted representation of a restricted model. See examples.  
 }
 

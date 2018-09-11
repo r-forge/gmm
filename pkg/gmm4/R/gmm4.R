@@ -1,8 +1,6 @@
 ################### the main gmm functions ###################
 ########## These functions ar to avoid having to builf model objects
 
-
-
 gmm4 <- function (g, x, tet0 = NULL, grad = NULL, 
                   type = c("twostep", "iter", "cue", "onestep"),
                   vcov = c("MDS", "HAC", "iid", "TrueFixed"),
@@ -30,10 +28,18 @@ gmm4 <- function (g, x, tet0 = NULL, grad = NULL,
         }
     if (is.list(g))
         {
-            model <- sysGmmModel(g=g, h=x, tet0=tet0, vcov=vcov,
-                                 kernel=kernel, crit=crit, bw=bw, prewhite=prewhite,
-                                 ar.method=ar.method, approx=approx, tol=kerntol,
-                                 centeredVcov=centeredVcov, data=data)
+            ## Formula of sysGMM? Need to find a better way.
+            model <- NULL
+            if (is.null(x) & !is.null(tet0))
+                model <- try(gmmModel(g=g, x=x, tet0=tet0, grad=grad, vcov=vcov,
+                                      kernel=kernel, crit=crit, bw=bw, prewhite=prewhite,
+                                      ar.method=ar.method, approx=approx, tol=kerntol,
+                                      centeredVcov=centeredVcov, data=data), silent=TRUE)
+            if (is.null(model) || class(model)=="try-error")
+                model <- sysGmmModel(g=g, h=x, tet0=tet0, vcov=vcov,
+                                     kernel=kernel, crit=crit, bw=bw, prewhite=prewhite,
+                                     ar.method=ar.method, approx=approx, tol=kerntol,
+                                     centeredVcov=centeredVcov, data=data)
         } else {
             model <- gmmModel(g=g, x=x, tet0=tet0, grad=grad, vcov=vcov,
                               kernel=kernel, crit=crit, bw=bw, prewhite=prewhite,

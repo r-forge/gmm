@@ -44,9 +44,21 @@ setClass("functionGmm", representation(X="ANY", fct="function",dfct="functionORN
                                        isEndo="logical"),
          prototype(vcov="MDS", kernel="Quadratic Spectral", bw="Andrews", prewhite=1L,
                    ar.method="ols", approx="AR(1)", tol=1e-7, dfct=NULL))
+setClass("formulaGmm", representation(modelF="data.frame", 
+                                      vcov="character",theta0="numeric",
+                                      n="integer", q="integer",k="integer",
+                                      parNames="character", momNames="character",
+                                      fRHS="list", fLHS="list",
+                                      kernel="character", bw="numericORcharacter",
+                                      prewhite="integer", ar.method="character",
+                                      approx="character", tol="numeric",
+                                      centeredVcov="logical", varNames="character",
+                                      isEndo="logical", isMDE="logical"),
+         prototype(vcov="MDS", kernel="Quadratic Spectral", bw="Andrews", prewhite=1L,
+                   ar.method="ols", approx="AR(1)", tol=1e-7))
 setClassUnion("regGmm", c("linearGmm", "nonlinearGmm"))
-setClassUnion("allNLGmm", c("nonlinearGmm", "functionGmm"))
-setClassUnion("gmmModels", c("linearGmm", "nonlinearGmm", "functionGmm"))
+setClassUnion("allNLGmm", c("nonlinearGmm", "functionGmm", "formulaGmm"))
+setClassUnion("gmmModels", c("linearGmm", "nonlinearGmm", "functionGmm", "formulaGmm"))
 
 ## gmmWeights
 
@@ -84,7 +96,11 @@ setClass("rnonlinearGmm", representation(R="list", cstSpec="list"),
 setClass("rfunctionGmm", representation(R="list", cstSpec="list"),
          contains="functionGmm")
 
-setClassUnion("rgmmModels", c("rlinearGmm", "rnonlinearGmm", "rfunctionGmm"))
+setClass("rformulaGmm", representation(R="list", cstSpec="list"),
+         contains="formulaGmm")
+
+setClassUnion("rgmmModels", c("rlinearGmm", "rnonlinearGmm", "rfunctionGmm",
+                              "rformulaGmm"))
 
 ## hypothesisTest
 
