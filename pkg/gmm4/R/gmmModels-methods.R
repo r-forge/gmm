@@ -474,11 +474,17 @@ setMethod("solveGmm", signature("allNLGmm", "gmmWeights"),
                           obj
                       }
                   if (algo == "optim")
-                      res <- optim(par=theta0, fn=g, gr=dg, method="BFGS", object=object,
-                                   wObj=wObj, ...)
-                  else
-                      res <- nlminb(start=theta0, objective=g, gradient=dg,
-                                    object=object, wObj=wObj, ...)
+                      {
+                          if ("method" %in% names(list(...)))
+                              res <- optim(par=theta0, fn=g, gr=dg, 
+                                           object=object, wObj=wObj, ...)
+                          else
+                              res <- optim(par=theta0, fn=g, gr=dg, method="BFGS",
+                                           object=object, wObj=wObj, ...)
+                      } else {
+                          res <- nlminb(start=theta0, objective=g, gradient=dg,
+                                        object=object, wObj=wObj, ...)
+                      }
                   theta <- res$par
                   names(theta) <- modelDims(object)$parNames
                   list(theta=theta, convergence=res$convergence)

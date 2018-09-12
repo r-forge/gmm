@@ -116,15 +116,17 @@ which represents the HC0 version of the heteroscedasticity consistent covariance
 y_i(\theta) = x_i(\theta) + \epsilon_i,
 \]
 with the moment condition $\E[\epsilon_i(\theta)Z_i]=0$. , where $X_i$ is $k\times 1$ and $Z_i$ is $q\times 1$ with $q\geq k$. The only difference is that $\epsilon_i(\theta)$ is a nonlinear function of the coefficient vector $\theta$. For this case, the same three possibilities exist for the asymptotic variance. 
-\item The functional case: Is we cannot represent the model in a regression format with instruments, we simply write the moment conditions as $\E[g_i(\theta)]$ with $g_i(\theta)$ being a continuous and differentiable function from $\R^k$ to $\R^q$, with $q\geq k$. Here, we do not distinguish  ``iid'' from ``MDS''. We therefore have two possible cases:
+\item The functional or formula case: If we cannot represent the model in a regression format with instruments, we simply write the moment conditions as $\E[g_i(\theta)]$ with $g_i(\theta)$ being a continuous and differentiable function from $\R^k$ to $\R^q$, with $q\geq k$. Here, we do not distinguish  ``iid'' from ``MDS''. We therefore have two possible cases:
   \begin{enumerate}
     \item[a)] ``iid'' or ``MDS'': The asymptotic variance is $V=E[g_i(\theta)g_i(\theta)']$ and can be estimated by its sample counterpart. 
     \item[b)] ``HAC'': Same as for the linear case with $\Gamma_i=E[g_t(\theta)g_{t-i}(\theta)']$.
     \end{enumerate}  
-\end{enumerate}
-Since the moment conditions are defined differently, we have three difference classes to represent the three models. Their common slots are all the arguments that specify $V$, which include the specifications of th HAC estimator if needed, the names of the coefficients, the names of the moment conditions, $k$, $q$, $n$, and the argument ``isEndo'', a $k\time 1$ logical vector that indicates which regressors in $X_i$ is considered endogenous. It is considered endogenous is it is not part of $Z_i$. Of course, it makes no sense when $g_i(\theta)$ is a general function. 
+  The difference between the two types refer to the method used to express the moments conditions in R. See below for examples. In particular, a formula type can be used to define a Minimum Distance Estimator (MDE) model. Moment conditions of MDE models can be written as $g_i(\theta)=[\Psi(\theta)-f_i]$, where $\Psi(\theta)$ is a $q\times 1$ vector of functions of $\theta$ that do not depend on the data, and $f_i$ is a $q\times 1$ vector of functions of the vector of observations $i$ that do not depend on $\theta$. It is worth making the distinction because we can easily show that the centered optimal weighting matrix in that case does not depend on the coefficient $\theta$. Efficient GMM can therefore be estimated in one step. 
 
-The main difference is the slots that define $g_i(\theta)$. For ``linearGmm'' class, the slots ``modelF'' and ``instF'' are model.frame's that define the regression model and the instruments. For ``nonlinearGmm'', we have the following slots: ``modelF'' is a data.frame for the nonlinear regression, ``instF'' is as for the linear case, and ``fRHS'' and ``fLHS'' are expressions to compute the right and left hand sides of the nonlinear regression. The function D() can be used to obtain analytical derivatives. Finally, the ``functionGmm'' class contains the slot ``fct'', which is a function of two arguments, the first being $\theta$, and returns a $n\times q$ matrix with the $i^{th}$ row being $g_i(\theta)'$. The slot ``dfct'' is an optional function with the same two arguments which returns the $q\times k$ matrix of first derivatives of $\bar{g}(\theta)$. The slot ``X'' is whatever is needed as second argument of ``fct'' and ``dfct''. The last two classes also contain the slot ``theta0'', which is mainly used to validate the object. It is also used latter as starting values for ``optim'' if no other starting values are provided. For the nonlinear regression, it must be a named vector.
+\end{enumerate}
+Since the moment conditions are defined differently, we have four difference classes to represent the four models. Their common slots are all the arguments that specify $V$, which include the specifications of the HAC estimator if needed, the names of the coefficients, the names of the moment conditions, $k$, $q$, $n$, and the argument ``isEndo'', a $k\time 1$ logical vector that indicates which regressors in $X_i$ is considered endogenous. It is considered endogenous if it is not part of $Z_i$. Of course, it makes no sense when $g_i(\theta)$ is a general function. 
+
+The main difference is the slots that define $g_i(\theta)$. For ``linearGmm'' class, the slots ``modelF'' and ``instF'' are model.frame's that define the regression model and the instruments. For ``nonlinearGmm'', we have the following slots: ``modelF'' is a data.frame for the nonlinear regression, ``instF'' is as for the linear case, and ``fRHS'' and ``fLHS'' are expressions to compute the right and left hand sides of the nonlinear regression. The function D() can be used to obtain analytical derivatives. The class ``formulaGmm'' is similar to the ``nonlinearGMM'' class with the exception that the slots ``fRHS'' and ``fLHS'' are lists of expressions, one element per moment condition, and there is no slot ``instF'' as there are no instruments. The additional slot ``isMDE'' indicates if is it an MDE model. Finally, the ``functionGmm'' class contains the slot ``fct'', which is a function of two arguments, the first being $\theta$, and returns a $n\times q$ matrix with the $i^{th}$ row being $g_i(\theta)'$. The slot ``dfct'' is an optional function with the same two arguments which returns the $q\times k$ matrix of first derivatives of $\bar{g}(\theta)$. The slot ``X'' is whatever is needed as second argument of ``fct'' and ``dfct''. The last two classes also contain the slot ``theta0'', which is mainly used to validate the object. It is also used latter as starting values for ``optim'' if no other starting values are provided. For the nonlinear regression, it must be a named vector.
 
 Consider the following model:
 \[
@@ -203,6 +205,38 @@ x <- simData$x3
 mod3 <- gmmModel(fct, x, theta0, grad=dfct, vcov="iid")
 mod3
 @ 
+
+We can also use the non-central moments and write the model as a MDE model using the formula type. The first four non-central moments are:
+\[
+E\begin{pmatrix}
+x_i-\mu\\
+x_i^2-(\mu^2+\sigma^2)\\
+x_i^3-(\mu^3+3\mu\sigma^2) \\
+x_i^4 - (\mu^4+6\mu^2\sigma^2+3\sigma^4)
+\end{pmatrix}=0
+\]
+If we name $\sigma^2$, ``sig'',  and $\mu$, ``mu'', we can create the model as follows.
+
+<<>>=
+theta0=c(mu=1,sig=1)
+dat <- data.frame(x=x, x2=x^2, x3=x^3, x4=x^4)
+gform <- list(x~mu,
+              x2~mu^2+sig, 
+              x3~mu^3+3*mu*sig,
+              x4~mu^4+6*mu^2*sig+3*sig^2)
+mod4 <- gmmModel(gform, NULL, theta0, vcov="MDS", data=dat)
+mod4
+@ 
+We could have created the model as
+<<eval=FALSE>>=
+dat <- data.frame(x=x)
+gform <- list(x~mu,
+              x^2~mu^2+sig, 
+              x^3~mu^3+3*mu*sig,
+              x^4~mu^4+6*mu^2*sig+3*sig^2)
+mod4 <- gmmModel(gform, NULL, theta0, vcov="MDS", data=dat)
+@ 
+But the first approach may speed up estimation quite a bit for large dataset because it reduces the number of operations. 
 
 \subsection{Methods for gmmModels Classes} \label{sec:gmmmodels-methods}
 
@@ -510,9 +544,9 @@ We now have all we need to estimate our models. The main method to estimate a mo
 <<>>=
 showMethods("solveGmm")
 @ 
-The last three are for systems of equations that we will cover later. The first is for ``nonlinearGmm'' and ``functionGmm'', and the second for ``linearGmm''. The methods require a gmmWeights object as second argument. For ``nonlinearGmm'' and ``functionGmm'' classes, there is a third optional argument, ``theta0'', which is the starting value to pass to \textit{optim}. If not provided, the one stored in the GMM model object is used. 
+The last three are for systems of equations that we will cover later. The first is for ``nonlinearGmm'' and ``functionGmm'', and the second for ``linearGmm''. The methods require a gmmWeights object as second argument. For ``nonlinearGmm'', ``functionGmm'' and ``formulaGmm''  classes, there are two more optional arguments. The first is ``theta0'', which is the starting value to pass to the minimization algorithm. If not provided, the one stored in the GMM model object is used. The second is ``algo'' which specifies which algorithm to use to minimize the objective function. By default, \textit{optim} is used. The only other choice for now is \textit{nlminb}. The default method for \textit{optim} is ``BFGS'', but all arguments of the algorithm can be modified by specifying them directly in the call of \textit{solveGmm}.
 
-The method simply minimizes $\bar{g}(\theta)'W\bar{g}(\theta)$ for a given $W$. For ``linearGmm'' classes, the analytical solution is used. It is therefore the prefered class to use when it is possible. For all other classes, the solution is obtained by \textit{optim}, and the argument ``...'' is used to pass options to it.  For ``nonlinearGmm'', the gradian of the objective function, $2nG'W\bar{g}$ is passed to \textit{optim} using the analytical derivative of the moment conditions (the \textit{evalDMoment} method). For ``functionGMM'' classes, $G$ is computed numerically using \textit{numericDeriv} unless $dfct$ was provided when the object was created. The \textit{solveGmm} method returns a vector of coefficients and a convergence code. The latter is null for linear models and is the code from \textit{optim} otherwise. 
+The method simply minimizes $\bar{g}(\theta)'W\bar{g}(\theta)$ for a given $W$. For ``linearGmm'' classes, the analytical solution is used. It is therefore the prefered class to use when it is possible. For all other classes, the solution is obtained by the selected algorithm. For ``nonlinearGmm'' and ``formulaGmm'', the gradian of the objective function, $2nG'W\bar{g}$ is passed to the algorithm using the analytical derivative of the moment conditions (the \textit{evalDMoment} method). For ``functionGMM'' classes, $G$ is computed numerically using \textit{numericDeriv} unless $dfct$ was provided when the object was created. The \textit{solveGmm} method returns a vector of coefficients and a convergence code. The latter is null for linear models and is the code returned by the algorithm otherwise. 
 
 Consider the following linear model:
 
@@ -552,6 +586,8 @@ mod2 <- gmmModel(y~exp(theta0+theta1*x1+theta2*x2), ~x2+z1+z2, theta0,
 wObj0 <- evalWeights(mod2, w="ident")
 res1 <- solveGmm(mod2, wObj0, control=list(maxit=2000))
 res1
+solveGmm(mod2, wObj0, method="Nelder", control=list(maxit=2000))
+solveGmm(mod2, wObj0, algo="nlminb", control=list(iter.max=2000))
 @ 
 
 Notice that there is no signature for restricted models. However, it is not needed since they inherit from their unrestricted counterpart and the same procedure is needed to estimate them. Suppose, for example, that we want to impose the restriction $\theta_1=\theta_2^2$.
@@ -590,7 +626,7 @@ For the iterative GMM we proceed as follows:
 \end{enumerate}
 CUE is a one step efficient GMM method in which $W=\hat{V}(\theta)$. The solution is obtained by minimizing $n\bar{g}(\theta)[\hat{V}(\theta)]^{-1}\bar{g}(\theta)$.
 
-There are two special cases that are worth mentioning. The first case applies to all ``gmmModels''. If $q=k$, the model is just-identified. In that case, the choice of $W$ has no effect on the solution. Therefore, \textit{gmmFit} will automatically set $W$ to the identity and return the one-step GMM solution. Setting the argument type to another value will therefore have no effect on the result. 
+There are two special cases that are worth mentioning. The first case applies to all ``gmmModels''. If $q=k$, the model is just-identified. In that case, in theory, the choice of $W$ has no effect on the solution. Therefore, by default, \textit{gmmFit} will automatically set $W$ to the identity and return the one-step GMM solution. Setting the argument type to another value will therefore have no effect on the result. For nonlinear models, however, the weighting matrix may affect the ability of the algorithm to find the solution. If we consider, for example, the model in which parameters of a normal distribution are estimated using non-central moments by the MDE method. In that case, the different scales of the moment conditions complicates the problem. The \textit{gmmFit} method allows the user to provide a weighting matrix, in which case, the solution is obtained by minimizing $n\bar{g}(\theta)'W\bar{g}(\theta)$ instead of $n\bar{g}(\theta)'\bar{g}(\theta)$. We will give an example below.
 
 Second, when ``vcov'' is set to ``iid'' in either a linearGMM or a ``nonlinearGmm'' model, the matrices $W_1$ and $W_2$ are proportional to each other. They therefore lead to the same solution. As a result, the two-step GMM, iterative GMM and CUE produce identical solution. In particular, if the model is linear, the solution corresponds to the two-stage least squares solution. In fact, \textit{gmmFit} calls the method \textit{tsls} in that case. We will look at the method below.
 
@@ -617,6 +653,27 @@ print(res2, model=FALSE)
 @ 
 
 For the iterative GMM, we can control the tolerance level and the maximum number of iterations with the arguments ``itertol'' and ``itermaxit''. The argument ``weights'' is equal to the character string ``optimal'', which implies that by default $W$ is set to the estimate of $V^{-1}$. If ``weights'' is set to ``ident'', \textit{gmmFit} returns the one-step GMM. Alternatively, we can provide \textit{gmmFit} with a fixed weighting matrix. It could be a matrix or a ``gmmWeights'' object. When the weighting matrix is provided, it returns a one-step GMM based on that matrix. The ``gmmfit'' object contains a slot ``efficientGmm'' of type logical. It is TRUE if the model has been estimated by efficient GMM. By default it is TRUE, since ``weights'' is set to ``optimal''. If ``weights'' takes any other value or if ``type'' is set to ``onestep'', it is set to FALSE. There is one exception. It is set to TRUE if we provide the method with a weighting matrix and we set the argument ``efficientWeights'' to TRUE. For example, the optimal weighting matrix of the  minimum distance method does not depend on any coefficient. It is probably a good idea in this case to compute it before and pass it to the \textit{gmmFit} method. The value of the ``efficientGmm'' slot will be used by the \textit{vcov} method to determine whether it should return the robust (or sandwich) covariance matrix. 
+
+There is a specific \textit{gmmFit} method for ``formulaGmm'' classes. It behaves differently only if ``weights'' is set to ``optimal'' and the slot ``isMDE'' of the object is TRUE. The \textit{gmmModel} constructor detects if the right-hand-side or the left-hand-side of each moment condition depends on the coefficient. If they don't, ``isMDE'' is set to TRUE. For that case, the method computes the efficient weighting matrix object, which does not depend on the coefficients, and call the general \textit{gmmFit} method with a fixed weights. The method is called Efficient MDE, which is a one-step method. If we look at the example we presented above, the model is
+
+<<>>=
+theta0=c(mu=1,sig=1)
+x <- rnorm(2000, 4, 5)
+dat <- data.frame(x=x, x2=x^2, x3=x^3, x4=x^4)
+gform <- list(x~mu,
+              x2~mu^2+sig, 
+              x3~mu^3+3*mu*sig,
+              x4~mu^4+6*mu^2*sig+3*sig^2)
+mod4 <- gmmModel(gform, NULL, theta0, vcov="MDS", data=dat)
+mod4@isMDE
+print(gmmFit(mod4), model=FALSE)
+@ 
+
+If the model is just identified, the weighting matrix is also used to scale the moment function and help the algorithm to find the solution. However, since in theory the weighting does not affect the solution, the method is simply called one-step GMM.
+
+<<>>=
+print(gmmFit(mod4[1:2]), model=FALSE)
+@ 
 
 \subsection{Methods for ``gmmfit'' classes} \label{sec:gmmmodels-gmmfitm}
 
