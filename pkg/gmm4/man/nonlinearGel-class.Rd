@@ -1,18 +1,21 @@
-\name{formulaGmm-class}
+\name{nonlinearGel-class}
 \docType{class}
-\alias{formulaGmm-class}
+\alias{nonlinearGel-class}
 
-\title{Class \code{"formulaGmm"}}
+\title{Class \code{"nonlinearGel"}}
 \description{
-GMM model class for moment conditions defined by formulas. 
+GEL model class for nonlinear regression models and instruments.
 }
 \section{Objects from the Class}{
-Objects can be created by calls of the form \code{new("formulaGmm", ...)}.
-It is however, recommended to use the constructor \code{\link{gmmModel}}.
+Objects can be created by calls of the form \code{new("nonlinearGel", ...)}.
+It is however, recommended to use the constructor \code{\link{gelModel}}.
 }
 \section{Slots}{
   \describe{
+    \item{\code{wSpec}:}{Object of class \code{"list"} ~~ }
+    \item{\code{gelType}:}{Object of class \code{"list"} ~~ }    
     \item{\code{modelF}:}{Object of class \code{"data.frame"} ~~ }
+    \item{\code{instF}:}{Object of class \code{"data.frame"} ~~ }
     \item{\code{vcov}:}{Object of class \code{"character"} ~~ }
     \item{\code{theta0}:}{Object of class \code{"numeric"} ~~ }
     \item{\code{n}:}{Object of class \code{"integer"} ~~ }
@@ -20,8 +23,8 @@ It is however, recommended to use the constructor \code{\link{gmmModel}}.
     \item{\code{k}:}{Object of class \code{"integer"} ~~ }
     \item{\code{parNames}:}{Object of class \code{"character"} ~~ }
     \item{\code{momNames}:}{Object of class \code{"character"} ~~ }
-    \item{\code{fRHS}:}{Object of class \code{"list"} ~~ }
-    \item{\code{fLHS}:}{Object of class \code{"list"} ~~ }
+    \item{\code{fRHS}:}{Object of class \code{"expression"} ~~ }
+    \item{\code{fLHS}:}{Object of class \code{"expressionORNULL"} ~~ }
     \item{\code{kernel}:}{Object of class \code{"character"} ~~ }
     \item{\code{bw}:}{Object of class \code{"numericORcharacter"} ~~ }
     \item{\code{prewhite}:}{Object of class \code{"integer"} ~~ }
@@ -31,17 +34,17 @@ It is however, recommended to use the constructor \code{\link{gmmModel}}.
     \item{\code{centeredVcov}:}{Object of class \code{"logical"} ~~ }
     \item{\code{varNames}:}{Object of class \code{"character"} ~~ }
     \item{\code{isEndo}:}{Object of class \code{"logical"} ~~ }
-    \item{\code{isMDE}:}{Object of class \code{"logical"} ~~ }
   }
 }
-
 \section{Extends}{
-Class \code{"\linkS4class{gmmModels}"}, directly.
-Class \code{"allNLGmm"}, by class \code{"formulaGmm"}, distance 2.
+Class \code{"\linkS4class{nonlinearGmm}"}, directly.
+Class \code{"\linkS4class{gelModels}"}, directly.
+Class \code{"regGmm"}, by class \code{"nonlinearGmm"}, distance 2.
+Class \code{"allNLGmm"}, by class \code{"nonlinearGmm"}, distance 2.
+Class \code{"gmmModels"}, by class \code{"nonlinearGmm"}, distance 2
 }
 
-
 \examples{
-showClass("formulaGmm")
+showClass("nonlinearGmm")
 }
 \keyword{classes}

@@ -15,7 +15,7 @@ Collate: 'allClasses.R' 'validity.R' 'gmmData.R' 'gmmModels-methods.R'
         'summaryGmm-methods.R' 'gmmWeights-methods.R' 'gmmModel.R'
         'rGmmModel-methods.R' 'hypothesisTest-methods.R'
         'sysGmmModel.R' 'sysGmmModels-methods.R' 'rsysGmmModels-methods.R'
-	'sgmmfit-methods.R' 'gmm4.R'
+	'sgmmfit-methods.R' 'gmm4.R' 'gel.R' 'gelModels-methods.R'
 License: GPL (>= 2)
 NeedsCompilation: no
 VignetteBuilder: knitr

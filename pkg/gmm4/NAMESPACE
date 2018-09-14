@@ -8,13 +8,16 @@ importFrom("stats", "ar", "as.formula", "model.matrix","vcov",
            "model.response", "na.omit", "terms", "residuals",
            "D", "numericDeriv", "sd", "optim", "lm", "pf", "coef", "update",
            "fitted", "lm.fit", "pchisq", "pnorm", "printCoefmat", "anova",
-           "model.frame", "reformulate", "formula", "nlminb")
+           "model.frame", "reformulate", "formula", "nlminb", "kernapply",
+           "constrOptim", "kernel")
 importFrom("sandwich", "vcovHAC", "estfun","kernHAC",
            "bread","bwAndrews","bwNeweyWest","weightsAndrews",
            "weightsLumley", "vcovHC")
 ### S4 Methods and Classes
 exportClasses("nonlinearGmm", "linearGmm", "functionGmm", "gmmModels",
               "regGmm", "allNLGmm", "gmmWeights", "gmmfit","rgmmModels",
+              "nonlinearGel", "linearGel", "functionGel", "gelModels",
+              "formulaGel",
               "specTest", "summaryGmm", "rlinearGmm", "hypothesisTest",
               "numericORcharacter", "tsls", "rnonlinearGmm", "rfunctionGmm",
               "slinearGmm", "snonlinearGmm", "sysGmmModels",
@@ -26,7 +29,9 @@ exportMethods(residuals, print, show, vcovHAC, coef, vcov, bread, summary, updat
 export(gmmModel, evalMoment, Dresiduals, evalDMoment, momentVcov, estfun.gmmFct,
        evalWeights, quadra, evalObjective, solveGmm, momentStrength,evalGmm, 
        tsls, gmmFit, meatGmm, specTest, gmm4, restGmmModel, modelResponse, DWH,
-       modelDims, printRestrict, getRestrict, sysGmmModel, ThreeSLS)
+       modelDims, printRestrict, getRestrict, sysGmmModel, ThreeSLS, gelModel,
+       rhoET, rhoEL, rhoEEL, rhoHD, EL.Wu, getLambda, gmmToGel, smoothGel,
+       solveGel)
  
 ###  S3 methods ###
 

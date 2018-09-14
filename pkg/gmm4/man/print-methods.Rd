@@ -3,6 +3,7 @@
 \alias{print-methods}
 \alias{print,ANY-method}
 \alias{print,gmmModels-method}
+\alias{print,gelModels-method}
 \alias{print,gmmfit-method}
 \alias{print,sgmmfit-method}
 \alias{print,rlinearGmm-method}
@@ -29,6 +30,9 @@ Print method for all \code{"gmmModels"}, \code{"gmmfit"},
 }
 \item{\code{signature(x = "gmmModels")}}{
 }
+\item{\code{signature(x = "gelModels")}}{
+}
+
 \item{\code{signature(x = "sysGmmModels")}}{
 }
 \item{\code{signature(x = "sysGmmWeights")}}{

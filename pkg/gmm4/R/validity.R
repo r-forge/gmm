@@ -473,3 +473,71 @@ setValidity("gmmWeights", .checkGmmWeights)
     }
 
 setValidity("sysGmmWeights", .checkSysGmmWeights)
+
+
+.checkGelModels <- function(object)
+    {
+        error <- character()
+        if (!all(names(object@wSpec)%in%c("k","w","bw","kernel")))
+            {
+                msg <- "wSpec must be a list with k, w, bw, and kernel"
+                error <- c(error, msg)
+            } else {
+                s <- object@wSpec
+                if (!is.numeric(s$bw))
+                    {
+                        msg <- "bw must be numeric"
+                        error <- c(error, msg)
+                    }
+                if (class(s$w) != "tskernel")
+                    {
+                        msg <- "w must be an object of class 'tskernel'"
+                        error <- c(error, msg)
+                    }
+                if (!is.character(s$kernel))
+                    {
+                        msg <- "kernel must be a character"
+                        error <- c(error, msg)
+                    }
+            }
+        if (!all(names(object@gelType)%in%c("name","fct")))
+            {
+                msg <- "gelType must be a list with name and fct"
+                error <- c(error, msg)
+            } else {
+                gtype <- object@gelType
+                if (!is.character(gtype$name))
+                    {
+                        error <- c(error, "name in gelType must ba a character")
+                    } else {
+                        if (is.null(gtype$fct))
+                            {
+                                if (!(gtype$name %in% c("EL","ET","EEL","HD")))
+                                    {
+                                        msg <- "name in gelType must be ET, EL, HD or EEL"
+                                        error <- c(error, msg)
+                                    }
+                            } else {
+                                if (!is.function(gtype$fct))
+                                    {
+                                        msg <- "fct in getType must be a function"
+                                        error <- c(error, msg)
+                                    } else {
+                                        n <- names(formals(gtype$fct))
+                                        tn <- c("gmat", "lambda", "derive", "k")
+                                        if (!isTRUE(all.equal(n, tn)))
+                                            {
+                                                msg <- "rhoFct must have the four arguments gmat, lambda, derive and k"
+                                                error <- c(error, msg)
+                                            }
+                                    }
+                            }
+                    }
+            }
+        if (length(error)==0)
+            TRUE
+        else
+            error
+    }
+
+setValidity("gelModels", .checkGelModels)

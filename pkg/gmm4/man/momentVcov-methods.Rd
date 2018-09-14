@@ -4,6 +4,7 @@
 \alias{momentVcov}
 \alias{estfun.gmmFct}
 \alias{momentVcov,gmmModels-method}
+\alias{momentVcov,gelModels-method}
 \alias{momentVcov,sysGmmModels-method}
 \title{ ~~ Methods for Function \code{momentVcov} in Package \pkg{Gmm} ~~}
 \description{
@@ -15,6 +16,9 @@ class object.
 \describe{
 
 \item{\code{signature(object = "gmmModels")}}{
+}
+
+\item{\code{signature(object = "gelModels")}}{
 }
 
 \item{\code{signature(object = "sysGmmModels")}}{

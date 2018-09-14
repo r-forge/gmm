@@ -1,17 +1,19 @@
-\name{formulaGmm-class}
+\name{formulaGel-class}
 \docType{class}
-\alias{formulaGmm-class}
+\alias{formulaGel-class}
 
-\title{Class \code{"formulaGmm"}}
+\title{Class \code{"formulaGel"}}
 \description{
 GMM model class for moment conditions defined by formulas. 
 }
 \section{Objects from the Class}{
-Objects can be created by calls of the form \code{new("formulaGmm", ...)}.
-It is however, recommended to use the constructor \code{\link{gmmModel}}.
+Objects can be created by calls of the form \code{new("formulaGel", ...)}.
+It is however, recommended to use the constructor \code{\link{gelModel}}.
 }
 \section{Slots}{
   \describe{
+    \item{\code{wSpec}:}{Object of class \code{"list"} ~~ }
+    \item{\code{gelType}:}{Object of class \code{"list"} ~~ }    	
     \item{\code{modelF}:}{Object of class \code{"data.frame"} ~~ }
     \item{\code{vcov}:}{Object of class \code{"character"} ~~ }
     \item{\code{theta0}:}{Object of class \code{"numeric"} ~~ }
@@ -36,12 +38,14 @@ It is however, recommended to use the constructor \code{\link{gmmModel}}.
 }
 
 \section{Extends}{
-Class \code{"\linkS4class{gmmModels}"}, directly.
+Class \code{"\linkS4class{formulaGmm}"}, directly.
+Class \code{"\linkS4class{gelModels}"}, directly.
 Class \code{"allNLGmm"}, by class \code{"formulaGmm"}, distance 2.
+Class \code{"gmmModels"}, by class \code{"formulaGmm"}, distance 2
 }
 
 
 \examples{
-showClass("formulaGmm")
+showClass("formulaGel")
 }
 \keyword{classes}

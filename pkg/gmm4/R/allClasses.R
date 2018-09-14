@@ -60,6 +60,19 @@ setClassUnion("regGmm", c("linearGmm", "nonlinearGmm"))
 setClassUnion("allNLGmm", c("nonlinearGmm", "functionGmm", "formulaGmm"))
 setClassUnion("gmmModels", c("linearGmm", "nonlinearGmm", "functionGmm", "formulaGmm"))
 
+## GEL models
+
+setClass("linearGel", representation(wSpec="list", gelType="list"),
+         contains="linearGmm")
+setClass("nonlinearGel", representation(wSpec="list", gelType="list"),
+         contains="nonlinearGmm")
+setClass("functionGel", representation(wSpec="list", gelType="list"),
+         contains="functionGmm")
+setClass("formulaGel", representation(wSpec="list", gelType="list"),
+         contains="formulaGmm")
+
+setClassUnion("gelModels", c("linearGel", "nonlinearGel", "functionGel", "formulaGel"))
+
 ## gmmWeights
 
 setClass("gmmWeights", representation(w="ANY", type="character", HAC="list"),
@@ -187,32 +200,44 @@ setAs("linearGmm", "nonlinearGmm",
 setAs("linearGmm", "functionGmm",
       function(from) {
           spec <- modelDims(from)          
-          X <- model.matrix(from)
-          theta0 <- rep(1,ncol(X))
-          names(theta0) <- paste("theta", 1:ncol(X), sep="")         
-          colnames(X) <- paste("X", 1:ncol(X), sep="")         
-          Z <- model.matrix(from, "instruments")
-          colnames(Z) <- paste("Z", 1:ncol(Z), sep="")         
-          dat <- cbind(X, Z, Y=modelResponse(from))
-          theta0 <- rep(0,ncol(X))
-          names(theta0) <- paste("theta", 1:ncol(X), sep="")
+          x <- from
+          theta0 <- rep(0,spec$k)
+          names(theta0) <- spec$parNames
           fct <- function(theta, x)
               {
-                  wx <- which(strtrim(colnames(x),1) == "X")
-                  wz <- which(strtrim(colnames(x),1) == "Z")
-                  wy <- which(strtrim(colnames(x),1) == "Y")
-                  e <- x[,wy]-c(x[,wx,drop=FALSE]%*%theta)
-                  e*x[,wz]
+                  names(theta) <- modelDims(x)$parNames
+                  gt <- evalMoment(x, theta)
               }
           dfct <- function(theta, x)
               {
-                  wx <- which(strtrim(colnames(x),1) == "X")
-                  wz <- which(strtrim(colnames(x),1) == "Z")
-                  -crossprod(x[,wz],x[,wx])/nrow(x)
+                  names(theta) <- modelDims(x)$parNames
+                  gt <- evalDMoment(x, theta)
               }
-          new("functionGmm", X=dat, fct=fct, dfct=dfct,  vcov=from@vcov,
+          new("functionGmm", X=x, fct=fct, dfct=dfct,  vcov=from@vcov,
               theta0=theta0, n=spec$n, q=spec$q, k=spec$k, parNames=names(theta0),
-              momNames=colnames(Z), kernel=from@kernel,
+              momNames=spec$momNames, kernel=from@kernel,
+              bw=from@bw, prewhite=from@prewhite, ar.method=from@ar.method,
+              approx=from@approx, tol=from@tol, centeredVcov=from@centeredVcov)
+      })
+
+setAs("allNLGmm", "functionGmm",
+      function(from) {
+          spec <- modelDims(from)          
+          x <- from
+          fct <- function(theta, x)
+              {
+                  names(theta) <- modelDims(x)$parNames
+                  gt <- evalMoment(x, theta)
+              }
+          dfct <- function(theta, x)
+              {
+                  names(theta) <- modelDims(x)$parNames
+                  gt <- evalDMoment(x, theta)
+              }
+          new("functionGmm", X=x, fct=fct, dfct=dfct,  vcov=from@vcov,
+              theta0=from@theta0, n=spec$n, q=spec$q, k=spec$k,
+              parNames=names(from@theta0),
+              momNames=spec$momNames, kernel=from@kernel,
               bw=from@bw, prewhite=from@prewhite, ar.method=from@ar.method,
               approx=from@approx, tol=from@tol, centeredVcov=from@centeredVcov)
       })
@@ -266,7 +291,6 @@ setAs("slinearGmm", "linearGmm",
                           approx=from@approx, tol=from@tol, centeredVcov=from@centeredVcov,
                           data=dat)
       })
-
 
 setAs("rslinearGmm", "rlinearGmm",
       function(from) {

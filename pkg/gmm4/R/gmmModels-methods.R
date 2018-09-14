@@ -349,7 +349,8 @@ setGeneric("momentVcov", function(object, ...) standardGeneric("momentVcov"))
 
 setMethod("momentVcov", signature("gmmModels"),
           function(object, theta, ...){
-              if (class(object) == "functionGmm" & object@vcov == "iid")
+              if ((inherits(object, "functionGmm") || inherits(object, "formulaGmm")) &
+                  object@vcov == "iid")
                   object@vcov <- "MDS"
               if (object@vcov == "MDS")
                   {

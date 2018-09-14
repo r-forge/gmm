@@ -3,6 +3,7 @@
 \alias{evalObjective}
 \alias{evalObjective-methods}
 \alias{evalObjective,gmmModels,numeric,gmmWeights-method}
+\alias{evalObjective,gelModels,numeric,missing-method}
 \alias{evalObjective,sysGmmModels,list,sysGmmWeights-method}
 \title{ ~~ Methods for Function \code{evalObjective} in Package \pkg{Gmm} ~~}
 \description{
@@ -12,14 +13,21 @@
 \S4method{evalObjective}{gmmModels,numeric,gmmWeights}(object, theta,
 wObj, \dots)
 
+\S4method{evalObjective}{gelModels,numeric,missing}(object, theta,
+wObj, lambda, \dots)
+
 \S4method{evalObjective}{sysGmmModels,list,sysGmmWeights}(object, theta,
 wObj, \dots)
 }
 \arguments{
-  \item{object}{An object of class \code{"gmmModels"} or \code{"sysGmmModels"}.}
+  \item{object}{An object of class \code{"gmmModels"},
+    \code{"gelModels"} or \code{"sysGmmModels"}.}
   \item{theta}{The vector for coefficients for single equation, or a
     list of vector for system of equations.}
-  \item{wObj}{An object of class \code{"gmmWeights"} or \code{"sysGmmWeights"}.}
+  \item{wObj}{An object of class \code{"gmmWeights"} or
+    \code{"sysGmmWeights"}.}
+  \item{lambda}{Vector of Lagrange multiplier for \code{"gmmModels"}
+    objects}
   \item{\dots}{Arguments to pass to other methods}
   }
 \section{Methods}{
@@ -36,6 +44,10 @@ theta <- c(beta0=1,beta1=2)
 model1 <- gmmModel(y~x1, ~z1+z2, data=simData)
 w <- evalWeights(model1, theta)
 evalObjective(model1, theta, w)
+
+model2 <- gmmToGel(model1, "EL")
+evalObjective(model2, theta, lambda=c(.1,.2,.3))
+
 }
 
 \keyword{methods}
