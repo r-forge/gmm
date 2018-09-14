@@ -38,7 +38,7 @@ Objects can be created by calls of the form \code{new("gmmfit", ...)}.
 }
 
 \seealso{
-\code{\link{gmmFit}}, \code{\link{tsls}}, and \code{\link{gmm4}} to fit
+\code{\link{modelFit}}, \code{\link{tsls}}, and \code{\link{gmm4}} to fit
 a model with GMM and then create an object of class \code{"gmmfit"}..  
 %%  ~~or \code{\linkS4class{CLASSNAME}} for links to other classes ~~~
 }

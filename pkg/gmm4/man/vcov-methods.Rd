@@ -61,7 +61,7 @@ If \code{breadOnly=TRUE}, it returns \eqn{(G'WG)^{-1}/n},
 where the value of \eqn{W} depends on the type of GMM. For two-step GMM,
 it is the first step weighting matrix, for one-step GMM, it is either
 the identity matrix or the fixed weighting matrix that was provided when
-\code{\link{gmmFit}} was called, for iterative GMM, it is the weighting
+\code{\link{modelFit}} was called, for iterative GMM, it is the weighting
 matrix used in the last step. For CUE, the result is identical to
 \code{sandwich=FALSE} and \code{beadOnly=FALSE}, because the
 weighting and coefficient estimates are obtained simultaneously, which
@@ -84,11 +84,11 @@ theta <- c(beta0=1,beta1=2)
 model1 <- gmmModel(y~x1, ~z1+z2, data=simData)
 
 ## optimal matrix
-res <- gmmFit(model1)
+res <- modelFit(model1)
 vcov(res)
 
 ## not the optimal matrix
-res <- gmmFit(model1, weights=diag(3))
+res <- modelFit(model1, weights=diag(3))
 vcov(res, TRUE)
 
 ## Model with heteroscedasticity
@@ -127,11 +127,11 @@ G <- matrix(c(-1,-2*mu,-3*mu^2-3*sig2, 0, -1, -3*mu),3,2)
 x <- simData$x3
 
 model <- gmmModel(g, x, c(mu=.1, sig2=1.5), vcov="iid")
-res1 <- gmmFit(model)
+res1 <- modelFit(model)
 summary(res1)
 ## Same results (that's because the moment vcov is centered by default)
 W <- solve(var(cbind(x,x^2,x^3)))
-res2 <- gmmFit(model, weights=W)
+res2 <- modelFit(model, weights=W)
 res2
 ## If is therefore more efficient in this case to do the following:
 ## the option breadOnly of summary() is passed to vcov()

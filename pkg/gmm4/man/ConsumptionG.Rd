@@ -52,7 +52,7 @@ theta0=c(alpha=468, beta=0.0971, gamma=1.24)
 model <- gmmModel(C~alpha+beta*Y^gamma, ~C1+Y1+Y2, data=dat, tet0=theta0, vcov="iid")
 
 ### Scaling the parameters increase the speed of convergence
-res <- gmmFit(model, control=list(parscale=c(1000,.1,1)))
+res <- modelFit(model, control=list(parscale=c(1000,.1,1)))
 
 ### It also seems that there is a degree of freedom adjustment for the
 ### estimate of the variance of the error term.

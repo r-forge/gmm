@@ -36,7 +36,7 @@ tsls(smodel)
 lapply(1:3, function(i) coef(tsls(smodel[i])))
 
 ## Fitting the model by two-step GMM
-res <- gmmFit(smodel)
+res <- modelFit(smodel)
 
 ## testing Overidentifying restrictions
 specTest(res)
@@ -49,35 +49,35 @@ summary(res)
 ### When the error id iid (homoscedastic), we have a
 ### FIVE estimator with 2SLS  as the first step
 smodel <- sysGmmModel(g, h, data=simData, vcov="iid")
-gmmFit(smodel)
+modelFit(smodel)
 
 ### When the error is iid (homoscedastic), 
 ### all instruments are the same, and the first step is 2SLS,
 ### we have 3SLS
 smodel <- sysGmmModel(g, ~x4+z1+z2+z3+z4, data=simData, vcov="iid")
-gmmFit(smodel, initW='tsls')
+modelFit(smodel, initW='tsls')
 
 ### When the error is iid (homoscedastic), 
 ### the instruments are the same and are the union of all regressors,
 ### we have SUR
 smodel <- sysGmmModel(g, NULL, data=simData, vcov="iid")
-gmmFit(smodel, initW='tsls')
+modelFit(smodel, initW='tsls')
 
 ############ Restricted models ##################
 
 ## unrestricted
 smodel <- sysGmmModel(g, h, data=simData, vcov="MDS")
-res <- gmmFit(smodel)
+res <- modelFit(smodel)
 
 ## no cross-equation restrictions
 R1 <- list(c("x1=-12*x4"), character(), c("x2=0.8", "x4=0.3"))
 rm1 <- restGmmModel(smodel, R1)
-(res1 <- gmmFit(rm1))
+(res1 <- modelFit(rm1))
 
 ## Cross equation restrictions
 R2<- c("Eqn1.x1=1", "Eqn2.x1=Eqn3.x2")
 rm2 <- restGmmModel(smodel, R2)
-(es2 <- gmmFit(rm2))## no longer expressed as a system
+(es2 <- modelFit(rm2))## no longer expressed as a system
 
 ## testing the restriction
 

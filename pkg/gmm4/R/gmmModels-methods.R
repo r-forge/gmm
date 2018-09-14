@@ -652,11 +652,11 @@ setMethod("subset", "formulaGmm",
               x@n <- nrow(x@modelF)
               x})
 
-## gmmFit
+## modelFit
 
-setGeneric("gmmFit", function(object, ...) standardGeneric("gmmFit"))
+setGeneric("modelFit", function(object, ...) standardGeneric("modelFit"))
 
-setMethod("gmmFit", signature("formulaGmm"), valueClass="gmmfit", 
+setMethod("modelFit", signature("formulaGmm"), valueClass="gmmfit", 
           definition = function(object, type=c("twostep", "iter","cue", "onestep"),
               itertol=1e-7, initW=c("ident", "tsls"), weights="optimal", 
               itermaxit=100, efficientWeights=FALSE, start=NULL, ...)
@@ -667,7 +667,7 @@ setMethod("gmmFit", signature("formulaGmm"), valueClass="gmmfit",
                               {
                                   spec <- modelDims(object)
                                   wObj <- evalWeights(object, spec$theta0, "optimal")
-                                  met <- getMethod("gmmFit", "gmmModels")
+                                  met <- getMethod("modelFit", "gmmModels")
                                   res <- met(object, weights=wObj, efficientWeights=TRUE,
                                              ...)
                                   res@type <- "mde"
@@ -680,7 +680,7 @@ setMethod("gmmFit", signature("formulaGmm"), valueClass="gmmfit",
                       }
               })
 
-setMethod("gmmFit", signature("gmmModels"), valueClass="gmmfit", 
+setMethod("modelFit", signature("gmmModels"), valueClass="gmmfit", 
           definition = function(object, type=c("twostep", "iter","cue", "onestep"),
               itertol=1e-7, initW=c("ident", "tsls"), weights="optimal", 
               itermaxit=100, efficientWeights=FALSE, start=NULL, ...)

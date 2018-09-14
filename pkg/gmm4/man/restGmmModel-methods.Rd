@@ -93,7 +93,7 @@ NLmodel@parNames
 
 R1 <- c("theta2=2", "theta3=theta4^2")
 rmod1 <- restGmmModel(NLmodel, R1)
-res1 <- gmmFit(rmod1)
+res1 <- modelFit(rmod1)
 res1
 ## recover the orignial form
 coef(rmod1, coef(res1))
@@ -102,7 +102,7 @@ coef(rmod1, coef(res1))
 
 R2 <- list(theta2~2, theta3~1/theta4)
 rmod2 <- restGmmModel(NLmodel, R2)
-res2 <- gmmFit(rmod2)
+res2 <- modelFit(rmod2)
 res2
 coef(rmod2, coef(res2))
 

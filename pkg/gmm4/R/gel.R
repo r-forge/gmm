@@ -170,7 +170,7 @@ smoothGel <- function (object, theta=NULL)
             return(sx)
         }
     if (is.null(theta))        
-        theta <- gmmFit(as(object, "gmmModels"), weights="ident")@theta
+        theta <- modelFit(as(object, "gmmModels"), weights="ident")@theta
     
     gt <- evalMoment(object, theta)
     gt <- scale(gt, scale=FALSE)

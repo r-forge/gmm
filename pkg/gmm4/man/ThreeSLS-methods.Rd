@@ -22,7 +22,7 @@ Sigma=NULL)
   \item{coefOnly}{Should the method return the only the coefficients or
     create an object of class \code{"sgmmfit"}.}
   \item{qrZ}{The qr decomposition of the common instruments. It is
-    mostly used by \code{\link{gmmFit}} to avoid recomputing it in
+    mostly used by \code{\link{modelFit}} to avoid recomputing it in
     iterative GMM or CUE. It should not be used directly unless the user
     knows what he is doing.}
   \item{Sigma}{The covariance matrix of the residuals. If not provided,

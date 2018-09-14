@@ -153,7 +153,7 @@ setMethod("specTest", signature("gmmfit", "numeric"),
                   stop("Th model without the tested conditions is under-identified")
               mod2 <- object@model[-which]
               w <- object@wObj
-              obj2 <- gmmFit(mod2, weights=w[-which])
+              obj2 <- modelFit(mod2, weights=w[-which])
               J <- specTest(object, wObj=w)@test[1]
               J1 <- specTest(obj2, wObj=w[-which])@test[1]
               j <- J-J1                                        
@@ -218,7 +218,7 @@ setMethod("update", "gmmfit",
                           isValid <- validObject(model)
                           fct[["object"]] <- quote(model)
                           ev$model <- model
-                          fct[[1L]] <- quote(gmmFit)
+                          fct[[1L]] <- quote(modelFit)
                           arg <- arg[-modarg]
                           if (length(arg) > 0)
                               for (n in names(arg))

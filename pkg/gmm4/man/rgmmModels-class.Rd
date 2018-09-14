@@ -9,7 +9,7 @@
 \section{Objects from the Class}{A virtual Class: No objects may be created from it.}
 \section{Methods}{
   \describe{
-    \item{gmmFit}{\code{signature(object = "rgmmModels")}: ... }
+    \item{modelFit}{\code{signature(object = "rgmmModels")}: ... }
 	 }
 }
 \seealso{

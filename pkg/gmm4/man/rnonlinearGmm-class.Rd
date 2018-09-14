@@ -47,7 +47,7 @@ Class \code{"\linkS4class{gmmModels}"}, by class "nonlinearGmm", distance 2.
   \describe{
     \item{coef}{\code{signature(object = "rnonlinearGmm")}: ... }
     \item{Dresiduals}{\code{signature(object = "rnonlinearGmm")}: ... }
-    \item{gmmFit}{\code{signature(object = "rnonlinearGmm")}: ... }
+    \item{modelFit}{\code{signature(object = "rnonlinearGmm")}: ... }
     \item{modelDims}{\code{signature(object = "rnonlinearGmm")}: ... }
     \item{print}{\code{signature(x = "rnonlinearGmm")}: ... }
     \item{residuals}{\code{signature(object = "rnonlinearGmm")}: ... }

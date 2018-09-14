@@ -605,9 +605,9 @@ The unrestricted version can be extracted using \textit{coef}.
 coef(rmod2, res2$theta)
 @ 
 
-\subsection{GMM Estimation: the \textit{gmmFit} method} \label{sec:gmmmodels-gmmfit}
+\subsection{GMM Estimation: the \textit{modelFit} method} \label{sec:gmmmodels-gmmfit}
 
-For most users, what we presented above will rarely be used. What they want is a way to estimate their models without worrying about how it is done. The \textit{gmmFit} method is the main method to estimate models. The only requirement is to first create a ``gmmModels''. Before going into all the details, the most important arguments to set is the object, which is a ``gmmModels'' class, and a type of GMM. The different types are: (1) ``twostep'' for two-step GMM, which is the default, (2) ``iter'' for iterative GMM, (3) ``cue'' for continuously updated GMM , or (4) ``onestep'' for th one-step GMM. 
+For most users, what we presented above will rarely be used. What they want is a way to estimate their models without worrying about how it is done. The \textit{modelFit} method is the main method to estimate models. The only requirement is to first create a ``gmmModels''. Before going into all the details, the most important arguments to set is the object, which is a ``gmmModels'' class, and a type of GMM. The different types are: (1) ``twostep'' for two-step GMM, which is the default, (2) ``iter'' for iterative GMM, (3) ``cue'' for continuously updated GMM , or (4) ``onestep'' for th one-step GMM. 
 
 In this package, the one-step GMM means the estimation using the identity matrix as $W$. It is therefore not an efficient GMM. The two-step GMM, without any other argument is computed as follows:
 \begin{enumerate}
@@ -626,17 +626,17 @@ For the iterative GMM we proceed as follows:
 \end{enumerate}
 CUE is a one step efficient GMM method in which $W=\hat{V}(\theta)$. The solution is obtained by minimizing $n\bar{g}(\theta)[\hat{V}(\theta)]^{-1}\bar{g}(\theta)$.
 
-There are two special cases that are worth mentioning. The first case applies to all ``gmmModels''. If $q=k$, the model is just-identified. In that case, in theory, the choice of $W$ has no effect on the solution. Therefore, by default, \textit{gmmFit} will automatically set $W$ to the identity and return the one-step GMM solution. Setting the argument type to another value will therefore have no effect on the result. For nonlinear models, however, the weighting matrix may affect the ability of the algorithm to find the solution. If we consider, for example, the model in which parameters of a normal distribution are estimated using non-central moments by the MDE method. In that case, the different scales of the moment conditions complicates the problem. The \textit{gmmFit} method allows the user to provide a weighting matrix, in which case, the solution is obtained by minimizing $n\bar{g}(\theta)'W\bar{g}(\theta)$ instead of $n\bar{g}(\theta)'\bar{g}(\theta)$. We will give an example below.
+There are two special cases that are worth mentioning. The first case applies to all ``gmmModels''. If $q=k$, the model is just-identified. In that case, in theory, the choice of $W$ has no effect on the solution. Therefore, by default, \textit{modelFit} will automatically set $W$ to the identity and return the one-step GMM solution. Setting the argument type to another value will therefore have no effect on the result. For nonlinear models, however, the weighting matrix may affect the ability of the algorithm to find the solution. If we consider, for example, the model in which parameters of a normal distribution are estimated using non-central moments by the MDE method. In that case, the different scales of the moment conditions complicates the problem. The \textit{modelFit} method allows the user to provide a weighting matrix, in which case, the solution is obtained by minimizing $n\bar{g}(\theta)'W\bar{g}(\theta)$ instead of $n\bar{g}(\theta)'\bar{g}(\theta)$. We will give an example below.
 
-Second, when ``vcov'' is set to ``iid'' in either a linearGMM or a ``nonlinearGmm'' model, the matrices $W_1$ and $W_2$ are proportional to each other. They therefore lead to the same solution. As a result, the two-step GMM, iterative GMM and CUE produce identical solution. In particular, if the model is linear, the solution corresponds to the two-stage least squares solution. In fact, \textit{gmmFit} calls the method \textit{tsls} in that case. We will look at the method below.
+Second, when ``vcov'' is set to ``iid'' in either a linearGMM or a ``nonlinearGmm'' model, the matrices $W_1$ and $W_2$ are proportional to each other. They therefore lead to the same solution. As a result, the two-step GMM, iterative GMM and CUE produce identical solution. In particular, if the model is linear, the solution corresponds to the two-stage least squares solution. In fact, \textit{modelFit} calls the method \textit{tsls} in that case. We will look at the method below.
 
-The \textit{gmmFit} method returns the S4 class object ``gmmfit''. The object contains the vector of coefficient estimates, the ``gmmWeights'' used to obtain it, the model object and other information about the method and convergence. We will cover its methods in the next section. The only one we introduce now is the \textit{show} method which prints the model info, the estimation method  and the coefficient estimates. To avoid printing the model, we can set the argument ``model'' of print to FALSE. 
+The \textit{modelFit} method returns the S4 class object ``gmmfit''. The object contains the vector of coefficient estimates, the ``gmmWeights'' used to obtain it, the model object and other information about the method and convergence. We will cover its methods in the next section. The only one we introduce now is the \textit{show} method which prints the model info, the estimation method  and the coefficient estimates. To avoid printing the model, we can set the argument ``model'' of print to FALSE. 
 
 <<>>=
 mod <- gmmModel(y~x1, ~z1+z2, data=simData, vcov="MDS")
-gmmFit(mod, type="onestep")
-print(gmmFit(mod, type="twostep"), model=FALSE)
-print(gmmFit(mod, type="iter"), model=FALSE)
+modelFit(mod, type="onestep")
+print(modelFit(mod, type="twostep"), model=FALSE)
+print(modelFit(mod, type="iter"), model=FALSE)
 @ 
 
 For nonlinear models, it is possible to pass arguments to \textit{optim} and to set a different starting value with the argument ``start''.
@@ -645,16 +645,16 @@ For nonlinear models, it is possible to pass arguments to \textit{optim} and to 
 theta0 <- c(theta0=0, theta1=0, theta2=0)
 mod2 <- gmmModel(y~exp(theta0+theta1*x1+theta2*x2), ~x2+z1+z2, theta0, 
                  data=simData, vcov="MDS")
-res1 <- gmmFit(mod2)
+res1 <- modelFit(mod2)
 print(res1, model=FALSE)
 theta0 <- c(theta0=0.5, theta1=0.5, theta2=-0.5)
-res2 <- gmmFit(mod2, start=theta0, control=list(reltol=1e-8))
+res2 <- modelFit(mod2, start=theta0, control=list(reltol=1e-8))
 print(res2, model=FALSE)
 @ 
 
-For the iterative GMM, we can control the tolerance level and the maximum number of iterations with the arguments ``itertol'' and ``itermaxit''. The argument ``weights'' is equal to the character string ``optimal'', which implies that by default $W$ is set to the estimate of $V^{-1}$. If ``weights'' is set to ``ident'', \textit{gmmFit} returns the one-step GMM. Alternatively, we can provide \textit{gmmFit} with a fixed weighting matrix. It could be a matrix or a ``gmmWeights'' object. When the weighting matrix is provided, it returns a one-step GMM based on that matrix. The ``gmmfit'' object contains a slot ``efficientGmm'' of type logical. It is TRUE if the model has been estimated by efficient GMM. By default it is TRUE, since ``weights'' is set to ``optimal''. If ``weights'' takes any other value or if ``type'' is set to ``onestep'', it is set to FALSE. There is one exception. It is set to TRUE if we provide the method with a weighting matrix and we set the argument ``efficientWeights'' to TRUE. For example, the optimal weighting matrix of the  minimum distance method does not depend on any coefficient. It is probably a good idea in this case to compute it before and pass it to the \textit{gmmFit} method. The value of the ``efficientGmm'' slot will be used by the \textit{vcov} method to determine whether it should return the robust (or sandwich) covariance matrix. 
+For the iterative GMM, we can control the tolerance level and the maximum number of iterations with the arguments ``itertol'' and ``itermaxit''. The argument ``weights'' is equal to the character string ``optimal'', which implies that by default $W$ is set to the estimate of $V^{-1}$. If ``weights'' is set to ``ident'', \textit{modelFit} returns the one-step GMM. Alternatively, we can provide \textit{modelFit} with a fixed weighting matrix. It could be a matrix or a ``gmmWeights'' object. When the weighting matrix is provided, it returns a one-step GMM based on that matrix. The ``gmmfit'' object contains a slot ``efficientGmm'' of type logical. It is TRUE if the model has been estimated by efficient GMM. By default it is TRUE, since ``weights'' is set to ``optimal''. If ``weights'' takes any other value or if ``type'' is set to ``onestep'', it is set to FALSE. There is one exception. It is set to TRUE if we provide the method with a weighting matrix and we set the argument ``efficientWeights'' to TRUE. For example, the optimal weighting matrix of the  minimum distance method does not depend on any coefficient. It is probably a good idea in this case to compute it before and pass it to the \textit{modelFit} method. The value of the ``efficientGmm'' slot will be used by the \textit{vcov} method to determine whether it should return the robust (or sandwich) covariance matrix. 
 
-There is a specific \textit{gmmFit} method for ``formulaGmm'' classes. It behaves differently only if ``weights'' is set to ``optimal'' and the slot ``isMDE'' of the object is TRUE. The \textit{gmmModel} constructor detects if the right-hand-side or the left-hand-side of each moment condition depends on the coefficient. If they don't, ``isMDE'' is set to TRUE. For that case, the method computes the efficient weighting matrix object, which does not depend on the coefficients, and call the general \textit{gmmFit} method with a fixed weights. The method is called Efficient MDE, which is a one-step method. If we look at the example we presented above, the model is
+There is a specific \textit{modelFit} method for ``formulaGmm'' classes. It behaves differently only if ``weights'' is set to ``optimal'' and the slot ``isMDE'' of the object is TRUE. The \textit{gmmModel} constructor detects if the right-hand-side or the left-hand-side of each moment condition depends on the coefficient. If they don't, ``isMDE'' is set to TRUE. For that case, the method computes the efficient weighting matrix object, which does not depend on the coefficients, and call the general \textit{modelFit} method with a fixed weights. The method is called Efficient MDE, which is a one-step method. If we look at the example we presented above, the model is
 
 <<>>=
 theta0=c(mu=1,sig=1)
@@ -666,13 +666,13 @@ gform <- list(x~mu,
               x4~mu^4+6*mu^2*sig+3*sig^2)
 mod4 <- gmmModel(gform, NULL, theta0, vcov="MDS", data=dat)
 mod4@isMDE
-print(gmmFit(mod4), model=FALSE)
+print(modelFit(mod4), model=FALSE)
 @ 
 
 If the model is just identified, the weighting matrix is also used to scale the moment function and help the algorithm to find the solution. However, since in theory the weighting does not affect the solution, the method is simply called one-step GMM.
 
 <<>>=
-print(gmmFit(mod4[1:2]), model=FALSE)
+print(modelFit(mod4[1:2]), model=FALSE)
 @ 
 
 \subsection{Methods for ``gmmfit'' classes} \label{sec:gmmmodels-gmmfitm}
@@ -698,7 +698,7 @@ The argument ``df.adj'' can be set to TRUE if degrees of freedom adjustment is n
   
 <<>>=
 mod <- gmmModel(y~x1, ~z1+z2+z3, data=simData, vcov="MDS")
-res <- gmmFit(mod)
+res <- modelFit(mod)
 specTest(res)
 @ 
 
@@ -724,7 +724,7 @@ summary(res, breadOnly=TRUE)@coef
 
 <<>>=
 mod <- gmmModel(y~x1+x2+x3+z1, ~x1+x2+z1+z2+z3+z4, data=simData, vcov="iid")
-res <- gmmFit(mod)
+res <- modelFit(mod)
 @ 
 
 We want to test the hypothesis 
@@ -754,7 +754,7 @@ n\bar{g}(\tilde{\theta})'\hat{V}^{-1}\tilde{G}\hat{\Omega}\tilde{G}'\hat{V}^{-1}
 where the tilde implies that it is evaluated at the restricted coefficient estimates. The asymptotic distribution is the same as the Wald test. To perform the test, we need to estimate the restricted model.
 
 <<>>=
-res.r <- gmmFit(rmod)
+res.r <- modelFit(rmod)
 @ 
 
 Then, we perform the test
@@ -794,7 +794,7 @@ e.r <- residuals(res.r)
   
 <<>>=
 mod <- gmmModel(y~x1, ~z1+z2, data=simData, vcov="iid")
-res1 <- gmmFit(mod)
+res1 <- modelFit(mod)
 res2 <- lm(y~x1, simData)
 DWH(res1,res2)
 @   
@@ -815,7 +815,7 @@ Notice that the Wald test is robust in the sense that the covariance matrix is b
 
 This method is to estimate linear models with two-stage least squares. It returns a ``tsls'' class object which inherits from ``gmmfit''. Most ``gmmfit'' methods are the same with the eception of \textit{bread}, \textit{meatGmm} and \textit{vcov}. They just use the structure of 2LSL to make them more computationally efficient. They may be removed in future version and included in the main ``gmmfit'' methods. 
 
-If the model has iid error, \textit{gmmFit} and \textit{tsls} are numerically identical. In fact, the function is called by \textit{gmmFit} in that case. The main reason for using it is if we have a more complex variance structure but want to avoid using a fully efficient GMM, which may have worse small sample properties. Therefore, ``sandwich'' is set to TRUE in the \textit{vcov} method for ``tsls'' objects. In the following example, errors are assumed heteroscedastic, and the model is estimated by 2SLS. The \textit{summary} method returns, however, robust standard errors because ``sandwich=TRUE'' is the default in the \textit{vcov} method of ``tsls''.
+If the model has iid error, \textit{modelFit} and \textit{tsls} are numerically identical. In fact, the function is called by \textit{modelFit} in that case. The main reason for using it is if we have a more complex variance structure but want to avoid using a fully efficient GMM, which may have worse small sample properties. Therefore, ``sandwich'' is set to TRUE in the \textit{vcov} method for ``tsls'' objects. In the following example, errors are assumed heteroscedastic, and the model is estimated by 2SLS. The \textit{summary} method returns, however, robust standard errors because ``sandwich=TRUE'' is the default in the \textit{vcov} method of ``tsls''.
 
 <<>>=
 mod <- gmmModel(y~x1, ~z1+z2+z3, data=simData, vcov="MDS")
@@ -825,7 +825,7 @@ summary(res)@coef
 
 \subsection{\textit{gmm4}: A function to fit them all} \label{sec:gmmmodels-gmm4}
 
-If you still think that the \textit{gmmFit} method is not simple enough because you have to crate a model first, the \textit{gmm4} function will do everything for you. It is the function that looks the most like its ancestor function \textit{gmm} from the gmm package. It is still required to specify the structure of variance for the moment conditions. In fact, it combines all arguments of the \textit{gmmModel} constructor and \textit{gmmFit} method. Here are a few examples.
+If you still think that the \textit{modelFit} method is not simple enough because you have to crate a model first, the \textit{gmm4} function will do everything for you. It is the function that looks the most like its ancestor function \textit{gmm} from the gmm package. It is still required to specify the structure of variance for the moment conditions. In fact, it combines all arguments of the \textit{gmmModel} constructor and \textit{modelFit} method. Here are a few examples.
 
 You want to estimate 
 \[
@@ -1023,7 +1023,7 @@ The second column is the method of moment (or just identified GMM), using the re
 <<>>=
 h1 <- ~age+educ+female
 model1 <- gmmModel(g, h1, thet0, vcov="MDS", data=dat88)
-res1 <- gmmFit(model1, control=list(reltol=1e-10, abstol=1e-10))
+res1 <- modelFit(model1, control=list(reltol=1e-10, abstol=1e-10))
 @ 
 
 The third column is first step GMM using the instruments $\{age, educ, female, hstat, married\}$. 
@@ -1031,13 +1031,13 @@ The third column is first step GMM using the instruments $\{age, educ, female, h
 <<>>=
 h2 <- ~age+educ+female+hsat+married
 model2 <- gmmModel(g, h2, thet0, vcov="MDS", data=dat88)
-res2 <- gmmFit(model2, type="onestep")
+res2 <- modelFit(model2, type="onestep")
 @
 
 The third is efficient GMM using the same instruments. 
 
 <<>>=
-res3 <- gmmFit(model2)
+res3 <- modelFit(model2)
 @ 
 
 The results (column 2 to 4 of Table 13.2) are presented in Table \ref{greene1}. The results are not identical, which is expected since results from nonlinear models depends on how the optimizer used is tuned. Only the last column cannot be explained by rounding errors or optimizer tuning. We have tried different tuning parameters in \textit{optim} and it never gets closer. Even if we start with the author's solution, \textit{optim} finds a solution with smaller value of the objective function. 
@@ -1206,7 +1206,7 @@ smod1[1:2, list(1:3,1:4)]
 If the second argument is missing, all instruments are selected. If only one equation is selected, the object if converted to a single equation class. We can therefore estimate each equation separately. 
 
 <<>>=
-gmmFit(smod1[1])
+modelFit(smod1[1])
 @ 
 
 \item \textit{model.matrix} and \textit{modelResponse}. The methods return the model.matrix and modelResponse of each equation in a list. Basically, the following are equivalent:
@@ -1430,41 +1430,41 @@ Again, we can recover the equation by equation coefficients:
 coef(rsmod1, theta1)
 @ 
 
-\subsection{The \textit{gmmFit} method for system of equations}\label{sec:sgmmmodels-gmmfit}
+\subsection{The \textit{modelFit} method for system of equations}\label{sec:sgmmmodels-gmmfit}
 
 This is the main algorithm to obtain GMM estimates of systems of equations. The method returns an object of class ``sgmmfit''. The latter has a \textit{show} method that print the essential of the model fit. We can estimate a system by two step GMM as follows:
 
 <<>>=
 smod1 <- sysGmmModel(g,h,vcov="MDS", data=simData)
-gmmFit(smod1, type="twostep")
+modelFit(smod1, type="twostep")
 @ 
 
 If ``vcov'' is ``iid'' and the instruments differ across equations, we obtain the FIVE estimator (Full-Information Instrumental Variable Efficient). 
 
 <<>>=
 smod1 <- sysGmmModel(g,h,vcov="iid", data=simData)
-gmmFit(smod1, type="twostep")
+modelFit(smod1, type="twostep")
 @ 
 
 If ``vcov'' is ``iid'', the instruments are the same and first step weights are obtained using an equation by equation 2SLS, it returns the 3SLS estimates. 
 
 <<>>=
 smod1 <- sysGmmModel(g,~z1+z2+z3+z4+z5,vcov="iid", data=simData)
-gmmFit(smod1, type="twostep", initW="tsls")
+modelFit(smod1, type="twostep", initW="tsls")
 @ 
 
 If, on top of that, the instruments are the union of all regressors, we get the SUR estimates.
 
 <<>>=
 smod1 <- sysGmmModel(g, vcov="iid", data=simData)
-gmmFit(smod1, type="twostep", initW="tsls")
+modelFit(smod1, type="twostep", initW="tsls")
 @ 
 
 It is also possible to obtain the first step weighting matrix using the equation by equation efficient GMM estimates
 
 <<>>=
 smod1 <- sysGmmModel(g,h,vcov="MDS", data=simData)
-res <- gmmFit(smod1, type="twostep", initW="EbyE")
+res <- modelFit(smod1, type="twostep", initW="EbyE")
 @
 
 As for the single equation case, a type ``onestep'' is a one step with the identity matrix, which is the same as setting the argument ``weights'' to ``ident''.  If the argument ``weights'' is set to a matrix or a ``sysGmmWeights'' object, the method will return a one step GMM with a fixed weighting matrix. Finally, we can obtain the equation by equation estimtes that uses a specific type, initW and weights. In the latter case, it is possible to inform the method that the weighting matrix is optimal by setting the argument ``efficientWeights'' to TRUE. 
@@ -1472,13 +1472,13 @@ As for the single equation case, a type ``onestep'' is a one step with the ident
 Finally, it is possible to obtain an equation by equation GMM estimates. The estimates are obtained using the same argument provided. For example, the following is a two-step efficient equation by equation GMM estimates:
 
 <<>>=
-gmmFit(smod1,  EbyE=TRUE) ## type is 'twostep' by default
+modelFit(smod1,  EbyE=TRUE) ## type is 'twostep' by default
 @ 
 
 As another example, the following is an equation by equation one-step GMM.
 
 <<>>=
-res <- gmmFit(smod1,  EbyE=TRUE, weights="ident")
+res <- modelFit(smod1,  EbyE=TRUE, weights="ident")
 @ 
 
 Restricted models are estimated in exactly the same way.
@@ -1486,10 +1486,10 @@ Restricted models are estimated in exactly the same way.
 <<>>=
 R1 <- list(c("x1=-12*z2"), character(), c("x3=0.8", "z1=0.3"))
 rsmod1 <- restGmmModel(smod1, R1)
-gmmFit(rsmod1)@theta
+modelFit(rsmod1)@theta
 R2<- c("Supply.x1=1", "Demand1.x3=Demand2.x3")
 rsmod1<- restGmmModel(smod1, R2)
-gmmFit(rsmod1)@theta
+modelFit(rsmod1)@theta
 @ 
 
 \subsection{The \textit{tsls} and \textit{ThreeSLS} methods}
@@ -1516,11 +1516,11 @@ smod2 <- sysGmmModel(g,,vcov="MDS", data=simData)
 res <- ThreeSLS(smod2)
 @ 
 
-The difference between the 3SLS and SUR using \textit{ThreeSLS} instead of \textit{gmmFit} is that the latter is an efficient GMM, while the former will only be efficient if the ``vcov'' of the model is ``iid''. Since the ``vcov'' of the above model is set to ``MDS'', the 3SLS and SUR are not efficient GMM estimates. As a result, the covariance matrix of the coefficient estimates will be computed using a sandwich matrix by deafult. If vcov is set to ``iid'', the following produce identical results.
+The difference between the 3SLS and SUR using \textit{ThreeSLS} instead of \textit{modelFit} is that the latter is an efficient GMM, while the former will only be efficient if the ``vcov'' of the model is ``iid''. Since the ``vcov'' of the above model is set to ``MDS'', the 3SLS and SUR are not efficient GMM estimates. As a result, the covariance matrix of the coefficient estimates will be computed using a sandwich matrix by deafult. If vcov is set to ``iid'', the following produce identical results.
 
 <<>>=
 smod2 <- sysGmmModel(g,~z1+z2+z3+z4+z5,vcov="iid", data=simData)
-gmmFit(smod2, initW="tsls")@theta
+modelFit(smod2, initW="tsls")@theta
 ThreeSLS(smod2)@theta
 @ 
 
@@ -1541,7 +1541,7 @@ The \textit{tsls} method returns an object of class ``stsls'' which inherits fro
   
 <<>>=
 smod1 <- sysGmmModel(g, h, vcov="iid", data=simData)
-res <- gmmFit(smod1)
+res <- modelFit(smod1)
 specTest(res)
 @ 
 
@@ -1557,20 +1557,20 @@ The method works also for restricted models.
 smod1 <- sysGmmModel(g,h,vcov="iid", data=simData)
 R1 <- list(c("x1=-12*z2"), character(), c("x3=0.8", "z1=0.3"))
 rsmod1 <- restGmmModel(smod1, R1)
-summary(gmmFit(rsmod1))@coef
+summary(modelFit(rsmod1))@coef
 R2<- c("Supply.x1=1", "Demand1.x3=Demand2.x3")
 rsmod1<- restGmmModel(smod1, R2)
-summary(gmmFit(rsmod1))@coef
+summary(modelFit(rsmod1))@coef
 @ 
 
 \item \textit{hypothesisTest}: For hypothesis testing, the method can test any linear restriction using either LM, LR or Wald tests. Consider the following unrestricted and restricted models.
   
 <<>>=
 smod1 <- sysGmmModel(g, h, vcov="MDS", data=simData)
-res.u <- gmmFit(smod1)
+res.u <- modelFit(smod1)
 R1 <- list(c("x1=-12*z2"), character(), c("x3=0.8", "z1=0.3"))
 rsmod1 <- restGmmModel(smod1, R1)
-res.r <- gmmFit(rsmod1)
+res.r <- modelFit(rsmod1)
 @ 
 
 The methods works as for single equations. We can just provide the unrestricted model and the $R$ and $q$ to get the Wald test, provide only the restricted fit for the LR test, or provide both and choose among the three tests by setting the argument ``type'' to the appropriate value. We only show the latter case. 
@@ -1584,7 +1584,7 @@ It is as easy to test cross-equation restrictions.
 <<>>=
 R2<- c("Supply.x1=1", "Demand1.x3=Demand2.x3")
 rsmod1<- restGmmModel(smod1, R2)
-res2.r <- gmmFit(rsmod1)
+res2.r <- modelFit(rsmod1)
 hypothesisTest(res.u, res2.r, type="LR")
 @ 
 
@@ -1662,14 +1662,14 @@ rmod <- restGmmModel(mod, R=R)
 We can then estimate the model and print the coefficient matrix:
 
 <<>>=
-res <- gmmFit(rmod)
+res <- modelFit(rmod)
 summary(res)@coef
 @ 
 
 We can also test the restriction:
 
 <<>>=
-res.u <- gmmFit(mod)
+res.u <- modelFit(mod)
 hypothesisTest(res.u, res)
 @ 
 

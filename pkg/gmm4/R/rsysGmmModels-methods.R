@@ -304,9 +304,9 @@ setMethod("evalWeights", "rslinearGmm",
                   callNextMethod()
               })
 
- ## gmmFit. Almost like sysGmmModels method, bu we need to check a few things
+ ## modelFit. Almost like sysGmmModels method, bu we need to check a few things
 
-setMethod("gmmFit", signature("rslinearGmm"), valueClass="sgmmfit", 
+setMethod("modelFit", signature("rslinearGmm"), valueClass="sgmmfit", 
           function(object, type=c("twostep", "iter","cue", "onestep"),
                    itertol=1e-7, initW=c("ident", "tsls", "EbyE"),
                    weights="optimal", itermaxit=100,
@@ -323,7 +323,7 @@ setMethod("gmmFit", signature("rslinearGmm"), valueClass="sgmmfit",
                           if (type=="onestep" || (is.character(weights) && weights=="ident"))
                               {
                               wObj <- evalWeights(object, w="ident")
-                              return(gmmFit(object, w=wObj))
+                              return(modelFit(object, w=wObj))
                           }
                       }
                   callNextMethod()

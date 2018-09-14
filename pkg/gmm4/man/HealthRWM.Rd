@@ -83,7 +83,7 @@ summary(res0)$coef
 ## Who is right?
 h1 <- ~age+educ+female
 model1 <- gmmModel(g, h1, thet0, vcov="MDS", data=dat88)
-res1 <- gmmFit(model1, control=list(reltol=1e-10, abstol=1e-10))
+res1 <- modelFit(model1, control=list(reltol=1e-10, abstol=1e-10))
 summary(res1)@coef
 
 ## Table 13.2 third column (close enough)
@@ -91,11 +91,11 @@ summary(res1)@coef
 ## efficient GMM
 h2 <- ~age+educ+female+hsat+married
 model2 <- gmmModel(g, h2, thet0, vcov="MDS", data=dat88)
-res2 <- gmmFit(model2, type="onestep")
+res2 <- modelFit(model2, type="onestep")
 summary(res2, sandwich=TRUE)@coef
 
 ## Table 13.2 fourth column (Can't get closer than that)
-res3 <- gmmFit(model2)
+res3 <- modelFit(model2)
 summary(res3)@coef
 
 # Lets see what happens if we start on Greene solution

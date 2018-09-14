@@ -50,7 +50,7 @@ c1995 <- subset(CigarettesSW, year == "1995")
 ## Equation 12.15
 model1 <- gmmModel(log(packs)~log(rprice)+log(rincome),
                    ~log(rincome)+tdiff, data = c1995, vcov="MDS")
-res1 <- gmmFit(model1)
+res1 <- modelFit(model1)
 
 ## HC0 robust se (different from the textbook)
 summary(res1, sandwich=TRUE)

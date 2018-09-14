@@ -47,7 +47,7 @@ model1 <- gmmModel(y~x, ~z1+z2, data=dat)
 e <- residuals(model1, theta)
 
 ## residuals of the fit
-res <- gmmFit(model1)
+res <- modelFit(model1)
 e <- residuals(res)
 
 }

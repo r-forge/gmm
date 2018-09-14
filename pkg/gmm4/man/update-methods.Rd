@@ -33,7 +33,7 @@ dat <- data.frame(y=y,z1=z1,x=x,z2=z2)
 theta <- c(beta0=1,beta1=2)
 model1 <- gmmModel(y~x, ~z1+z2, data=dat)
 
-(res <- gmmFit(model1))
+(res <- modelFit(model1))
 
 ## lets change to iterative
 update(res, type="iter")

@@ -8,7 +8,7 @@
 }
 \description{
 The main functions and methods to fit any model with GMM. As opposed to
-\code{\link{gmmFit}}, models don't need to be created. It is all done by
+\code{\link{modelFit}}, models don't need to be created. It is all done by
 the functions. It is meant to be more user friendly. This document
 needs to changed. It is just a copy and paste from the gmm package
 }
@@ -168,7 +168,7 @@ It returns an object of class \code{"gmmfit"}
 }
 
 \seealso{
-\code{\link{gmmFit}}, \code{\link{gmmModel}} 
+\code{\link{modelFit}}, \code{\link{gmmModel}} 
 }
 \examples{
 data(simData)

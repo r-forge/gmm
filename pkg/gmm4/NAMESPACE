@@ -28,7 +28,7 @@ exportMethods(residuals, print, show, vcovHAC, coef, vcov, bread, summary, updat
 
 export(gmmModel, evalMoment, Dresiduals, evalDMoment, momentVcov, estfun.gmmFct,
        evalWeights, quadra, evalObjective, solveGmm, momentStrength,evalGmm, 
-       tsls, gmmFit, meatGmm, specTest, gmm4, restGmmModel, modelResponse, DWH,
+       tsls, modelFit, meatGmm, specTest, gmm4, restGmmModel, modelResponse, DWH,
        modelDims, printRestrict, getRestrict, sysGmmModel, ThreeSLS, gelModel,
        rhoET, rhoEL, rhoEEL, rhoHD, EL.Wu, getLambda, gmmToGel, smoothGel,
        solveGel)

@@ -126,7 +126,7 @@ data(simData)
 
 ## Unrestricted model
 model1 <- gmmModel(y~x1+x2+x3, ~x2+x3+z1+z2+z3, data=simData, vcov="MDS")
-res1 <- gmmFit(model1)
+res1 <- modelFit(model1)
 
 ## Wald test 
 R <- c("x1=0.5","x2=x3")
@@ -135,17 +135,17 @@ hypothesisTest(object.u=res1, R=R)
 ## LR tests
 
 rmodel1 <- restGmmModel(model1, R)
-res2 <- gmmFit(rmodel1)
+res2 <- modelFit(rmodel1)
 hypothesisTest(object.u=res1, object.r=res2, type="LR")
 
 ### LR and Wald should be the same as long as the same weighting
 ### matrix if used for both GMM fits, for the LR and Wald as well
 
 # Unrestricted model and save the weights
-res1 <- gmmFit(model1)
+res1 <- modelFit(model1)
 w <- res1@wObj
 # estimate models with the same weights
-res2 <- gmmFit(rmodel1, weights=w)
+res2 <- modelFit(rmodel1, weights=w)
 
 # LR test with the same weights
 hypothesisTest(res1, res2, type="LR", wObj=w)
@@ -161,8 +161,8 @@ model <- gmmModel(log(wage)~educ+exper+I(exper^2),
 R <- c("educ=0","I(exper^2)=0")
 rmodel <- restGmmModel(model, R)
 
-res1 <- gmmFit(model)
-res2 <- gmmFit(rmodel, weights=res1@wObj)
+res1 <- modelFit(model)
+res2 <- modelFit(rmodel, weights=res1@wObj)
 
 hypothesisTest(object.u=res1, object.r=res2, type="LR", wObj=res1@wObj)
 hypothesisTest(object.u=res1, object.r=res2, type="Wald",
@@ -180,8 +180,8 @@ hypothesisTest(object.u=res1, object.r=res2, type="LM")
 NLmodel <- as(model1, "nonlinearGmm")
 R1 <- c("theta2=2", "theta3=theta4^2")
 rNLmodel <- restGmmModel(NLmodel, R1)
-res.u <- gmmFit(NLmodel)
-res.r <- gmmFit(rNLmodel)
+res.u <- modelFit(NLmodel)
+res.r <- modelFit(rNLmodel)
 hypothesisTest(object.u=res.u, R=R1)
 
 ## LM

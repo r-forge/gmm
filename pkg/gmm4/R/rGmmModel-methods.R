@@ -734,7 +734,7 @@ setMethod("[", c("rfunctionGmm", "numeric", "missing"),
 
 ## gmmfit
 
-setMethod("gmmFit", signature("rlinearGmm"), valueClass="gmmfit", 
+setMethod("modelFit", signature("rlinearGmm"), valueClass="gmmfit", 
           definition = function(object, type=c("twostep", "iter","cue", "onestep"),
               itertol=1e-7, initW=c("ident", "tsls"), weights="optimal", 
               itermaxit=100, efficientWeights=FALSE, ...) {
@@ -753,7 +753,7 @@ setMethod("gmmFit", signature("rlinearGmm"), valueClass="gmmfit",
                   }
           })
 
-setMethod("gmmFit", signature("rnonlinearGmm"), valueClass="gmmfit", 
+setMethod("modelFit", signature("rnonlinearGmm"), valueClass="gmmfit", 
           definition = function(object, type=c("twostep", "iter","cue", "onestep"),
               itertol=1e-7, initW=c("ident", "tsls"), weights="optimal", 
               itermaxit=100, efficientWeights=FALSE, start=NULL, ...) {
@@ -772,7 +772,7 @@ setMethod("gmmFit", signature("rnonlinearGmm"), valueClass="gmmfit",
                   }
           })
 
-setMethod("gmmFit", signature("rformulaGmm"), valueClass="gmmfit", 
+setMethod("modelFit", signature("rformulaGmm"), valueClass="gmmfit", 
           definition = function(object, type=c("twostep", "iter","cue", "onestep"),
               itertol=1e-7, initW=c("ident", "tsls"), weights="optimal", 
               itermaxit=100, efficientWeights=FALSE, start=NULL, ...) {

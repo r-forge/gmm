@@ -38,7 +38,7 @@ data(simData)
 theta <- c(beta0=1,beta1=2)
 model1 <- gmmModel(y~x1, ~z1+z2, data=simData)
 
-res <- gmmFit(model1)
+res <- modelFit(model1)
 m <- meatGmm(res)
 b <- bread(res)
 

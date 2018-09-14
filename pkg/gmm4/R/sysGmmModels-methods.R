@@ -703,9 +703,9 @@ setMethod("ThreeSLS", "slinearGmm",
           })
 
 
-## gmmFit
+## modelFit
 
-setMethod("gmmFit", signature("sysGmmModels"), valueClass="sgmmfit", 
+setMethod("modelFit", signature("sysGmmModels"), valueClass="sgmmfit", 
           function(object, type=c("twostep", "iter","cue", "onestep"),
                    itertol=1e-7, initW=c("ident", "tsls", "EbyE"), weights="optimal", 
                    itermaxit=100, efficientWeights=FALSE, start=NULL,
@@ -741,7 +741,7 @@ setMethod("gmmFit", signature("sysGmmModels"), valueClass="sgmmfit",
                   {
                       neqn <- length(object@eqnNames)
                       res <- lapply(1:neqn, function(i)
-                          gmmFit(object[i], type=type, weights=weights,itertol=itertol,
+                          modelFit(object[i], type=type, weights=weights,itertol=itertol,
                                  initW=initW, itermaxit=itermaxit,
                                  efficientWeights=efficientWeights, start=start, ...))
                       theta <- lapply(res, coef)
@@ -801,7 +801,7 @@ setMethod("gmmFit", signature("sysGmmModels"), valueClass="sgmmfit",
                   } else if (initW == "EbyE") {
                       neqn <- length(object@eqnNames)
                       res <- lapply(1:neqn, function(i)
-                          gmmFit(object[i], type=type, weights=weights,itertol=itertol,
+                          modelFit(object[i], type=type, weights=weights,itertol=itertol,
                                  itermaxit=itermaxit,
                                  efficientWeights=efficientWeights, start=start, ...))
                       theta0 <- lapply(res, coef)

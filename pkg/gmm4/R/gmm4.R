@@ -54,7 +54,7 @@ gmm4 <- function (g, x, tet0 = NULL, grad = NULL,
     if (!is.null(cstLHS))
         model <- restGmmModel(model, cstLHS, cstRHS)
 
-    fit <- gmmFit(object=model, type=type, itertol=itertol, initW=initW,
+    fit <- modelFit(object=model, type=type, itertol=itertol, initW=initW,
                   weights=weights, itermaxit=itermaxit,
                   efficientWeights=efficientWeights, ...)
     fit@call <- Call

@@ -18,7 +18,7 @@ smoothGel(object, theta=NULL)
 
   \item{theta}{An optional vector of coefficients. For
   \code{"gmmModels"}, it is the coefficient used to obtain the optimal
-  bandwidth. If \code{NULL}, it is obtained using \code{\link{gmmFit}}
+  bandwidth. If \code{NULL}, it is obtained using \code{\link{modelFit}}
   with the identity matrix as weights. For \code{"gelModels"}, the
   coefficient is require since the function returns the smoothed moments
   at a given vector of coefficients.}

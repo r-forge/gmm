@@ -49,8 +49,23 @@ The method applies to all GEL classes.
   }
 \examples{
 data(simData)
-theta <- c(beta0=1,beta1=2)
 model1 <- gelModel(y~x1, ~z1+z2, gelType="EL", data=simData)
+
+## Get a good starting value
+theta0 <- modelFit(as(model1, "gmmModels"))@theta
+
+#Some NA's are produced
+res <- solveGel(model1, theta0=theta0)
+
+## Wu's method is pretty stable
+res2 <- solveGel(model1, theta0=theta0,
+                lControl=list(algo="Wu"))
+
+## Change solver parameters
+res3 <- solveGel(model1, theta0=theta0,
+                 lControl=list(algo="Wu"),
+                 tControl=list(method="Nelder", control=list(maxit=2000)))
+
 
 }
 

@@ -87,7 +87,7 @@ model1 <- gmmModel(y~x1+x2+x3+z1, ~x1+x2+z1+z2+z3+z4, data=simData)
 
 ## The restricted model
 R1 <- c("x1","2*x2+z1=2", "4+x3*5=3")
-res <- gmmFit(model1)
+res <- modelFit(model1)
 rest <- getRestrict(model1, coef(res), R1)
 
 ## it allows to test the restriction
@@ -102,7 +102,7 @@ v <- rest$dR\%*\%vcov(res)\%*\%t(rest$dR)
 ## the linear model into a nonlinear one
 NLmodel <- as(model1, "nonlinearGmm")
 R1 <- c("theta2=2", "theta3=theta4^2")
-res <- gmmFit(NLmodel)
+res <- modelFit(NLmodel)
 rest <- getRestrict(NLmodel, coef(res), R1)
 
 g <- rest$R-rest$q

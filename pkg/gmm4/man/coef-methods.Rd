@@ -49,12 +49,12 @@ model.
 \examples{
 data(simData)
 model1 <- gmmModel(y~x1+x2+x3+z1, ~x1+x2+z1+z2+z3+z4, data=simData)
-res1 <- gmmFit(model1)
+res1 <- modelFit(model1)
 coef(res1)
 
 ### Restricted models
 rmodel1 <- restGmmModel(model1, R=c("x1=1", "x2=2*x3"))
-res2 <- gmmFit(rmodel1)
+res2 <- modelFit(rmodel1)
 res2
 coef(rmodel1, coef(res2))
 }

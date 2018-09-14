@@ -1,50 +1,50 @@
-\name{gmmFit-methods}
+\name{modelFit-methods}
 \docType{methods}
-\alias{gmmFit}
-\alias{gmmFit-methods}
-\alias{gmmFit,gmmModels-method}
-\alias{gmmFit,formulaGmm-method}
-\alias{gmmFit,sysGmmModels-method}
-\alias{gmmFit,rlinearGmm-method}
-\alias{gmmFit,rformulaGmm-method}
-\alias{gmmFit,rslinearGmm-method}
-\alias{gmmFit,rnonlinearGmm-method}
-\title{ ~~ Methods for Function \code{gmmFit} in Package \pkg{gmm4} ~~}
+\alias{modelFit}
+\alias{modelFit-methods}
+\alias{modelFit,gmmModels-method}
+\alias{modelFit,formulaGmm-method}
+\alias{modelFit,sysGmmModels-method}
+\alias{modelFit,rlinearGmm-method}
+\alias{modelFit,rformulaGmm-method}
+\alias{modelFit,rslinearGmm-method}
+\alias{modelFit,rnonlinearGmm-method}
+\title{ ~~ Methods for Function \code{modelFit} in Package \pkg{gmm4} ~~}
 \description{
 Method to fit a model using GMM, from an object of class \code{"gmmModels"}.
 }
 \usage{
-\S4method{gmmFit}{gmmModels}(object, type=c("twostep", "iter","cue",
+\S4method{modelFit}{gmmModels}(object, type=c("twostep", "iter","cue",
               "onestep"), itertol=1e-7, initW=c("ident", "tsls"),
               weights="optimal", itermaxit=100,
               efficientWeights=FALSE, start=NULL, \dots)
 
-\S4method{gmmFit}{formulaGmm}(object, type=c("twostep", "iter","cue",
+\S4method{modelFit}{formulaGmm}(object, type=c("twostep", "iter","cue",
               "onestep"), itertol=1e-7, initW=c("ident", "tsls"),
               weights="optimal", itermaxit=100,
               efficientWeights=FALSE, start=NULL, \dots)
 
-\S4method{gmmFit}{sysGmmModels}(object, type=c("twostep", "iter","cue",
+\S4method{modelFit}{sysGmmModels}(object, type=c("twostep", "iter","cue",
               "onestep"), itertol=1e-7, initW=c("ident", "tsls", "EbyE"),
               weights="optimal", itermaxit=100,
               efficientWeights=FALSE, start=NULL, EbyE=FALSE, \dots)
 
-\S4method{gmmFit}{rnonlinearGmm}(object, type=c("twostep", "iter","cue",
+\S4method{modelFit}{rnonlinearGmm}(object, type=c("twostep", "iter","cue",
               "onestep"), itertol=1e-7, initW=c("ident", "tsls"),
               weights="optimal", itermaxit=100,
               efficientWeights=FALSE, start=NULL, \dots)
 
-\S4method{gmmFit}{rlinearGmm}(object, type=c("twostep", "iter","cue",
+\S4method{modelFit}{rlinearGmm}(object, type=c("twostep", "iter","cue",
               "onestep"), itertol=1e-7, initW=c("ident", "tsls"),
               weights="optimal", itermaxit=100,
               efficientWeights=FALSE, \dots)
 
-\S4method{gmmFit}{rformulaGmm}(object, type=c("twostep", "iter","cue",
+\S4method{modelFit}{rformulaGmm}(object, type=c("twostep", "iter","cue",
               "onestep"), itertol=1e-7, initW=c("ident", "tsls"),
               weights="optimal", itermaxit=100,
               efficientWeights=FALSE, start=NULL, \dots)
 
-\S4method{gmmFit}{rslinearGmm}(object, type=c("twostep", "iter","cue",
+\S4method{modelFit}{rslinearGmm}(object, type=c("twostep", "iter","cue",
               "onestep"), itertol=1e-7, initW=c("ident", "tsls", "EbyE"),
               weights="optimal", itermaxit=100,
               efficientWeights=FALSE, start=NULL, EbyE=FALSE, \dots)
@@ -116,24 +116,24 @@ theta <- c(beta0=1,beta1=2)
 model1 <- gmmModel(y~x1, ~z1+z2, data=simData)
 
 ## Efficient GMM with HAC vcov and tsls as first step.
-res1 <- gmmFit(model1, init="tsls")
+res1 <- modelFit(model1, init="tsls")
 
 ## GMM with identity. Two ways.
-res2 <- gmmFit(model1, type="onestep")
-res3 <- gmmFit(model1, weights=diag(3))
+res2 <- modelFit(model1, type="onestep")
+res3 <- modelFit(model1, weights=diag(3))
 
 ## nonlinear regression with iterative GMM.
 g <- y~beta0+x1^beta1
 h <- ~z1+z2
 model2 <- gmmModel(g, h, c(beta0=1, beta1=2), data=simData)
-res4 <- gmmFit(model2, type="iter")
+res4 <- modelFit(model2, type="iter")
 
 ## GMM for with no endogenous vaiables is
 ## OLS with Robust standard error
 
 library(lmtest)
 model3 <- gmmModel(y~x1, ~x1, data=simData, vcov="MDS")
-resGmm <- gmmFit(model3)
+resGmm <- modelFit(model3)
 resLm <- lm(y~x1, simData)
 summary(resGmm)
 coeftest(resLm, vcov=vcovHC(resLm, "HC0"))
@@ -144,13 +144,13 @@ coeftest(resLm, vcov=vcovHC(resLm, "HC1"))
 R <- diag(2)
 q <- c(1,2)
 rmodel1 <- restGmmModel(model1, R, q)
-gmmFit(rmodel1)
+modelFit(rmodel1)
 
 ## Only one constraint
 R <- matrix(c(0,1), ncol=2)
 q <- 2
 rmodel1 <- restGmmModel(model1, R, q)
-gmmFit(rmodel1)
+modelFit(rmodel1)
 
 }
 \keyword{methods}

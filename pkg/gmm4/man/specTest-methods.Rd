@@ -60,7 +60,7 @@ University Press.
 data(simData)
 model1 <- gmmModel(y~x1, ~z1+z2, data=simData)
 
-res <- gmmFit(model1)
+res <- modelFit(model1)
 specTest(res)
 
 ## Hayashi Example 3.3 (there is not result in the book but
@@ -68,7 +68,7 @@ specTest(res)
 data(Griliches)
 dat <- subset(Griliches, YEAR==67)
 model <- gmmModel(LW~S+EXPR+IQ, ~S+EXPR+AGE+MED, data=dat, vcov="MDS")
-res <- gmmFit(model)
+res <- modelFit(model)
 ## testing the orthogonality conditions of S
 specTest(res, 2)
 
