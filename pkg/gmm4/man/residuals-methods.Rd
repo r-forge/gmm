@@ -7,6 +7,7 @@
 \alias{residuals,nonlinearGmm-method}
 \alias{residuals,sysGmmModels-method}
 \alias{residuals,gmmfit-method}
+\alias{residuals,gelfit-method}
 \alias{residuals,sgmmfit-method}
 \title{ ~~ Methods for Function \code{residuals} in Package \pkg{stats} ~~}
 \description{
@@ -27,6 +28,8 @@ called on a \code{gmmModels} class for a given coefficient theta or on a
 }
 
 \item{\code{signature(object = "gmmfit")}}{
+}
+\item{\code{signature(object = "gelfit")}}{
 }
 \item{\code{signature(object = "sgmmfit")}}{
 }

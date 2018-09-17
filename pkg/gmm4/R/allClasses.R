@@ -87,6 +87,12 @@ setClass("gmmfit", representation(theta = "numeric", convergence = "numericORNUL
 
 setClass("tsls", contains="gmmfit")
 
+## gelfit
+
+setClass("gelfit", representation(theta = "numeric", convergence = "numeric",
+                                  lambda = "numeric", lconvergence = "numeric",
+                                  call="call", type="character", model="gelModels"))
+
 ## specTest
 
 setClass("specTest", representation(test = "matrix", testname="character"))

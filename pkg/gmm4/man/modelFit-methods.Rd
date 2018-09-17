@@ -3,6 +3,7 @@
 \alias{modelFit}
 \alias{modelFit-methods}
 \alias{modelFit,gmmModels-method}
+\alias{modelFit,gelModels-method}
 \alias{modelFit,formulaGmm-method}
 \alias{modelFit,sysGmmModels-method}
 \alias{modelFit,rlinearGmm-method}
@@ -48,6 +49,10 @@ Method to fit a model using GMM, from an object of class \code{"gmmModels"}.
               "onestep"), itertol=1e-7, initW=c("ident", "tsls", "EbyE"),
               weights="optimal", itermaxit=100,
               efficientWeights=FALSE, start=NULL, EbyE=FALSE, \dots)
+
+\S4method{modelFit}{gelModels}(object, gelType=NULL, rhoFct=NULL,
+              initTheta=c("gmm", "theta0"), start.tet=NULL,
+              start.lam=NULL, ...)
 }
 \arguments{
   \item{object}{An object of class \code{"gmmModels"}}
@@ -78,12 +83,29 @@ Method to fit a model using GMM, from an object of class \code{"gmmModels"}.
     the model is nonlinear. By default, the theta0 argument of the model
     is used}
   \item{EbyE}{Should we estimate the system equation by equation?}
-  \item{\dots}{Arguments to pass to other methods}
+  \item{\dots}{Arguments to pass to other methods (mostly the
+    optimization algorithm)}
+  \item{gelType}{The type of GEL. This argument is only used if we want
+              to fit the model with a different GEL method. see \code{\link{gelModel}}.}
+  \item{rhoFct}{An alternative objective function for GEL. This argument
+    is only used if we want to fit the model with a different GEL
+    method. see \code{\link{gelModel}}.}
+  \item{initTheta}{Method to obtain the starting values for the
+    coefficient vector. By default the GMM estimate with identity matrix
+    is used. The second argument means that the theta0 of the
+    object, if any, should be used.}
+  \item{start.tet}{Manual starting values for the coeffficient vector.}
+  \item{start.lam}{Manual starting values for the Lagrange
+              multiplier. By default, it is a vector of zeros.}
   }
 \section{Methods}{
 \describe{
 \item{\code{signature(object = "gmmModels")}}{
 The main method for all GMM-type models.
+}
+
+\item{\code{signature(object = "gelModels")}}{
+The main method for all GEL-type models.
 }
 
 \item{\code{signature(object = "rnonlinearGmm")}}{

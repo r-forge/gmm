@@ -41,19 +41,26 @@ setMethod("evalMoment", "gelModels", function(object, theta)
 
 ################ evalDMoment ##########################
 
-setMethod("evalDMoment", "gelModels", function(object, theta)
+setMethod("evalDMoment", "gelModels", function(object, theta, impProb=NULL)
     {
         if (object@vcov != "HAC")
             {
-                evalDMoment(as(object, "gmmModels"), theta)
+                evalDMoment(as(object, "gmmModels"), theta, impProb)
             } else {
-                f <- function(theta, object)
-                        colMeans(smoothGel(object, theta)$smoothx)
+                f <- function(theta, object, impProb)
+                    {
+                        gt <- evalMoment(object, theta)
+                        if (is.null(impProb))
+                            colMeans(gt)
+                        else
+                            colSums(gt*impProb)
+                    }
                 env <- new.env()
                 assign("theta", theta, envir = env)
                 assign("object", object, envir = env)
                 assign("f", f, envir = env)
-                G <- numericDeriv(quote(f(theta, object)), "theta", 
+                assign("impProb", impProb, envir=env)
+                G <- numericDeriv(quote(f(theta, object, impProb)), "theta", 
                                   env)
                 G <- attr(G, "gradient")
                 spec <- modelDims(object)
@@ -106,8 +113,9 @@ setMethod("solveGel", signature("gelModels"),
                       {
                           gt <- evalMoment(model, theta)
                           gelt <- model@gelType
+                          k <- model@wSpec$k
                           args <- c(list(gmat=gt, l0=lambda0, gelType=gelt$name,
-                                         rhoFct=gelt$fct), lcont)
+                                         rhoFct=gelt$fct), lcont, k=k[1]/k[2])
                           res <- do.call(slv, args)
                           if (returnL)
                               return(res)
@@ -136,5 +144,34 @@ setMethod("solveGel", signature("gelModels"),
                        lambda=resl$lambda, lconvergence=resl$convergence)
           })
 
+
+#########################  modelFit  #########################
+
+setMethod("modelFit", signature("gelModels"), valueClass="gelfit", 
+          definition = function(object, gelType=NULL, rhoFct=NULL,
+              initTheta=c("gmm", "theta0"), start.tet=NULL,
+              start.lam=NULL, ...)
+              {
+                  Call <- match.call()
+                  initTheta = match.arg(initTheta)
+                  if (!is.null(gelType))
+                      object <- gmmToGel(as(object, "gmmModels"), gelType, rhoFct)
+                  if (is.null(start.tet))
+                      {
+                          if (initTheta == "gmm")
+                              start.tet <- modelFit(as(object, "gmmModels"))@theta
+                          else if ("theta0" %in% slotNames(object))
+                              start.tet <- object@theta0
+                          else
+                              stop("starting values is missing for the coefficient vector")
+                      }
+                  res <- solveGel(object, theta0=start.tet, lambda0=start.lam,
+                                  ...)
+                  
+                  new("gelfit", theta=res$theta, convergence=res$convergence,
+                      lconvergence=res$lconvergence$convergence,
+                      lambda=res$lambda, call=Call, type=object@gelType$name,
+                      model=object)
+                  })
 
 

@@ -2,6 +2,7 @@
 \docType{methods}
 \alias{coef-methods}
 \alias{coef,gmmfit-method}
+\alias{coef,gelfit-method}
 \alias{coef,sgmmfit-method}
 \alias{coef,rlinearGmm-method}
 \alias{coef,rslinearGmm-method}
@@ -17,6 +18,9 @@ It extract the coefficient estimates of some GMM objects.
 \describe{
  
 \item{\code{signature(object = "gmmfit")}}{
+}
+
+\item{\code{signature(object = "gelfit")}}{
 }
 
 \item{\code{signature(object = "sgmmfit")}}{

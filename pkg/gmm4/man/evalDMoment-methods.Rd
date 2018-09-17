@@ -8,7 +8,7 @@
 \alias{evalDMoment,sysGmmModels-method}
 \alias{evalDMoment,rslinearGmm-method}
 \alias{evalDMoment,regGmm-method}
-\title{ ~~ Methods for Function \code{evalDMoment} in Package \pkg{Gmm} ~~}
+\title{ ~~ Methods for Function \code{evalDMoment} in Package \pkg{gmm4} ~~}
 \description{
 It computes the matrix of derivatives of the sample moments with respect
 to the coefficients.

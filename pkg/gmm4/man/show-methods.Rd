@@ -5,6 +5,7 @@
 \alias{show,gmmModels-method}
 \alias{show,sysGmmModels-method}
 \alias{show,gmmfit-method}
+\alias{show,gelfit-method}
 \alias{show,sgmmfit-method}
 \alias{show,specTest-method}
 \alias{show,summaryGmm-method}
@@ -29,6 +30,8 @@ Display method for all \code{"gmmModels"} and \code{"gmmfit"} objects.
 }
 
 \item{\code{signature(object = "gmmfit")}}{
+}
+\item{\code{signature(object = "gelfit")}}{
 }
 \item{\code{signature(object = "sgmmfit")}}{
 }

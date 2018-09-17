@@ -22,7 +22,7 @@ exportClasses("nonlinearGmm", "linearGmm", "functionGmm", "gmmModels",
               "numericORcharacter", "tsls", "rnonlinearGmm", "rfunctionGmm",
               "slinearGmm", "snonlinearGmm", "sysGmmModels",
               "sgmmfit","stsls", "rslinearGmm", "rsnonlinearGmm", "rsysGmmModels",
-              "formulaGmm","rfunctionGmm")
+              "formulaGmm","rfunctionGmm", "gelfit")
 exportMethods(residuals, print, show, vcovHAC, coef, vcov, bread, summary, update,
               model.matrix, hypothesisTest, "[", merge, subset)
 
@@ -31,7 +31,7 @@ export(gmmModel, evalMoment, Dresiduals, evalDMoment, momentVcov, estfun.gmmFct,
        tsls, modelFit, meatGmm, specTest, gmm4, restGmmModel, modelResponse, DWH,
        modelDims, printRestrict, getRestrict, sysGmmModel, ThreeSLS, gelModel,
        rhoET, rhoEL, rhoEEL, rhoHD, EL.Wu, getLambda, gmmToGel, smoothGel,
-       solveGel)
+       solveGel, getImpProb)
  
 ###  S3 methods ###
 

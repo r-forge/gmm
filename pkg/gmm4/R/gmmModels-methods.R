@@ -241,30 +241,36 @@ setMethod("modelDims", "formulaGmm",
 setGeneric("evalDMoment", function(object, ...) standardGeneric("evalDMoment"))
 
 setMethod("evalDMoment", signature("regGmm"),
-          function(object, theta) {
+          function(object, theta, impProb=NULL) {
               De <- Dresiduals(object, theta)
               Z <- model.matrix(object, "instrument")
-              G <- apply(De,2, function(x) colMeans(Z*x))
+              if (is.null(impProb))
+                  impProb <- 1/nrow(Z)
+              G <- apply(De,2, function(x) colSums(Z*x*impProb))
               d <- modelDims(object)
               dimnames(G) <- list(d$momNames, d$parNames)
               G
           })
 
 setMethod("evalDMoment", signature("functionGmm"),
-          function(object, theta) {
+          function(object, theta, impProb=NULL) {
               spec <- modelDims(object)
               if (is.null(spec$dfct))
               {
-                  f <- function(theta, object)
+                  f <- function(theta, object, impProb)
                   {
                       gt <- evalMoment(object, theta)
-                      colMeans(gt)
+                      if (is.null(impProb))
+                          colMeans(gt)
+                      else
+                          colSums(gt*impProb)
                   }
                   env <- new.env()
                   assign("theta", theta, envir=env)
                   assign("object", object, envir=env)
+                  assign("impProb", impProb, envir=env)
                   assign("f", f, envir=env)
-                  G <- numericDeriv(quote(f(theta, object)), "theta", env)
+                  G <- numericDeriv(quote(f(theta, object, impProb)), "theta", env)
                   G <- attr(G, "gradient")
               } else {
                   G <- spec$dfct(theta, object@X)
@@ -274,10 +280,12 @@ setMethod("evalDMoment", signature("functionGmm"),
               })
 
 setMethod("evalDMoment", signature("formulaGmm"),
-          function(object, theta) {
+          function(object, theta, impProb=NULL) {
               res <- modelDims(object)
               nt <- names(theta)
               nt0 <- names(res$theta0)
+              if (is.null(impProb))
+                  impProb <- 1/modelDims(object)$n
               if (length(theta) != length(nt0))
                   stop("The length of theta is not equal to the number of parameters")
               if (is.null(nt))
@@ -290,15 +298,27 @@ setMethod("evalDMoment", signature("formulaGmm"),
                   {
                       lhs <- sapply(1:res$q, function(j) {
                           if (!is.null(res$fLHS[[j]]))
-                              d <- mean(eval(D(res$fLHS[[j]], i), varList))
-                          else
-                              d <- 0
+                              {
+                                  tmp <- eval(D(res$fLHS[[j]], i), varList)
+                                  if (length(tmp)>1)
+                                      d <- sum(tmp*impProb)
+                                  else
+                                      d <- tmp
+                              } else {
+                                  d <- 0
+                              }
                           c(d)})
                       rhs <- sapply(1:res$q, function(j) {
                           if (!is.null(res$fRHS[[j]]))
-                              d <- mean(eval(D(res$fRHS[[j]], i), varList))
-                          else
-                              d <- 0
+                              {
+                                  tmp <- eval(D(res$fRHS[[j]], i), varList)
+                                  if (length(tmp)>1)
+                                      d <- sum(tmp*impProb)
+                                  else
+                                      d <- tmp
+                              } else {
+                                  d <- 0
+                              }
                           c(d)})
                       G <- cbind(G, lhs-rhs)
                   }

@@ -2,11 +2,12 @@
 \docType{methods}
 \alias{vcov-methods}
 \alias{vcov,gmmfit-method}
+\alias{vcov,gelfit-method}
 \alias{vcov,sgmmfit-method}
 \alias{vcov,tsls-method}
 \title{ ~~ Methods for Function \code{vcov} in Package \pkg{stats} ~~}
 \description{
-Computes the covariance matrix of the coefficient estimated by GMM. 
+Computes the covariance matrix of the coefficient estimated by GMM or GEL. 
 }
 \usage{
 \S4method{vcov}{gmmfit}(object, sandwich=NULL, df.adj=FALSE,
@@ -17,6 +18,7 @@ breadOnly=FALSE, modelVcov=NULL)
 
 \S4method{vcov}{tsls}(object, sandwich=TRUE, df.adj=FALSE)
 
+\S4method{vcov}{gelfit}(object, withImpProb=FALSE, tol=1e-10)
 }
 \arguments{
   \item{object}{An object of class \code{"gmmfit"}}
@@ -37,11 +39,18 @@ breadOnly=FALSE, modelVcov=NULL)
     to change the way the variance of the moments is computed. If it is
     set to a different specification included in the model,
     \code{sandwich} is set to \code{TRUE}. }
+  \item{withImpProb}{Should we compute the moments with the implied
+    probabilities}
+  \item{tol}{Any diagonal less than \code{"tol"} is set to tol}
 }
 \section{Methods}{
 \describe{
 
 \item{\code{signature(object = "gmmfit")}}{
+For any model estimated by any GMM methods.  
+}
+
+\item{\code{signature(object = "gelfit")}}{
 For any model estimated by any GMM methods.  
 }
 
