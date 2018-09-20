@@ -3,6 +3,7 @@
 \alias{summary}
 \alias{summary-methods}
 \alias{summary,gmmfit-method}
+\alias{summary,gelfit-method}
 \alias{summary,sgmmfit-method}
 \title{ ~~ Methods for Function \code{summary} in Package \pkg{base} ~~}
 \description{
@@ -10,6 +11,8 @@ Compute several results from a GMM fit.
 }
 \usage{
 \S4method{summary}{gmmfit}(object, \dots)
+
+\S4method{summary}{gelfit}(object, \dots)
 
 \S4method{summary}{sgmmfit}(object, \dots)
 }

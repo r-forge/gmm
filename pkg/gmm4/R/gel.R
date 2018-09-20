@@ -1,15 +1,12 @@
 gelModel <- function(g, x=NULL, gelType, rhoFct=NULL, tet0=NULL,grad=NULL,
                      vcov = c("HAC", "MDS", "iid"),
-                     kernel = c("Quadratic Spectral",  "Truncated", "Bartlett", "Parzen",
-                          "Tukey-Hanning"), crit = 1e-06,
-                     bw = "Andrews", prewhite = 1L, ar.method = "ols", approx = "AR(1)", 
-                     tol = 1e-07, centeredVcov = TRUE, data=parent.frame())
+                     vcovOptions=list(), centeredVcov = TRUE, data=parent.frame())
     {
         vcov <- match.arg(vcov)
-        kernel <- match.arg(kernel)
         args <- as.list(match.call())
         args$rhoFct <- NULL
         args$gelType <- NULL
+        args$data <- data
         model <- do.call(gmmModel, args)
         gmmToGel(model, gelType, rhoFct)
     }
@@ -175,25 +172,26 @@ smoothGel <- function (object, theta=NULL)
     gt <- evalMoment(object, theta)
     gt <- scale(gt, scale=FALSE)
     class(gt) <- "gmmFct"
-    if (!(object@kernel%in%c("Bartlett","Parzen")))
-        object@kernel <- "Bartlett"
-    kernel <- switch(object@kernel,
+    vspec <- object@vcovOptions
+    if (!(vspec$kernel%in%c("Bartlett","Parzen")))
+        object@vcovOptions$kernel <- "Bartlett"
+    kernel <- switch(object@vcovOptions$kernel,
                      Bartlett="Truncated",
                      Parzen="Bartlett")
     k <- switch(kernel,
                 Truncated=c(2,2),
                 Bartlett=c(1,2/3))
-    if (is.character(object@bw))
+    if (is.character(vspec$bw))
         {
-            bw <- get(paste("bw", object@bw, sep = ""))
-            bw <- bw(gt, kernel = object@kernel, prewhite = object@prewhite,
-                     ar.method = object@ar.method, approx = object@approx)
+            bw <- get(paste("bw", vspec$bw, sep = ""))
+            bw <- bw(gt, kernel = vspec$kernel, prewhite = vspec$prewhite,
+                     ar.method = vspec$ar.method, approx = vspec$approx)
         } else {
-            bw <- object@bw
+            bw <- object@vcovOptions$bw
         } 
-    w <- weightsAndrews(gt, bw = bw, kernel = kernel, prewhite = object@prewhite, 
-                        ar.method = object@ar.method, tol = object@tol, verbose = FALSE, 
-                        approx = object@approx)
+    w <- weightsAndrews(gt, bw = bw, kernel = kernel, prewhite = vspec$prewhite, 
+                        ar.method = vspec$ar.method, tol = vspec$tol, verbose = FALSE, 
+                        approx = vspec$approx)
     rt <- length(w)
     if (rt >= 2)
         {

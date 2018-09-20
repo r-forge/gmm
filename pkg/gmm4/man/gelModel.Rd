@@ -13,11 +13,8 @@ estimation algorithm.
 }
 \usage{
 gelModel(g, x=NULL, gelType, rhoFct=NULL, tet0=NULL,grad=NULL,
-        vcov = c("HAC", "MDS", "iid"),
-        kernel = c("Quadratic Spectral",  "Truncated", "Bartlett", "Parzen",
-                   "Tukey-Hanning"), crit = 1e-06,
-        bw = "Andrews", prewhite = 1L, ar.method = "ols", approx = "AR(1)", 
-        tol = 1e-07, centeredVcov = TRUE, data=parent.frame())
+        vcov = c("HAC", "MDS", "iid"),vcovOptions=list(),
+        centeredVcov = TRUE, data=parent.frame())
 
 gmmToGel(object, gelType, rhoFct=NULL)
 }
@@ -71,33 +68,8 @@ gmmToGel(object, gelType, rhoFct=NULL)
   \code{MDS} only when \code{g} is a formula. In that case, residuals
   are assumed homoscedastic as well as serially uncorrelated.}
 
-\item{kernel}{type of kernel used to compute the covariance matrix of
-  the vector of sample moment conditions (see \code{\link{kernHAC}} for
-  more details)}
-
-\item{crit}{The stopping rule for the iterative GMM. It can be reduce to
-  increase the precision.}
-
-\item{bw}{The method to compute the bandwidth parameter in the HAC
-  weighting matrix. The default is \code{link{bwAndrews}} (as proposed in Andrews
-  (1991)), which minimizes the MSE of the weighting matrix. Alternatives
-  are \code{link{bwWilhelm}} (as proposed in Wilhelm
-  (2015)), which minimizes the mean-square error (MSE) of the resulting
-  GMM estimator, and \code{link{bwNeweyWest}} (as proposed in Newey-West(1994)).}
-
-\item{prewhite}{logical or integer. Should the estimating functions be
-  prewhitened? If \code{TRUE} or greater than 0 a VAR model of order
-  \code{as.integer(prewhite)} is fitted via \code{ar} with method
-  \code{"ols"} and \code{demean = FALSE}.}
-
-\item{ar.method}{character. The \code{method} argument passed to
-  \code{\link{ar}} for prewhitening.}
-
-\item{approx}{A character specifying the approximation method if the
-  bandwidth has to be chosen by \code{bwAndrews}.}
-
-\item{tol}{Weights that exceed \code{tol} are used for computing the
-  covariance matrix, all other weights are treated as 0.}
+\item{vcovOptions}{A list of options for the covariance matrix of the
+  moment conditions. See \code{\link{vcovHAC}} for the default values.}
 
 \item{centeredVcov}{Should the moment function be centered when
   computing its covariance matrix. Doing so may improve inference.}

@@ -18,8 +18,11 @@ data(simData)
 theta <- c(beta0=1,beta1=2)
 model1 <- gmmModel(y~x1, ~z1+z2, data=simData)
 
+# a warning is given if the model is not set as being HAC
 vcovHAC(model1, theta)
 
+model1 <- gmmModel(y~x1, ~z1+z2, data=simData, vcov="HAC",vcovOptions=list(kernel="B"))
+vcovHAC(model1, theta)
 }
 
 \keyword{methods}

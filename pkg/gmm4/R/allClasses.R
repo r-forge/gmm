@@ -14,48 +14,31 @@ setClassUnion("functionORNULL", c("function", "NULL"))
 setClass("linearGmm", representation(modelF="data.frame", instF="data.frame",
                                      vcov="character",n="integer", q="integer", k="integer",
                                      parNames="character", momNames="character",
-                                     kernel="character", bw="numericORcharacter",
-                                     prewhite="integer", ar.method="character",
-                                     approx="character", tol="numeric",
-                                     centeredVcov="logical", varNames="character",
-                                     isEndo="logical"),
-         prototype(vcov="MDS", kernel="Quadratic Spectral", bw="Andrews", prewhite=1L,
-                   ar.method="ols", approx="AR(1)", tol=1e-7))
+                                     vcovOptions="list", centeredVcov="logical",
+                                     varNames="character", isEndo="logical"))
 setClass("nonlinearGmm", representation(modelF="data.frame", instF="data.frame",
                                         vcov="character",theta0="numeric",
                                         n="integer", q="integer",k="integer",
                                         parNames="character", momNames="character",
                                         fRHS="expression", fLHS="expressionORNULL",
-                                        kernel="character", bw="numericORcharacter",
-                                        prewhite="integer", ar.method="character",
-                                        approx="character", tol="numeric",
+                                        vcovOptions="list",
                                         centeredVcov="logical", varNames="character",
-                                        isEndo="logical"),
-         prototype(vcov="MDS", kernel="Quadratic Spectral", bw="Andrews", prewhite=1L,
-                   ar.method="ols", approx="AR(1)", tol=1e-7))
+                                        isEndo="logical"))
 setClass("functionGmm", representation(X="ANY", fct="function",dfct="functionORNULL",
                                        vcov="character",theta0="numeric",
                                        n="integer", q="integer",k="integer",
                                        parNames="character", momNames="character",
-                                       kernel="character", bw="numericORcharacter",
-                                       prewhite="integer", ar.method="character",
-                                       approx="character", tol="numeric",
+                                       vcovOptions="list",
                                        centeredVcov="logical", varNames="character",
-                                       isEndo="logical"),
-         prototype(vcov="MDS", kernel="Quadratic Spectral", bw="Andrews", prewhite=1L,
-                   ar.method="ols", approx="AR(1)", tol=1e-7, dfct=NULL))
+                                       isEndo="logical"))
 setClass("formulaGmm", representation(modelF="data.frame", 
                                       vcov="character",theta0="numeric",
                                       n="integer", q="integer",k="integer",
                                       parNames="character", momNames="character",
                                       fRHS="list", fLHS="list",
-                                      kernel="character", bw="numericORcharacter",
-                                      prewhite="integer", ar.method="character",
-                                      approx="character", tol="numeric",
+                                      vcovOptions="list",
                                       centeredVcov="logical", varNames="character",
-                                      isEndo="logical", isMDE="logical"),
-         prototype(vcov="MDS", kernel="Quadratic Spectral", bw="Andrews", prewhite=1L,
-                   ar.method="ols", approx="AR(1)", tol=1e-7))
+                                      isEndo="logical", isMDE="logical"))
 setClassUnion("regGmm", c("linearGmm", "nonlinearGmm"))
 setClassUnion("allNLGmm", c("nonlinearGmm", "functionGmm", "formulaGmm"))
 setClassUnion("gmmModels", c("linearGmm", "nonlinearGmm", "functionGmm", "formulaGmm"))
@@ -75,8 +58,7 @@ setClassUnion("gelModels", c("linearGel", "nonlinearGel", "functionGel", "formul
 
 ## gmmWeights
 
-setClass("gmmWeights", representation(w="ANY", type="character", HAC="list"),
-         prototype(HAC=list()))
+setClass("gmmWeights", representation(w="ANY", type="character", wSpec="list"))
 
 ## gmmfit
 
@@ -91,7 +73,8 @@ setClass("tsls", contains="gmmfit")
 
 setClass("gelfit", representation(theta = "numeric", convergence = "numeric",
                                   lambda = "numeric", lconvergence = "numeric",
-                                  call="call", type="character", model="gelModels"))
+                                  call="call", type="character", vcov="list",
+                                  model="gelModels"))
 
 ## specTest
 
@@ -104,6 +87,12 @@ setClass("summaryGmm", representation(coef="matrix", specTest = "specTest",
                                       type="character", convergence = "numericORNULL",
                                       convIter="numericORNULL", wSpec="list",niter="integer",
                                       df.adj="logical", breadOnly="logical"))
+
+setClass("summaryGel", representation(coef="matrix", specTest = "specTest",
+                                      model="gelModels", lambda="matrix",
+                                      convergence="numeric",lconvergence="numeric",
+                                      impProb="list"))
+
 ## Restricted gmm Models
 
 setClass("rlinearGmm", representation(cstLHS="matrix", cstRHS="numeric", cstSpec="list"),
@@ -132,26 +121,19 @@ setClass("slinearGmm", representation(modelT="list", instT="list",data="data.fra
                                       vcov="character",n="integer", q="integer",
                                       k="integer", parNames="list",
                                       momNames="list", eqnNames="character",
-                                      kernel="character", bw="numericORcharacter",
-                                      prewhite="integer", ar.method="character",
-                                      approx="character", tol="numeric",
-                                      centeredVcov="logical", sameMom="logical", SUR="logical",
-                                      varNames="list", isEndo="list"),
-         prototype(vcov="MDS", kernel="Quadratic Spectral", bw="Andrews", prewhite=1L,
-                   ar.method="ols", approx="AR(1)", tol=1e-7))
+                                      vcovOptions="list",
+                                      centeredVcov="logical", sameMom="logical",
+                                      SUR="logical", varNames="list", isEndo="list"))
+
 setClass("snonlinearGmm", representation(data="data.frame", instT="list",
                                          vcov="character",theta0="list",
                                          n="integer", q="integer",k="integer",
                                          parNames="list", momNames="list",
                                          fRHS="list", fLHS="list", eqnNames="character",
-                                         kernel="character", bw="numericORcharacter",
-                                         prewhite="integer", ar.method="character",
-                                         approx="character", tol="numeric",
+                                         vcovOptions="list",
                                          centeredVcov="logical", sameMom="logical",
                                          SUR="logical",
-                                         varNames="list", isEndo="list"),
-         prototype(vcov="MDS", kernel="Quadratic Spectral", bw="Andrews", prewhite=1L,
-                   ar.method="ols", approx="AR(1)", tol=1e-7))
+                                         varNames="list", isEndo="list"))
 setClassUnion("sysGmmModels", c("slinearGmm", "snonlinearGmm"))
 
 ## Restricted System GMM
@@ -166,12 +148,9 @@ setClassUnion("rsysGmmModels", c("rslinearGmm", "rsnonlinearGmm"))
 
 ### sysGmmWeights
 
-setClass("sysGmmWeights", representation(w="ANY", type="character", HAC="list",
+setClass("sysGmmWeights", representation(w="ANY", type="character", wSpec="list",
                                          Sigma="ANY", momNames="list", eqnNames="character",
-                                         sameMom="logical"),
-         prototype(w="ident", type="weights", momNames=list(), eqnNames=character(),
-                   HAC=list(), sameMom=FALSE))
-
+                                         sameMom="logical"))
 ## summarySysGmm
 
 setClass("summarySysGmm",
@@ -197,9 +176,8 @@ setAs("linearGmm", "nonlinearGmm",
           lhs <- expression(Y)
           new("nonlinearGmm", modelF=X, instF=from@instF, vcov=from@vcov,
               theta0=theta0, n=spec$n, q=spec$q, k=spec$k, parNames=names(theta0),
-              momNames=spec$momNames, fRHS=rhs, fLHS=lhs, kernel=from@kernel,
-              bw=from@bw, prewhite=from@prewhite, ar.method=from@ar.method,
-              approx=from@approx, tol=from@tol, centeredVcov=from@centeredVcov,
+              momNames=spec$momNames, fRHS=rhs, fLHS=lhs,
+              vcovOptions=from@vcovOptions, centeredVcov=from@centeredVcov,
               isEndo=from@isEndo, varNames=from@varNames)
       })
 
@@ -221,9 +199,8 @@ setAs("linearGmm", "functionGmm",
               }
           new("functionGmm", X=x, fct=fct, dfct=dfct,  vcov=from@vcov,
               theta0=theta0, n=spec$n, q=spec$q, k=spec$k, parNames=names(theta0),
-              momNames=spec$momNames, kernel=from@kernel,
-              bw=from@bw, prewhite=from@prewhite, ar.method=from@ar.method,
-              approx=from@approx, tol=from@tol, centeredVcov=from@centeredVcov)
+              momNames=spec$momNames,vcovOptions=from@vcovOptions,
+              centeredVcov=from@centeredVcov)
       })
 
 setAs("allNLGmm", "functionGmm",
@@ -243,9 +220,8 @@ setAs("allNLGmm", "functionGmm",
           new("functionGmm", X=x, fct=fct, dfct=dfct,  vcov=from@vcov,
               theta0=from@theta0, n=spec$n, q=spec$q, k=spec$k,
               parNames=names(from@theta0),
-              momNames=spec$momNames, kernel=from@kernel,
-              bw=from@bw, prewhite=from@prewhite, ar.method=from@ar.method,
-              approx=from@approx, tol=from@tol, centeredVcov=from@centeredVcov)
+              momNames=spec$momNames, vcovOptions=from@vcovOptions,
+              centeredVcov=from@centeredVcov)
       })
 
 setAs("slinearGmm", "linearGmm",
@@ -292,10 +268,8 @@ setAs("slinearGmm", "linearGmm",
           g <- formula(g, .GlobalEnv)
           h <- paste("~", paste(nZ, collapse="+"), "-1")
           h <- formula(h, .GlobalEnv)
-          res <- gmmModel(g, h, vcov=from@vcov, kernel=from@kernel, bw=from@bw,
-                          prewhite=from@prewhite, ar.method=from@ar.method,
-                          approx=from@approx, tol=from@tol, centeredVcov=from@centeredVcov,
-                          data=dat)
+          res <- gmmModel(g, h, vcov=from@vcov, vcovOptions=from@vcovOptions,
+                          centeredVcov=from@centeredVcov, data=dat)
       })
 
 setAs("rslinearGmm", "rlinearGmm",
@@ -310,7 +284,7 @@ setAs("sysGmmWeights", "gmmWeights",
           w <- quadra(from)
           if (is.character(w))
               w <- "ident"
-          new("gmmWeights", w=w, type="weights", HAC=list())
+          new("gmmWeights", w=w, type="weights", wSpec=list())
       })
           
 

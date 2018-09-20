@@ -98,7 +98,71 @@ setMethod("vcov", "gelfit",
                   SigmaLam <- backsolve(R, u)/n * bw^2
                   diag(SigmaLam)[diag(SigmaLam) < 0] <- tol
               }
-              list(vcov_par = Sigma, vcov_lambda = SigmaLam)
+              list(vcov_par = Sigma, vcov_lambda = SigmaLam, gtR=R)
           })
 
 
+## Summary
+
+
+setMethod("summary","gelfit",
+          function (object, ...) 
+              {
+                  if (length(object@vcov) == 0)
+                      v <- vcov(object, ...)
+                  else
+                      v <- object@vcov
+                  se.t <- sqrt(diag(v$vcov_par))
+                  se.l <- sqrt(diag(v$vcov_lambda))
+                  theta <- object@theta
+                  lambda <- object@lambda
+                  tval.t <- theta/se.t
+                  tval.l <- lambda/se.l
+                  coef <- cbind(theta, se.t, tval.t,
+                                2*pnorm(abs(tval.t), lower.tail = FALSE))
+                  coefl <- cbind(lambda, se.l, tval.l,
+                                 2*pnorm(abs(tval.l), lower.tail = FALSE))
+                  stest <- specTest(object)
+                  dimnames(coef) <- list(names(theta), c("Estimate", "Std. Error", 
+                                                         "t value", "Pr(>|t|)"))
+                  dimnames(coefl) <- list(names(lambda), c("Estimate", "Std. Error", 
+                                                           "t value", "Pr(>|t|)"))
+                  pt <- getImpProb(object)
+                      
+                  ans <- new("summaryGel", coef = coef, specTest = stest,
+                             model = object@model, lambda=coefl,
+                             convergence=object@convergence,
+                             lconvergence=object@lconvergence, impProb=pt)
+                  ans})
+
+## specTest
+
+setMethod("specTest", signature("gelfit", "missing"),
+          function(object, which) {
+              spec <- modelDims(object@model)
+              q <- spec$q
+              n <- 
+              if (length(object@vcov)==0)
+                  v <- vcov(object)
+              else
+                  v <- object@vcov
+              gt <- evalMoment(object@model, object@theta)
+              gbar <- colMeans(gt)
+              n <- nrow(gt)
+              LR <- evalObjective(object@model, object@theta, lambda=object@lambda)
+              kHat <- crossprod(v$gtR)
+              LM <- n * crossprod(object@lambda, crossprod(kHat, object@lambda))/
+                  (object@model@wSpec$bw^2)
+              J <- n * crossprod(gbar, solve(kHat, gbar))/(object@model@wSpec$k[1]^2)
+              df <- q-spec$k
+              test <- c(LR,LM,J)
+              if (df == 0)
+                  pv <- NA
+              else
+                  pv <- 1-pchisq(test, df)
+              test <- cbind(test, df, pv)
+              dimnames(test) <- list(c("LR: ",
+                                       "LM: ",
+                                       " J: "), c("Statistics", "df", "pvalue"))
+              ans <- new("specTest", test=test, testname="Test E(g)=0")
+              ans})

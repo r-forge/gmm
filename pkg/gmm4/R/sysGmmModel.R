@@ -3,16 +3,13 @@
 
 
 sysGmmModel <- function(g, h=NULL, tet0=NULL,
-                        vcov = c("HAC", "MDS", "iid"),
-                        kernel = c("Quadratic Spectral",  "Truncated", "Bartlett", "Parzen",
-                            "Tukey-Hanning"), crit = 1e-06,
-                        bw = "Andrews", prewhite = 1L, ar.method = "ols", approx = "AR(1)", 
-                        tol = 1e-07, centeredVcov = TRUE, data=parent.frame())
+                        vcov = c("iid", "HAC", "MDS"),
+                        vcovOptions=list(), centeredVcov = TRUE, data=parent.frame())
     {
         vcov <- match.arg(vcov)
-        kernel <- match.arg(kernel)
-        if (is.numeric(bw))
-            names(bw) <- "Fixed"
+        if (!is.list(vcovOptions))
+            stop("vcovOptions must be a list")
+        vcovOptions <- do.call(.getVcovOptions, c(vcovOptions, type=vcov))
         if (!is.list(data) && !is.environment(data)) 
             stop("'data' must be a list or an environment")
         if (!is.list(g))
@@ -93,9 +90,7 @@ sysGmmModel <- function(g, h=NULL, tet0=NULL,
                              function(i) model$parNames[[i]] %in% model$momNames[[i]])
             gmodel <- new("slinearGmm", data=model$data, 
                           instT=model$instT, modelT=model$modelT,
-                          vcov=vcov, kernel=kernel, bw=bw,
-                          prewhite=as.integer(prewhite),
-                          ar.method=ar.method, approx=approx, tol=tol,
+                          vcov=vcov, vcovOptions=vcovOptions,
                           centeredVcov = centeredVcov, k=model$k,
                           q=model$q, n=model$n, parNames=model$parNames,
                           momNames=model$momNames, eqnNames=model$eqnNames,
@@ -105,13 +100,11 @@ sysGmmModel <- function(g, h=NULL, tet0=NULL,
             model <- .snlGmmData(g, h, tet0, data)
             gmodel <- new("snonlinearGmm", data=model$data, instT=model$instT,
                           theta0=tet0,fRHS=model$fRHS,eqnNames=model$eqnNames,
-                          fLHS=model$fLHS, vcov=vcov, kernel=kernel, bw=bw,
-                          prewhite=as.integer(prewhite),
-                          ar.method=ar.method, approx=approx, tol=tol,
+                          fLHS=model$fLHS, vcov=vcov, vcovOptions=vcovOptions,
                           centeredVcov = centeredVcov, k=model$k, q=model$q,
                           n=model$n, parNames=model$parNames,
-                          momNames=model$momNames, sameMom=sameMom, SUR=SUR, varNames=model$varNames,
-                          isEndo=model$isEndo)
+                          momNames=model$momNames, sameMom=sameMom, SUR=SUR,
+                          varNames=model$varNames, isEndo=model$isEndo)
         }
         gmodel
     }

@@ -15,32 +15,21 @@ needs to changed. It is just a copy and paste from the gmm package
 \usage{
 gmm4(g, x, tet0 = NULL, grad = NULL, 
      type = c("twostep", "iter", "cue", "onestep"),
-     vcov = c("MDS", "HAC", "iid", "TrueFixed"),
+     vcov = c("iid", "HAC", "MDS", "TrueFixed"),
      initW = c("ident", "tsls", "EbyE"), weights = "optimal", 
-     itermaxit = 50, cstLHS=NULL, cstRHS=NULL, 
-     kernel = c("Quadratic Spectral", "Truncated",
-                "Bartlett", "Parzen", "Tukey-Hanning"), crit = 1e-06, 
-     bw = "Andrews", prewhite = 1L, ar.method = "ols", approx = "AR(1)", 
-     kerntol = 1e-07, itertol = 1e-07, centeredVcov = TRUE,
+     itermaxit = 50, cstLHS=NULL, cstRHS=NULL,
+     vcovOptions=list(), 
+     itertol = 1e-07, centeredVcov = TRUE,
      data = parent.frame(), ...)
 
 \S4method{tsls}{formula}(object, x, vcov = c("iid", "HAC", "MDS"),
-         kernel = c("Quadratic Spectral", "Truncated", "Bartlett", 
-                    "Parzen", "Tukey-Hanning"), crit = 1e-06, bw = "Andrews", 
-         prewhite = 1L, ar.method = "ols", approx = "AR(1)", kerntol = 1e-07, 
-         centeredVcov = TRUE, data = parent.frame())
+         vcovOptions=list(), centeredVcov = TRUE, data = parent.frame())
 
 \S4method{tsls}{list}(object, x=NULL, vcov = c("iid", "HAC", "MDS"),
-         kernel = c("Quadratic Spectral", "Truncated", "Bartlett", 
-                    "Parzen", "Tukey-Hanning"), crit = 1e-06, bw = "Andrews", 
-         prewhite = 1L, ar.method = "ols", approx = "AR(1)", kerntol = 1e-07, 
-         centeredVcov = TRUE, data = parent.frame())
+         vcovOptions=list(), centeredVcov = TRUE, data = parent.frame())
 
 \S4method{ThreeSLS}{list}(object, x=NULL, vcov = c("iid", "HAC", "MDS"),
-         kernel = c("Quadratic Spectral", "Truncated", "Bartlett", 
-                    "Parzen", "Tukey-Hanning"), crit = 1e-06, bw = "Andrews", 
-         prewhite = 1L, ar.method = "ols", approx = "AR(1)", kerntol = 1e-07, 
-         centeredVcov = TRUE, data = parent.frame())
+         vcovOptions=list(), centeredVcov = TRUE, data = parent.frame())
 }
 \arguments{
 \item{object}{A formula or a list of formulas.}  
@@ -90,34 +79,6 @@ gmm4(g, x, tet0 = NULL, grad = NULL,
     a fixed matrix.}
   
   \item{itermaxit}{Maximum iterations for iterative GMM}
-
-  \item{kernel}{type of kernel used to compute the covariance matrix of
-  the vector of sample moment conditions (see \code{\link{kernHAC}} for
-  more details)}
-
-  \item{crit}{The stopping rule for the iterative GMM. It can be reduce
-    to increase the precision.}
-  
-  \item{bw}{The method to compute the bandwidth parameter in the HAC
-  weighting matrix. The default is \code{link{bwAndrews}} (as proposed in Andrews
-  (1991)), which minimizes the MSE of the weighting matrix. Alternatives
-  are \code{link{bwWilhelm}} (as proposed in Wilhelm
-  (2015)), which minimizes the mean-square error (MSE) of the resulting
-  GMM estimator, and \code{link{bwNeweyWest}} (as proposed in Newey-West(1994)).}
-
-  \item{prewhite}{logical or integer. Should the estimating functions be
-  prewhitened? If \code{TRUE} or greater than 0 a VAR model of order
-  \code{as.integer(prewhite)} is fitted via \code{ar} with method
-  \code{"ols"} and \code{demean = FALSE}.}
-
-  \item{ar.method}{character. The \code{method} argument passed to
-    \code{\link{ar}} for prewhitening.}
-  
-  \item{approx}{A character specifying the approximation method if the
-    bandwidth has to be chosen by \code{bwAndrews}.}
-  
-  \item{kerntol}{Weights that exceed \code{tol} are used for computing
-    the covariance matrix, all other weights are treated as 0.}
   
   \item{itertol}{Tolance for the stopping rule in iterative GMM}
 
@@ -131,7 +92,10 @@ gmm4(g, x, tet0 = NULL, grad = NULL,
   
   \item{cstRHS}{The right hand side of the constraints to impose on the
     coefficients. See \code{\link{restGmmModel}} for more details.}
-  
+
+  \item{vcovOptions}{A list of options for the covariance matrix of the
+  moment conditions. See \code{\link{vcovHAC}} for the default values.}
+ 
   \item{\dots}{Arguments to pass to \code{\link{optim}} when the model
     is nonlinear.}
 }

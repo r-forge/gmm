@@ -747,7 +747,7 @@ setMethod("modelFit", signature("rlinearGmm"), valueClass="gmmfit",
                           wObj <- weights
                       else
                           wObj <- evalWeights(object, theta=theta, w=weights)
-                      return(evalGmm(object, theta, wObj))
+                      return(evalModel(object, theta, wObj))
                   } else {
                       callNextMethod()
                   }
@@ -766,7 +766,7 @@ setMethod("modelFit", signature("rnonlinearGmm"), valueClass="gmmfit",
                           wObj <- weights
                       else
                           wObj <- evalWeights(object, theta=theta, w=weights)
-                      return(evalGmm(object, theta, wObj))
+                      return(evalModel(object, theta, wObj))
                   } else {
                       callNextMethod()
                   }
@@ -785,7 +785,7 @@ setMethod("modelFit", signature("rformulaGmm"), valueClass="gmmfit",
                           wObj <- weights
                       else
                           wObj <- evalWeights(object, theta=theta, w=weights)
-                      return(evalGmm(object, theta, wObj))
+                      return(evalModel(object, theta, wObj))
                   } else {
                       callNextMethod()
                   }

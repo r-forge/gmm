@@ -13,10 +13,11 @@ setMethod("print", "sysGmmModels",
                       sep = "")
                   cat("Covariance matrix: ", x@vcov, sep = "")
                   if (x@vcov == "HAC") {
-                      cat(" with ", x@kernel, " kernel and ")
-                      if (is.numeric(x@bw)) 
-                          cat("Fixed  bandwidth (", round(x@bw, 3), ")", sep = "")
-                      else cat(x@bw, " bandwidth", sep = "")
+                      option <- x@vcovOptions
+                      cat(" with ", option$kernel, " kernel and ")
+                      if (is.numeric(option$bw)) 
+                          cat("Fixed  bandwidth (", round(option$bw, 3), ")", sep = "")
+                      else cat(option$bw, " bandwidth", sep = "")
                   }
                   cat("\n")
                   d <- modelDims(x)
@@ -119,8 +120,7 @@ setMethod("[", c("snonlinearGmm", "numeric", "missing"),
               new("nonlinearGmm", instF=instF, modelF=modelF, q=x@q[[1]],
                   fLHS=x@fLHS[[1]], fRHS=x@fRHS[[1]], theta0=x@theta0[[1]],
                   k=x@k[[1]], parNames=x@parNames[[1]], momNames=x@momNames[[1]],
-                  vcov=x@vcov, n=spec$n, kernel=x@kernel, bw=x@bw, prewhite=x@prewhite,
-                  ar.method=x@ar.method, approx=x@approx, tol=x@tol,
+                  vcov=x@vcov, n=spec$n,vcovOptions=x@vcovOptions,
                   centeredVcov=x@centeredVcov, varNames=x@varNames[[1]],
                   isEndo=x@isEndo[[1]])
           })
@@ -151,8 +151,7 @@ setMethod("[", c("slinearGmm", "numeric", "missing"),
               modelF <- model.frame(x@modelT[[1]], x@data)
               new("linearGmm", instF=instF, modelF=modelF, q=x@q[[1]],
                   k=x@k[[1]], parNames=x@parNames[[1]], momNames=x@momNames[[1]],
-                  vcov=x@vcov, n=spec$n, kernel=x@kernel, bw=x@bw, prewhite=x@prewhite,
-                  ar.method=x@ar.method, approx=x@approx, tol=x@tol,
+                  vcov=x@vcov, n=spec$n, vcovOptions=x@vcovOptions,
                   centeredVcov=x@centeredVcov, varNames=x@varNames[[1]],
                   isEndo=x@isEndo[[1]])
           })
@@ -206,8 +205,7 @@ setMethod("merge", c("linearGmm", "linearGmm"),
               dat <- dat[,!duplicated(colnames(dat))]
               eqnNames <- paste("Eqn", 1:length(all), sep="")
               new("slinearGmm", data=dat, instT=instT, modelT=modelT,
-                  eqnNames=eqnNames, vcov=x@vcov, kernel=x@kernel, bw=x@bw,
-                  prewhite=x@prewhite, ar.method=x@ar.method, approx=x@approx, tol=x@tol,
+                  eqnNames=eqnNames, vcov=x@vcov, vcovOptions=x@vcovOptions,
                   centeredVcov = x@centeredVcov, k=k, q=q, n=n[1], parNames=parNames,
                   momNames=momNames, sameMom=FALSE, isEndo=isEndo, varNames=varNames,
                   SUR=FALSE)              
@@ -237,9 +235,7 @@ setMethod("merge", c("nonlinearGmm", "nonlinearGmm"),
               dat <- dat[,!duplicated(colnames(dat))]
               new("snonlinearGmm", data=dat, instT=instT,
                   theta0=theta0,fRHS=fRHS,eqnNames=eqnNames,
-                  fLHS=fLHS, vcov=x@vcov, kernel=x@kernel, bw=x@bw,
-                  prewhite=x@prewhite,
-                  ar.method=x@ar.method, approx=x@approx, tol=x@tol,
+                  fLHS=fLHS, vcov=x@vcov, vcovOptions=x@vcovOptions,
                   centeredVcov = x@centeredVcov, k=k, q=q,
                   n=n[1], parNames=parNames, isEndo=isEndo, varNames=varNames, 
                   momNames=momNames, sameMom=FALSE, SUR=FALSE)
@@ -273,9 +269,7 @@ setMethod("merge", c("snonlinearGmm", "nonlinearGmm"),
               dat <- dat[,!duplicated(colnames(dat))]
               new("snonlinearGmm", data=dat, instT=instT,
                   theta0=theta0,fRHS=fRHS,eqnNames=eqnNames,
-                  fLHS=fLHS, vcov=x@vcov, kernel=x@kernel, bw=x@bw,
-                  prewhite=x@prewhite,
-                  ar.method=x@ar.method, approx=x@approx, tol=x@tol,
+                  fLHS=fLHS, vcov=x@vcov,vcovOptions=x@vcovOptions,
                   centeredVcov = x@centeredVcov, k=k, q=q,
                   n=n[1], parNames=parNames, isEndo=isEndo, varNames=varNames,
                   momNames=momNames, sameMom=FALSE, SUR=FALSE)
@@ -305,8 +299,7 @@ setMethod("merge", c("slinearGmm", "linearGmm"),
               eqnNames <- c(eqNames, paste("Eqn",
                                            (length(eqNames)+1):length(instT), sep=""))
               new("slinearGmm", data=dat, instT=instT, modelT=modelT,
-                  eqnNames=eqnNames, vcov=x@vcov, kernel=x@kernel, bw=x@bw,
-                  prewhite=x@prewhite, ar.method=x@ar.method, approx=x@approx, tol=x@tol,
+                  eqnNames=eqnNames, vcov=x@vcov, vcovOptions=x@vcovOptions,
                   centeredVcov = x@centeredVcov, k=k, q=q, n=n[1], parNames=parNames,
                   momNames=momNames, sameMom=FALSE, isEndo=isEndo, varNames=varNames,
                   SUR=FALSE)              
@@ -433,9 +426,9 @@ setMethod("evalWeights", "sysGmmModels",
               if (is.matrix(w) || (w == "ident"))
                   {
                       return(new("sysGmmWeights", type="weights",momNames=object@momNames,
-                                 HAC=list(), w=w, Sigma=NULL, sameMom=sameMom,
+                                 wSpec=list(), w=w, Sigma=NULL, sameMom=sameMom,
                                  eqnNames=object@eqnNames))
-              }
+                  }
               if (w != "optimal")
                   stop("w is either 'ident', 'optimal' or a matrix")
               if (object@vcov == "iid")
@@ -468,7 +461,7 @@ setMethod("evalWeights", "sysGmmModels",
                   stop("Only identity, iid and MDS if allowed for now")
               }
               return(new("sysGmmWeights", type=type,momNames=object@momNames,
-                         HAC=list(), w=w, Sigma=Sigma, sameMom=sameMom,
+                         wSpec=list(), w=w, Sigma=Sigma, sameMom=sameMom,
                          eqnNames=object@eqnNames))
           })
 
@@ -696,7 +689,7 @@ setMethod("ThreeSLS", "slinearGmm",
                   return(list(theta=theta, convergence=NULL))
               wObj <- new("sysGmmWeights", w=qrZ, Sigma=Sigma, type="iid",
                           momNames=spec$momNames,
-                          HAC=list(), sameMom=TRUE, eqnNames=object@eqnNames)
+                          wSpec=list(), sameMom=TRUE, eqnNames=object@eqnNames)
               new("sgmmfit", theta=theta, convergence=NULL,
                   convIter=rep(NULL, neqn), call=Call, type=type, wObj=wObj,
                   niter=2L, efficientGmm=efficientGmm,  model=object)
@@ -809,7 +802,7 @@ setMethod("modelFit", signature("sysGmmModels"), valueClass="sgmmfit",
                       wObj <- evalWeights(object, NULL, "ident")
                       theta0 <- solveGmm(object, wObj, start, ...)$theta
                   }
-              bw <- object@bw
+              bw <- object@vcovOptions$bw
               if (type != "cue")
                   {
                       while(TRUE)
@@ -819,8 +812,8 @@ setMethod("modelFit", signature("sysGmmModels"), valueClass="sgmmfit",
                               else
                                   wObj0 <- NULL
                               wObj <- evalWeights(object, theta0, "optimal", wObj0)
-                              if (is.character(object@bw) && object@vcov=="HAC")
-                                  object@bw <- wObj@HAC$bw
+                              if (object@vcov=="HAC" && is.character(object@bw))
+                                  object@vcovOptions$bw <- wObj@wSpec$bw
                               res <- solveGmm(object, wObj, theta0, ...)
                               theta1 <- res$theta
                               convergence <- res$convergence
@@ -845,10 +838,10 @@ setMethod("modelFit", signature("sysGmmModels"), valueClass="sgmmfit",
                           }      
                   } else {
                       convIter <- NULL
-                      if (is.character(object@bw) && object@vcov=="HAC")
+                      if (object@vcov=="HAC" && is.character(bw))
                           {
                               w <- momentVcov(object, theta0)
-                              object@bw <- bw
+                              object@vcovOptions$bw <- attr(w, "Spec")$bw
                           }
                       if (object@vcov == "iid")
                           wObj0 <- evalWeights(object, theta0)
@@ -857,7 +850,7 @@ setMethod("modelFit", signature("sysGmmModels"), valueClass="sgmmfit",
                       obj <- function(theta, object, wObj0, spec)
                           {
                               theta <- .tetReshape(theta, object@eqnNames,
-                                                          spec$parNames)
+                                                   spec$parNames)
                               wObj <- evalWeights(object, theta, "optimal", wObj0)
                               evalObjective(object, theta, wObj)
                           }
@@ -867,7 +860,7 @@ setMethod("modelFit", signature("sysGmmModels"), valueClass="sgmmfit",
                       convergence <- res$convergence
                       wObj <- evalWeights(object, theta1, "optimal", wObj0)
                   }
-              object@bw <- bw
+              object@vcovOptions$bw <- bw
               new("sgmmfit", theta=theta1, convergence=convergence,
                   convIter=convIter, call=Call, type=type, wObj=wObj,
                   niter=i, efficientGmm=TRUE, model=object)

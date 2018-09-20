@@ -13,6 +13,7 @@
 \alias{print,rformulaGmm-method}
 \alias{print,rnonlinearGmm-method}
 \alias{print,summaryGmm-method}
+\alias{print,summaryGel-method}
 \alias{print,summarySysGmm-method}
 \alias{print,specTest-method}
 \alias{print,gmmWeights-method}
@@ -45,6 +46,8 @@ Print method for all \code{"gmmModels"}, \code{"gmmfit"},
 \item{\code{signature(x = "sgmmfit")}}{
 }
 \item{\code{signature(x = "summaryGmm")}}{
+}
+\item{\code{signature(x = "summaryGel")}}{
 }
 \item{\code{signature(x = "summarySysGmm")}}{
 }

@@ -14,11 +14,11 @@ setMethod("print", "gmmModels",
               cat("Covariance matrix: ", x@vcov, sep="")
               if (x@vcov == "HAC")
                   {
-                      cat(" with ", x@kernel, " kernel and ")
-                      if (is.numeric(x@bw))
-                          cat("Fixed  bandwidth (", round(x@bw,3), ")",  sep="")
+                      cat(" with ", x@vcovOptions$kernel, " kernel and ", sep="")
+                      if (is.numeric(x@vcovOptions$bw))
+                          cat("Fixed  bandwidth (", round(x@vcovOptions$bw,3), ")",  sep="")
                       else
-                          cat(x@bw, " bandwidth",  sep="")
+                          cat(x@vcovOptions$bw, " bandwidth",  sep="")
                   }
               cat("\n")
               d <- modelDims(x)
@@ -58,10 +58,10 @@ setMethod("model.matrix", signature("linearGmm"),
               if (type == "regressors")
               {
                   ti <- attr(object@modelF, "terms")
-                  mat <- model.matrix(ti, object@modelF)[,]
+                  mat <- as.matrix(model.matrix(ti, object@modelF)[,])
               } else {
                   ti <- attr(object@instF, "terms")
-                  mat <- model.matrix(ti, object@instF)[,]
+                  mat <- as.matrix(model.matrix(ti, object@instF)[,])
               }
               mat
           })
@@ -247,8 +247,10 @@ setMethod("evalDMoment", signature("regGmm"),
               if (is.null(impProb))
                   impProb <- 1/nrow(Z)
               G <- apply(De,2, function(x) colSums(Z*x*impProb))
-              d <- modelDims(object)
-              dimnames(G) <- list(d$momNames, d$parNames)
+              spec <- modelDims(object)
+              if (!is.matrix(G))
+                      G <- matrix(G,  spec$q, spec$k)
+              dimnames(G) <- list(spec$momNames, spec$parNames)
               G
           })
 
@@ -275,6 +277,8 @@ setMethod("evalDMoment", signature("functionGmm"),
               } else {
                   G <- spec$dfct(theta, object@X)
               }
+              if (!is.matrix(G))
+                  G <- matrix(G,  spec$q, spec$k)
               dimnames(G) <- list(spec$momNames, spec$parNames)
               G
               })
@@ -284,8 +288,9 @@ setMethod("evalDMoment", signature("formulaGmm"),
               res <- modelDims(object)
               nt <- names(theta)
               nt0 <- names(res$theta0)
+              spec <- modelDims(object)
               if (is.null(impProb))
-                  impProb <- 1/modelDims(object)$n
+                  impProb <- 1/spec$n
               if (length(theta) != length(nt0))
                   stop("The length of theta is not equal to the number of parameters")
               if (is.null(nt))
@@ -322,6 +327,9 @@ setMethod("evalDMoment", signature("formulaGmm"),
                           c(d)})
                       G <- cbind(G, lhs-rhs)
                   }
+              if (!is.matrix(G))
+                  G <- matrix(G,  spec$q, spec$k)
+              dimnames(G) <- list(spec$momNames, spec$parNames)
               G
           })
 
@@ -335,12 +343,19 @@ estfun.gmmFct <- function(x, ...) x
 setMethod("vcovHAC", "gmmModels",
           function (x, theta) { 
               gmat <- evalMoment(x, theta)
+              if (x@vcov != "HAC")
+                  {
+                      warning("Model set as ", x@vcov, ". The default HAC options are used")
+                      x@vcov <- "HAC"
+                      x@vcovOptions <- .getVcovOptions("HAC")
+                  }
               if (x@centeredVcov) 
                   gmat <- scale(gmat, scale = FALSE)
               class(gmat) <- "gmmFct"
-              if (is.character(x@bw))
+              options <- x@vcovOptions
+              if (is.character(options$bw))
               {
-                  if (x@bw == "Wilhelm")
+                  if (options$bw == "Wilhelm")
                   {
                       G <- evalDMoment(x, theta)
                       obj <- list(gt = gmat, G = G)
@@ -348,18 +363,21 @@ setMethod("vcovHAC", "gmmModels",
                   } else {
                       obj <- gmat
                   }
-                  bw <- get(paste("bw",x@bw,sep=""))(obj, order.by = NULL, 
-                      kernel = x@kernel, prewhite = x@prewhite, 
-                      ar.method = x@ar.method, approx = x@approx)
+                  bwFct  <- get(paste("bw",options$bw,sep=""))
+                  bwArgs <- options
+                  bwArgs$bw <- NULL
+                  bwArgs$tol <- NULL
+                  bwArgs$x <- obj
+                  bw <- do.call(bwFct, bwArgs)
               } else {
-                  bw <- x@bw
+                  bw <- options$bw
               }
-              weights <- weightsAndrews(x = gmat, bw = bw, kernel = x@kernel, 
-                                        prewhite = x@prewhite, tol = x@tol)
+              weights <- weightsAndrews(x = gmat, bw = bw, kernel = options$kernel, 
+                                        prewhite = options$prewhite, tol = options$tol)
               w <- vcovHAC(x = gmat, order.by = NULL, weights = weights, 
-                           prewhite = x@prewhite, sandwich = FALSE,
-                           ar.method = x@ar.method)
-              attr(w, "Spec") <- list(weights = weights, bw = bw, kernel = x@kernel)
+                           prewhite = options$prewhite, sandwich = FALSE,
+                           ar.method = options$ar.method)
+              attr(w, "Spec") <- list(weights = weights, bw = bw, kernel = options$kernel)
               w
           })
 
@@ -396,7 +414,7 @@ setGeneric("evalWeights", function(object, ...) standardGeneric("evalWeights"))
 setMethod("evalWeights", signature("gmmModels"),valueClass="gmmWeights",
           function(object, theta=NULL, w="optimal", ...)
               {
-                  hac <- list()
+                  wSpec <- list()
                   if (is.matrix(w))
                       {
                           type <- "weights"
@@ -427,13 +445,13 @@ setMethod("evalWeights", signature("gmmModels"),valueClass="gmmWeights",
                                           type <- "qr"
                                       } else {
                                           w <- vcovHAC(object, theta)
-                                          hac <- attr(w,"Spec")
+                                          wSpec <- attr(w,"Spec")
                                           w <- chol(w[,])
                                           type <- "chol"
                                       }
                               }
                       }
-                  new("gmmWeights", type=type, w=w, HAC=hac)
+                  new("gmmWeights", type=type, w=w, wSpec=wSpec)
               })
 
 ############ evalObjective #################################
@@ -765,14 +783,14 @@ setMethod("modelFit", signature("gmmModels"), valueClass="gmmfit",
                           wObj <- evalWeights(object, NULL, "ident")
                           theta0 <- solveGmm(object, wObj, start, ...)$theta
                       }
-                  bw <- object@bw
+                  bw <- object@vcovOptions$bw
                   if (type != "cue")
                   {
                       while(TRUE)
                           {                              
                               wObj <- evalWeights(object, theta0, "optimal")
-                              if (is.character(object@bw) && object@vcov=="HAC")
-                                  object@bw <- wObj@HAC$bw
+                              if (object@vcov=="HAC" && is.character(bw))
+                                  object@vcovOptions$bw <- wObj@wSpec$bw
                               res <- solveGmm(object, wObj, theta0, ...)
                               theta1 <- res$theta
                               convergence <- res$convergence
@@ -795,10 +813,10 @@ setMethod("modelFit", signature("gmmModels"), valueClass="gmmfit",
                           }      
                   } else {
                       convIter <- NULL
-                      if (is.character(object@bw) && object@vcov=="HAC")
+                      if (object@vcov=="HAC" && is.character(bw))
                           {
                               w <- momentVcov(object, theta0)
-                              object@bw <- bw
+                              object@vcovOptions$bw <- attr(w, "Spec")$bw
                           }
                       obj <- function(theta, object)
                           {
@@ -812,7 +830,7 @@ setMethod("modelFit", signature("gmmModels"), valueClass="gmmfit",
                       wObj <- evalWeights(object, theta1, "optimal")
                       
                   }
-                  object@bw <- bw
+                  object@vcovOptions$bw <- bw
                   names(theta1) <- spec$parNames
                   new("gmmfit", theta=theta1, convergence=convergence, type=type,
                       wObj=wObj, model=object, convIter=convIter, call=Call,
@@ -852,11 +870,11 @@ setMethod("tsls", signature("linearGmm"), valueClass="tsls",
           })
 
 
-## evalGmm
+## evalModel
 
-setGeneric("evalGmm", function(object, ...) standardGeneric("evalGmm"))
+setGeneric("evalModel", function(object, ...) standardGeneric("evalModel"))
 
-setMethod("evalGmm", signature("gmmModels"),
+setMethod("evalModel", signature("gmmModels"),
           function(object, theta, wObj=NULL) {
               spec <- modelDims(object)
               if (!is.null(names(theta)))

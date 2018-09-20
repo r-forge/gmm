@@ -16,7 +16,7 @@ The method \code{\link{evalWeights}} is the constructor.
   \describe{
     \item{\code{w}:}{Object of class \code{"ANY"} ~~ }
     \item{\code{type}:}{Object of class \code{"character"} ~~ }
-    \item{\code{HAC}:}{Object of class \code{"list"} ~~ }
+    \item{\code{wSpec}:}{Object of class \code{"list"} ~~ }
   }
 }
 \section{Methods}{

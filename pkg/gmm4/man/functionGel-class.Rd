@@ -24,12 +24,7 @@ It is however, recommended to use the constructor \code{\link{gelModel}}.
 	\item{\code{k}:}{Object of class \code{"integer"} ~~ }
 	\item{\code{parNames}:}{Object of class \code{"character"} ~~ }
 	\item{\code{momNames}:}{Object of class \code{"character"} ~~ }
-	\item{\code{kernel}:}{Object of class \code{"character"} ~~ }
-	\item{\code{bw}:}{Object of class \code{"numericORcharacter"} ~~ }
-	\item{\code{prewhite}:}{Object of class \code{"integer"} ~~ }
-	\item{\code{ar.method}:}{Object of class \code{"character"} ~~ }
-	\item{\code{approx}:}{Object of class \code{"character"} ~~ }
-	\item{\code{tol}:}{Object of class \code{"numeric"} ~~ }
+	\item{\code{vcovOptions}:}{Object of class \code{"list"} ~~ }	
 	\item{\code{centeredVcov}:}{Object of class \code{"logical"} ~~ }
 	\item{\code{varNames}:}{Object of class \code{"character"} ~~ }
 	\item{\code{isEndo}:}{Object of class \code{"logical"} ~~ }

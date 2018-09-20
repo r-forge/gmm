@@ -26,12 +26,7 @@ Objects can be created by calls of the form \code{new("rnonlinearGmm",
     \item{\code{momNames}:}{Object of class \code{"character"} ~~ }
     \item{\code{fRHS}:}{Object of class \code{"expression"} ~~ }
     \item{\code{fLHS}:}{Object of class \code{"expressionORNULL"} ~~ }
-    \item{\code{kernel}:}{Object of class \code{"character"} ~~ }
-    \item{\code{bw}:}{Object of class \code{"numericORcharacter"} ~~ }
-    \item{\code{prewhite}:}{Object of class \code{"integer"} ~~ }
-    \item{\code{ar.method}:}{Object of class \code{"character"} ~~ }
-    \item{\code{approx}:}{Object of class \code{"character"} ~~ }
-    \item{\code{tol}:}{Object of class \code{"numeric"} ~~ }
+    \item{\code{vcovOptions}:}{Object of class \code{"list"} ~~ }    
     \item{\code{centeredVcov}:}{Object of class \code{"logical"} ~~ }
     \item{\code{varNames}:}{Object of class \code{"character"} ~~ }
     \item{\code{isEndo}:}{Object of class \code{"logical"} ~~ }

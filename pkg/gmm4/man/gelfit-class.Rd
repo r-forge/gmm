@@ -18,6 +18,7 @@ but can be created with \code{\link{modelFit}}.
     \item{\code{lconvergence}:}{Object of class \code{"numeric"} ~~ }
     \item{\code{call}:}{Object of class \code{"call"} ~~ }
     \item{\code{type}:}{Object of class \code{"character"} ~~ }
+    \item{\code{vcov}:}{Object of class \code{"list"} ~~ }
     \item{\code{model}:}{Object of class \code{"gelModels"} ~~ }
   }
 }

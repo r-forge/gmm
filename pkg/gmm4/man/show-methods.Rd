@@ -9,6 +9,7 @@
 \alias{show,sgmmfit-method}
 \alias{show,specTest-method}
 \alias{show,summaryGmm-method}
+\alias{show,summaryGel-method}
 \alias{show,summarySysGmm-method}
 \alias{show,gmmWeights-method}
 \alias{show,sysGmmWeights-method}
@@ -39,6 +40,12 @@ Display method for all \code{"gmmModels"} and \code{"gmmfit"} objects.
 }
 
 \item{\code{signature(object = "summarySysGmm")}}{
+}
+
+\item{\code{signature(object = "summaryGmm")}}{
+}
+
+\item{\code{signature(object = "summaryGel")}}{
 }
 
 \item{\code{signature(object = "hypothesisTest")}}{

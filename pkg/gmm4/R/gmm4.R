@@ -3,18 +3,14 @@
 
 gmm4 <- function (g, x, tet0 = NULL, grad = NULL, 
                   type = c("twostep", "iter", "cue", "onestep"),
-                  vcov = c("MDS", "HAC", "iid", "TrueFixed"),
+                  vcov = c("iid", "HAC", "MDS", "TrueFixed"),
                   initW = c("ident", "tsls", "EbyE"), weights = "optimal", 
-                  itermaxit = 50, cstLHS=NULL, cstRHS=NULL, 
-                  kernel = c("Quadratic Spectral", "Truncated",
-                      "Bartlett", "Parzen", "Tukey-Hanning"), crit = 1e-06, 
-                  bw = "Andrews", prewhite = 1L, ar.method = "ols", approx = "AR(1)", 
-                  kerntol = 1e-07, itertol = 1e-07, centeredVcov = TRUE,
+                  itermaxit = 50, cstLHS=NULL, cstRHS=NULL,
+                  vcovOptions=list(), itertol = 1e-07, centeredVcov = TRUE,
                   data = parent.frame(), ...) 
 {
     Call <- match.call()
     vcov <- match.arg(vcov)
-    kernel <- match.arg(kernel)
     type <- match.arg(type)
     initW <- match.arg(initW)
     if (vcov == "TrueFixed")
@@ -32,18 +28,15 @@ gmm4 <- function (g, x, tet0 = NULL, grad = NULL,
             model <- NULL
             if (is.null(x) & !is.null(tet0))
                 model <- try(gmmModel(g=g, x=x, tet0=tet0, grad=grad, vcov=vcov,
-                                      kernel=kernel, crit=crit, bw=bw, prewhite=prewhite,
-                                      ar.method=ar.method, approx=approx, tol=kerntol,
+                                      vcovOptions=vcovOptions,
                                       centeredVcov=centeredVcov, data=data), silent=TRUE)
             if (is.null(model) || class(model)=="try-error")
                 model <- sysGmmModel(g=g, h=x, tet0=tet0, vcov=vcov,
-                                     kernel=kernel, crit=crit, bw=bw, prewhite=prewhite,
-                                     ar.method=ar.method, approx=approx, tol=kerntol,
+                                     vcovOptions=vcovOptions,
                                      centeredVcov=centeredVcov, data=data)
         } else {
             model <- gmmModel(g=g, x=x, tet0=tet0, grad=grad, vcov=vcov,
-                              kernel=kernel, crit=crit, bw=bw, prewhite=prewhite,
-                              ar.method=ar.method, approx=approx, tol=kerntol,
+                               vcovOptions=vcovOptions,
                               centeredVcov=centeredVcov, data=data)
             if (initW == "EbyE")
                 {
@@ -53,10 +46,10 @@ gmm4 <- function (g, x, tet0 = NULL, grad = NULL,
         }
     if (!is.null(cstLHS))
         model <- restGmmModel(model, cstLHS, cstRHS)
-
+    
     fit <- modelFit(object=model, type=type, itertol=itertol, initW=initW,
-                  weights=weights, itermaxit=itermaxit,
-                  efficientWeights=efficientWeights, ...)
+                    weights=weights, itermaxit=itermaxit,
+                    efficientWeights=efficientWeights, ...)
     fit@call <- Call
     fit
 }
@@ -64,17 +57,11 @@ gmm4 <- function (g, x, tet0 = NULL, grad = NULL,
 
 setMethod("tsls", "formula",
           function(object, x, vcov = c("iid", "HAC", "MDS"),
-                   kernel = c("Quadratic Spectral", "Truncated", "Bartlett", 
-                       "Parzen", "Tukey-Hanning"), crit = 1e-06, bw = "Andrews", 
-                   prewhite = 1L, ar.method = "ols", approx = "AR(1)", kerntol = 1e-07, 
-                   centeredVcov = TRUE, data = parent.frame())
+                   vcovOptions=list(), centeredVcov = TRUE, data = parent.frame())
               {
                   vcov <- match.arg(vcov)
-                  kernel <- match.arg(kernel)
-                  model <- gmmModel(g = object, x = x, vcov = vcov, 
-                                    kernel = kernel, crit = crit, bw = bw,
-                                    prewhite = prewhite, ar.method = ar.method,
-                                    approx = approx, tol = kerntol, 
+                  model <- gmmModel(g = object, x = x, vcov = vcov,
+                                    vcovOptions=vcovOptions,
                                     centeredVcov = centeredVcov, data = data)
                   tsls(model)
               })
@@ -82,35 +69,23 @@ setMethod("tsls", "formula",
 
 setMethod("tsls", "list",
           function(object, x=NULL, vcov = c("iid", "HAC", "MDS"),
-                   kernel = c("Quadratic Spectral", "Truncated", "Bartlett", 
-                       "Parzen", "Tukey-Hanning"), crit = 1e-06, bw = "Andrews", 
-                   prewhite = 1L, ar.method = "ols", approx = "AR(1)", kerntol = 1e-07, 
-                   centeredVcov = TRUE, data = parent.frame())
+                   vcovOptions=list(), centeredVcov = TRUE, data = parent.frame())
               {
                   vcov <- match.arg(vcov)
-                  kernel <- match.arg(kernel)
-                  model <- sysGmmModel(g = object, h = x, vcov = vcov, 
-                                    kernel = kernel, crit = crit, bw = bw,
-                                    prewhite = prewhite, ar.method = ar.method,
-                                    approx = approx, tol = kerntol, 
-                                    centeredVcov = centeredVcov, data = data)
+                  model <- sysGmmModel(g = object, h = x, vcov = vcov,
+                                       vcovOptions=vcovOptions,
+                                       centeredVcov = centeredVcov, data = data)
                   tsls(model)
               })
 
 
 setMethod("ThreeSLS", "list",
           function(object, x=NULL, vcov = c("iid", "HAC", "MDS"),
-                   kernel = c("Quadratic Spectral", "Truncated", "Bartlett", 
-                       "Parzen", "Tukey-Hanning"), crit = 1e-06, bw = "Andrews", 
-                   prewhite = 1L, ar.method = "ols", approx = "AR(1)", kerntol = 1e-07, 
-                   centeredVcov = TRUE, data = parent.frame())
+                   vcovOptions=list(), centeredVcov = TRUE, data = parent.frame())
               {
                   vcov <- match.arg(vcov)
-                  kernel <- match.arg(kernel)
-                  model <- sysGmmModel(g = object, h = x, vcov = vcov, 
-                                       kernel = kernel, crit = crit, bw = bw,
-                                       prewhite = prewhite, ar.method = ar.method,
-                                       approx = approx, tol = kerntol, 
+                  model <- sysGmmModel(g = object, h = x, vcov = vcov,
+                                       vcovOptions=vcovOptions,
                                        centeredVcov = centeredVcov, data = data)
                   ThreeSLS(model)
               })

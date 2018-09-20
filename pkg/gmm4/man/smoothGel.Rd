@@ -56,7 +56,7 @@ data(simData)
 theta <- c(beta0=1,beta1=2)
 
 ## A linearGmm
-model1 <- gmmModel(y~x1, ~z1+z2, data=simData, kernel="Bartlett")
+model1 <- gmmModel(y~x1, ~z1+z2, data=simData,vcov="HAC",vcovOptions=list(kernel="Bartlett"))
 
 ### get the bandwidth
 ### Notice that the kernel name is the not the same

@@ -27,12 +27,7 @@ The constructor is \code{\link{restGmmModel}}
     \item{\code{fRHS}:}{Object of class \code{"list"} ~~ }
     \item{\code{fLHS}:}{Object of class \code{"list"} ~~ }
     \item{\code{eqnNames}:}{Object of class \code{"character"} ~~ }
-    \item{\code{kernel}:}{Object of class \code{"character"} ~~ }
-    \item{\code{bw}:}{Object of class \code{"numericORcharacter"} ~~ }
-    \item{\code{prewhite}:}{Object of class \code{"integer"} ~~ }
-    \item{\code{ar.method}:}{Object of class \code{"character"} ~~ }
-    \item{\code{approx}:}{Object of class \code{"character"} ~~ }
-    \item{\code{tol}:}{Object of class \code{"numeric"} ~~ }
+    \item{\code{vcovOptions}:}{Object of class \code{"list"} ~~ }    
     \item{\code{centeredVcov}:}{Object of class \code{"logical"} ~~ }
     \item{\code{sameMom}:}{Object of class \code{"logical"} ~~ }
     \item{\code{SUR}:}{Object of class \code{"logical"} ~~ }

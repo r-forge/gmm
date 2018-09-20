@@ -60,7 +60,8 @@ setMethod("vcov", "gmmfit",
               if (breadOnly)
                   {
                       vcov <- bread(object)/spec$n
-                      attr(vcov, "type") <- list(sandwich=FALSE, df.adj=FALSE, breadOnly=TRUE)
+                      attr(vcov, "type") <- list(sandwich=FALSE, df.adj=FALSE,
+                                                 breadOnly=TRUE)
                       return(vcov)
                   }
               if (is.null(sandwich))
@@ -84,7 +85,8 @@ setMethod("vcov", "gmmfit",
               dimnames(vcov) <- list(spec$parNames,spec$parNames)
               if (df.adj)
                   vcov <- vcov*spec$n/(spec$n-spec$k)
-              attr(vcov, "type") <- list(sandwich=sandwich, df.adj=df.adj, breadOnly=breadOnly)
+              attr(vcov, "type") <- list(sandwich=sandwich, df.adj=df.adj,
+                                         breadOnly=breadOnly)
               vcov
           })
 
@@ -189,7 +191,7 @@ setMethod("summary", "gmmfit",
               strength <- momentStrength(object@model, coef(object), vcovType) 
               dimnames(coef) <- list(names(par), 
                                      c("Estimate", "Std. Error", "t value", "Pr(>|t|)"))
-              wSpec <- object@wObj@HAC
+              wSpec <- object@wObj@wSpec
               ans <- new("summaryGmm", coef=coef, type=object@type,specTest=stest,
                          strength=strength, model=object@model, df.adj=df.adj,
                          niter=object@niter, breadOnly=attr(v, "type")$breadOnly,

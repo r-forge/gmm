@@ -3,6 +3,7 @@
 \alias{specTest}
 \alias{specTest-methods}
 \alias{specTest,gmmfit,missing-method}
+\alias{specTest,gelfit,missing-method}
 \alias{specTest,sgmmfit,missing-method}
 \alias{specTest,gmmfit,numeric-method}
 \title{ ~~ Methods for Function \code{specTest} in Package \pkg{gmm4} ~~}
@@ -15,9 +16,11 @@ It computes tests of specification for GMM fit.
 \S4method{specTest}{sgmmfit,missing}(object, which, df.adj=FALSE, wObj=NULL)
 
 \S4method{specTest}{gmmfit,numeric}(object, which)
+
+\S4method{specTest}{gelfit,missing}(object, which)
 }
 \arguments{
-  \item{object}{GMM fit object}
+  \item{object}{GMM or GEL fit object}
   \item{which}{Which sub-moment conditions to test.}
   \item{df.adj}{Should we adjust the covariance matrix of the moment
     conditions for degrees of freedom. If \code{TRUE}

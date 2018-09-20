@@ -14,7 +14,7 @@ setMethod("print", "gelModels",
                   {
                       cat("Smoothing: ")
                       cat(x@wSpec$kernel, " kernel and ", sep="")
-                      cat(x@bw, " bandwidth",  sep="")
+                      cat(x@vcovOptions$bw, " bandwidth",  sep="")
                       cat(" (", round(x@wSpec$bw, 3), ")", sep="")
                   } else {
                       cat("No Smoothing required\n")
@@ -64,6 +64,8 @@ setMethod("evalDMoment", "gelModels", function(object, theta, impProb=NULL)
                                   env)
                 G <- attr(G, "gradient")
                 spec <- modelDims(object)
+                if (!is.matrix(G))
+                        G <- matrix(G,  spec$q, spec$k)
                 dimnames(G) <- list(spec$momNames, spec$parNames)
                 G
             }
@@ -95,8 +97,7 @@ setMethod("evalObjective", signature("gelModels", "numeric", "missing"),
                   else
                       rhoFct <- object@gelType$fct
                   rho <- rhoFct(gmat=gt, lambda=lambda, derive = 0, k = k[1]/k[2])
-                  n <- modelDims(object)$n
-                  2*n*sum(rho)*k[2]/(k[1]^2*object@wSpec$bw)
+                  2*sum(rho)*k[2]/(k[1]^2*object@wSpec$bw)
               })
 
 #########################  solveGel  #########################
@@ -140,7 +141,10 @@ setMethod("solveGel", signature("gelModels"),
                                      slv=lamSlv, lcont=lControl), tControl)
                   res <- do.call(get(coefSlv), args)
                   resl <- f(res$par,  object, lambda0, lamSlv, lControl, TRUE)
-                  list(theta=res$par, convergence=res$convergence,
+                  names(resl$lambda) <- modelDims(object)$momNames
+                  theta <- res$par
+                  names(theta) <- modelDims(object)$parNames                  
+                  list(theta=theta, convergence=res$convergence,
                        lambda=resl$lambda, lconvergence=resl$convergence)
           })
 
@@ -150,7 +154,7 @@ setMethod("solveGel", signature("gelModels"),
 setMethod("modelFit", signature("gelModels"), valueClass="gelfit", 
           definition = function(object, gelType=NULL, rhoFct=NULL,
               initTheta=c("gmm", "theta0"), start.tet=NULL,
-              start.lam=NULL, ...)
+              start.lam=NULL, vcov=FALSE, ...)
               {
                   Call <- match.call()
                   initTheta = match.arg(initTheta)
@@ -167,11 +171,55 @@ setMethod("modelFit", signature("gelModels"), valueClass="gelfit",
                       }
                   res <- solveGel(object, theta0=start.tet, lambda0=start.lam,
                                   ...)
-                  
-                  new("gelfit", theta=res$theta, convergence=res$convergence,
-                      lconvergence=res$lconvergence$convergence,
-                      lambda=res$lambda, call=Call, type=object@gelType$name,
-                      model=object)
+                  gelfit <- new("gelfit", theta=res$theta, convergence=res$convergence,
+                                lconvergence=res$lconvergence$convergence,
+                                lambda=res$lambda, call=Call, type=object@gelType$name,
+                                vcov=list(), model=object)
+                  if (vcov)
+                      gelfit@vcov <- vcov(gelfit)
+                  gelfit
                   })
 
+
+#### evalModel
+
+setMethod("evalModel", signature("gelModels"),
+          function(object, theta, lambda=NULL, gelType=NULL, rhoFct=NULL,
+                   lamSlv=NULL, lControl=list()) {
+              Call <- match.call()
+              if (!is.null(gelType))
+                  object <- gmmToGel(as(object, "gmmModels"), gelType, rhoFct)
+              spec <- modelDims(object)
+              if (!is.null(names(theta)))
+                  {
+                      if (!all(names(theta) %in% spec$parNames))
+                          stop("You provided a named theta with wrong names")
+                      theta <- theta[match(spec$parNames, names(theta))]
+                  } else {
+                      if (class(object) %in% c("formulaGel","nonlinearGel", "formulaGel"))
+                          stop("To evaluate nonlinear models, theta must be named")
+                      names(theta) <- spec$parNames
+                  }
+              type <- paste("Eval-", object@gelType$name, sep="")
+              if (is.null(lambda))
+                  {
+                      gt <- evalMoment(object, theta)
+                      gelt <- object@gelType
+                      k <- object@wSpec$k
+                      args <- c(list(gmat=gt, gelType=gelt$name,
+                                     rhoFct=gelt$fct), lControl, k=k[1]/k[2])
+                      if (is.null(lamSlv))
+                          lamSlv <- getLambda
+                      res <- do.call(lamSlv, args)
+                      lambda <- res$lambda
+                      lconvergence <- res$convergence$convergence
+                      type <- paste(type, " with optimal lambda", sep="")
+                  } else {
+                      lconvergence <- 1
+                      type <- paste(type, " with fixed lambda", sep="")
+                  }
+              names(lambda) <- spec$momNames
+               new("gelfit", theta=theta, convergence=1, lconvergence=lconvergence,
+                   lambda=lambda, call=Call, type=type, vcov=list(), model=object)
+          })
 

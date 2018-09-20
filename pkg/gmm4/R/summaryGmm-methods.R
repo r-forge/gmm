@@ -24,10 +24,11 @@ setMethod("print", "summaryGmm",
                   cat("Number of iterations: ", x@niter, "\n")
               if (length(x@wSpec) > 0)
                   {
-                      if (is.numeric(x@model@bw))
+                      if (is.numeric(x@model@vcovOptions$bw))
                           cat("Fixed Bandwidth: ", round(x@wSpec$bw, 3), "\n", sep="")
                       else
-                          cat(x@model@bw, " Bandwidth: ", round(x@wSpec$bw, 3), "\n", sep="")
+                          cat(x@model@vcovOptions$bw,
+                              " Bandwidth: ", round(x@wSpec$bw, 3), "\n", sep="")
                   }
               if (x@breadOnly)
                   {
@@ -91,10 +92,10 @@ setMethod("print", "summarySysGmm",
                           if (x@type == "iter") 
                               cat("Number of iterations: ", x@niter, "\n")
                           if (length(x@wSpec) > 0) {
-                              if (is.numeric(x@model@bw)) 
+                              if (is.numeric(x@model@vcovOptions$bw)) 
                                   cat("Fixed Bandwidth: ", round(x@wSpec$bw, 3), 
                                       "\n", sep = "")
-                              else cat(x@model@bw, " Bandwidth: ",
+                              else cat(x@model@vcovOptions$bw, " Bandwidth: ",
                                        round(x@wSpec$bw, 3), "\n", sep = "")
                               if (!is.null(x@convergence)) 
                                   cat("Convergence Optim: ", x@convergence, "\n")
@@ -150,3 +151,33 @@ setMethod("print", "summarySysGmm",
 ## show
 
 setMethod("show", "summarySysGmm", function(object) print(object))
+
+
+######## Methods for summaryGel object
+
+## print
+
+setMethod("print", "summaryGel",
+          function(x, digits=5, lambda=TRUE, ...)
+          {
+              print(x@model)
+              cat("Convergence Theta: ", x@convergence, "\n", sep="")
+              cat("Convergence Lambda: ", x@lconvergence, "\n", sep="")
+              cat("Average |Sum of pt*gt()]|: ", format(mean(abs(x@impProb$convMom)),
+                                                        digits=5), "\n", sep="")
+              cat("|Sum of pt - 1|: ", format(mean(abs(x@impProb$convProb)),
+                                              digits=5), "\n", sep="")
+              
+              cat("\ncoefficients:\n")
+              printCoefmat(x@coef, digits=digits, ...)
+              if (lambda)
+                  {
+                      cat("\nLambdas:\n")
+                      printCoefmat(x@lambda, digits=digits, ...)
+                  }
+              print(x@specTest)
+          })
+
+
+## show
+setMethod("show", "summaryGel", function(object) print(object)) 

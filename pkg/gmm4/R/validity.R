@@ -5,11 +5,18 @@
     {
         error <- character()
         vcov <- c("HAC","MDS","iid")
-        kernel <- c("Quadratic Spectral", "Truncated",
-                    "Bartlett", "Parzen", "Tukey-Hanning")
-        bw <- c("Andrews","NeweyWest","Wilhelm")
-        method <- as.list(args(ar))$method
-        approx <- as.list(bwAndrews)$approx        
+        chk <- try(.getVcovOptions(object@vcov, object@vcovOptions), silent=TRUE)
+        if (class(chk) == "try-error")
+            {
+                msg <- "Invalid vcovOptions"
+                error <- c(error, msg)
+            } else {
+                if (!isTRUE(all.equal(chk, object@vcovOptions)))
+                    {
+                        msg <- "Invalid vcovOptions"
+                        error <- c(error, msg)
+                    }
+            }
         if ( !(object@vcov%in%vcov))
             {
                 vcov <- paste(vcov, collapse=", ")
@@ -17,36 +24,6 @@
                              vcov, "/n", sep="")
                 error <- c(error, msg)
             }        
-        if ( !(object@kernel%in%kernel))
-            {
-                kernel <- paste(kernel, collapse=", ")
-                msg <- paste("kernel must be one of ",
-                             kernel, "/n", sep="")
-                error <- c(error, msg)
-            }
-        if (!is.numeric(object@bw))
-            if ( !(object@bw%in%bw))
-                {
-                bw <- paste(bw, collapse=", ")
-                msg <- paste("bw must be one of ",
-                             bw, "/n", sep="")
-                error <- c(error, msg)
-            }
-        if ( !(object@ar.method%in%eval(method)))
-            {
-                method <- paste(method, collapse=", ")
-                msg <- paste("ar.method must be one of ",
-                             method, "/n", sep="")
-                error <- c(error, msg)
-            }
-        if ( !(object@approx%in%eval(approx)))
-            {
-                approx <- paste(approx, collapse=", ")
-                msg <- paste("approx must be one of ",
-                             approx, "/n", sep="")
-                error <- c(error, msg)
-            }
-                error
     }
 
 .checkLinGmm <- function(object)
@@ -348,11 +325,11 @@ setValidity("functionGmm", .checkfGmm)
                         error <- c(error, msg)
                     }
             }
-        if (length(object@HAC)>0)
+        if (length(object@wSpec)>0)
             {
-                if (!all(names(object@HAC) %in% c("bw", "kernel","weights")))
+                if (!all(names(object@wSpec) %in% c("bw", "kernel","weights")))
                     {
-                        msg <- "HAC must contain 'bw', 'kernel', and 'weights'"
+                        msg <- "wSpec must contain 'bw', 'kernel', and 'weights'"
                         error <- c(error, msg)
                     }
             }
@@ -458,11 +435,11 @@ setValidity("gmmWeights", .checkGmmWeights)
                     error <- c(error, msg)
                 }
             }
-        if (length(object@HAC)>0)
+        if (length(object@wSpec)>0)
         {
-            if (!all(names(object@HAC) %in% c("bw", "kernel","weights")))
+            if (!all(names(object@wSpec) %in% c("bw", "kernel","weights")))
             {
-                msg <- "HAC must contain 'bw', 'kernel', and 'weights'"
+                msg <- "wSpec must contain 'bw', 'kernel', and 'weights'"
                 error <- c(error, msg)
             }
         }

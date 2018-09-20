@@ -201,7 +201,7 @@ setMethod("summary","sgmmfit",
                                  MDS = "HC")
               strength <- lapply(1:neqn, function(i)
                   momentStrength(object@model[i], par[[i]], vcovType))              
-              wSpec <- object@wObj@HAC
+              wSpec <- object@wObj@wSpec
               ans <- new("summarySysGmm", coef = coef, type = object@type, 
                          specTest = stest, strength = strength, model = object@model, 
                          df.adj = df.adj, niter = object@niter,
@@ -248,7 +248,7 @@ setMethod("hypothesisTest", signature("missing", "sgmmfit"),
                   uobj <- as(object.r@model, substring(class(object.r@model), 
                                                        2))
                   G <- evalDMoment(uobj, b)
-                  G <- gmm4:::.GListToMat(G)
+                  G <- .GListToMat(G)
                   gt <- evalMoment(object.r@model, coef(object.r))
                   gt <- do.call(cbind, gt)
                   gbar <- colMeans(gt)

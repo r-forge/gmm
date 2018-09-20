@@ -52,7 +52,7 @@ Method to fit a model using GMM, from an object of class \code{"gmmModels"}.
 
 \S4method{modelFit}{gelModels}(object, gelType=NULL, rhoFct=NULL,
               initTheta=c("gmm", "theta0"), start.tet=NULL,
-              start.lam=NULL, ...)
+              start.lam=NULL, vcov=FALSE, ...)
 }
 \arguments{
   \item{object}{An object of class \code{"gmmModels"}}
@@ -96,7 +96,9 @@ Method to fit a model using GMM, from an object of class \code{"gmmModels"}.
     object, if any, should be used.}
   \item{start.tet}{Manual starting values for the coeffficient vector.}
   \item{start.lam}{Manual starting values for the Lagrange
-              multiplier. By default, it is a vector of zeros.}
+    multiplier. By default, it is a vector of zeros.}
+  \item{vcov}{Should the method computes the covariance matrices of the
+              coefficients and Lagrange multipliers.}
   }
 \section{Methods}{
 \describe{
@@ -110,19 +112,19 @@ The main method for all GEL-type models.
 
 \item{\code{signature(object = "rnonlinearGmm")}}{
 It makes a difference only if the number of contraints is equal to the
-number of coefficients, in which case, the method \code{\link{evalGmm}}
+number of coefficients, in which case, the method \code{\link{evalModel}}
 is called at the contrained vector. If not, the next method is called.
 }
 
 \item{\code{signature(object = "rformulaGmm")}}{
 It makes a difference only if the number of contraints is equal to the
-number of coefficients, in which case, the method \code{\link{evalGmm}}
+number of coefficients, in which case, the method \code{\link{evalModel}}
 is called at the contrained vector. If not, the next method is called.
 }
 
 \item{\code{signature(object = "rlinearGmm")}}{
 It makes a difference only if the number of contraints is equal to the
-number of coefficients, in which case, the method \code{\link{evalGmm}}
+number of coefficients, in which case, the method \code{\link{evalModel}}
 is called at the contrained vector. If not, the next method is called.
 }
 

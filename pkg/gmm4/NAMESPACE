@@ -22,12 +22,12 @@ exportClasses("nonlinearGmm", "linearGmm", "functionGmm", "gmmModels",
               "numericORcharacter", "tsls", "rnonlinearGmm", "rfunctionGmm",
               "slinearGmm", "snonlinearGmm", "sysGmmModels",
               "sgmmfit","stsls", "rslinearGmm", "rsnonlinearGmm", "rsysGmmModels",
-              "formulaGmm","rfunctionGmm", "gelfit")
+              "formulaGmm","rfunctionGmm", "gelfit", "summaryGel")
 exportMethods(residuals, print, show, vcovHAC, coef, vcov, bread, summary, update,
               model.matrix, hypothesisTest, "[", merge, subset)
 
 export(gmmModel, evalMoment, Dresiduals, evalDMoment, momentVcov, estfun.gmmFct,
-       evalWeights, quadra, evalObjective, solveGmm, momentStrength,evalGmm, 
+       evalWeights, quadra, evalObjective, solveGmm, momentStrength,evalModel, 
        tsls, modelFit, meatGmm, specTest, gmm4, restGmmModel, modelResponse, DWH,
        modelDims, printRestrict, getRestrict, sysGmmModel, ThreeSLS, gelModel,
        rhoET, rhoEL, rhoEEL, rhoHD, EL.Wu, getLambda, gmmToGel, smoothGel,
