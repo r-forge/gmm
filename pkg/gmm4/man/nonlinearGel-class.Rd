@@ -29,6 +29,7 @@ It is however, recommended to use the constructor \code{\link{gelModel}}.
     \item{\code{centeredVcov}:}{Object of class \code{"logical"} ~~ }
     \item{\code{varNames}:}{Object of class \code{"character"} ~~ }
     \item{\code{isEndo}:}{Object of class \code{"logical"} ~~ }
+    \item{\code{omit}:}{Object of class \code{"integer"} ~~ }        
   }
 }
 \section{Extends}{

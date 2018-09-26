@@ -95,7 +95,7 @@ sysGmmModel <- function(g, h=NULL, tet0=NULL,
                           q=model$q, n=model$n, parNames=model$parNames,
                           momNames=model$momNames, eqnNames=model$eqnNames,
                           sameMom=sameMom, SUR=SUR, varNames=model$varNames,
-                          isEndo=model$isEndo)
+                          isEndo=model$isEndo, omit=model$na.action)
         } else {
             model <- .snlGmmData(g, h, tet0, data)
             gmodel <- new("snonlinearGmm", data=model$data, instT=model$instT,
@@ -104,7 +104,7 @@ sysGmmModel <- function(g, h=NULL, tet0=NULL,
                           centeredVcov = centeredVcov, k=model$k, q=model$q,
                           n=model$n, parNames=model$parNames,
                           momNames=model$momNames, sameMom=sameMom, SUR=SUR,
-                          varNames=model$varNames, isEndo=model$isEndo)
+                          varNames=model$varNames, isEndo=model$isEndo, omit=model$na.action)
         }
         gmodel
     }

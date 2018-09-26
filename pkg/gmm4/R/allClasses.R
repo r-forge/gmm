@@ -15,7 +15,8 @@ setClass("linearGmm", representation(modelF="data.frame", instF="data.frame",
                                      vcov="character",n="integer", q="integer", k="integer",
                                      parNames="character", momNames="character",
                                      vcovOptions="list", centeredVcov="logical",
-                                     varNames="character", isEndo="logical"))
+                                     varNames="character", isEndo="logical",
+                                     omit='integer'))
 setClass("nonlinearGmm", representation(modelF="data.frame", instF="data.frame",
                                         vcov="character",theta0="numeric",
                                         n="integer", q="integer",k="integer",
@@ -23,14 +24,14 @@ setClass("nonlinearGmm", representation(modelF="data.frame", instF="data.frame",
                                         fRHS="expression", fLHS="expressionORNULL",
                                         vcovOptions="list",
                                         centeredVcov="logical", varNames="character",
-                                        isEndo="logical"))
+                                        isEndo="logical",omit='integer'))
 setClass("functionGmm", representation(X="ANY", fct="function",dfct="functionORNULL",
                                        vcov="character",theta0="numeric",
                                        n="integer", q="integer",k="integer",
                                        parNames="character", momNames="character",
                                        vcovOptions="list",
                                        centeredVcov="logical", varNames="character",
-                                       isEndo="logical"))
+                                       isEndo="logical",omit='integer'))
 setClass("formulaGmm", representation(modelF="data.frame", 
                                       vcov="character",theta0="numeric",
                                       n="integer", q="integer",k="integer",
@@ -38,7 +39,7 @@ setClass("formulaGmm", representation(modelF="data.frame",
                                       fRHS="list", fLHS="list",
                                       vcovOptions="list",
                                       centeredVcov="logical", varNames="character",
-                                      isEndo="logical", isMDE="logical"))
+                                      isEndo="logical", isMDE="logical",omit='integer'))
 setClassUnion("regGmm", c("linearGmm", "nonlinearGmm"))
 setClassUnion("allNLGmm", c("nonlinearGmm", "functionGmm", "formulaGmm"))
 setClassUnion("gmmModels", c("linearGmm", "nonlinearGmm", "functionGmm", "formulaGmm"))
@@ -123,7 +124,8 @@ setClass("slinearGmm", representation(modelT="list", instT="list",data="data.fra
                                       momNames="list", eqnNames="character",
                                       vcovOptions="list",
                                       centeredVcov="logical", sameMom="logical",
-                                      SUR="logical", varNames="list", isEndo="list"))
+                                      SUR="logical", varNames="list", isEndo="list",
+                                      omit='integer'))
 
 setClass("snonlinearGmm", representation(data="data.frame", instT="list",
                                          vcov="character",theta0="list",
@@ -133,7 +135,8 @@ setClass("snonlinearGmm", representation(data="data.frame", instT="list",
                                          vcovOptions="list",
                                          centeredVcov="logical", sameMom="logical",
                                          SUR="logical",
-                                         varNames="list", isEndo="list"))
+                                         varNames="list", isEndo="list",
+                                         omit='integer'))
 setClassUnion("sysGmmModels", c("slinearGmm", "snonlinearGmm"))
 
 ## Restricted System GMM
@@ -178,7 +181,7 @@ setAs("linearGmm", "nonlinearGmm",
               theta0=theta0, n=spec$n, q=spec$q, k=spec$k, parNames=names(theta0),
               momNames=spec$momNames, fRHS=rhs, fLHS=lhs,
               vcovOptions=from@vcovOptions, centeredVcov=from@centeredVcov,
-              isEndo=from@isEndo, varNames=from@varNames)
+              isEndo=from@isEndo, varNames=from@varNames,omit=from@omit)
       })
 
 setAs("linearGmm", "functionGmm",
@@ -200,7 +203,7 @@ setAs("linearGmm", "functionGmm",
           new("functionGmm", X=x, fct=fct, dfct=dfct,  vcov=from@vcov,
               theta0=theta0, n=spec$n, q=spec$q, k=spec$k, parNames=names(theta0),
               momNames=spec$momNames,vcovOptions=from@vcovOptions,
-              centeredVcov=from@centeredVcov)
+              centeredVcov=from@centeredVcov,omit=integer())
       })
 
 setAs("allNLGmm", "functionGmm",
@@ -221,7 +224,7 @@ setAs("allNLGmm", "functionGmm",
               theta0=from@theta0, n=spec$n, q=spec$q, k=spec$k,
               parNames=names(from@theta0),
               momNames=spec$momNames, vcovOptions=from@vcovOptions,
-              centeredVcov=from@centeredVcov)
+              centeredVcov=from@centeredVcov,omit=integer())
       })
 
 setAs("slinearGmm", "linearGmm",

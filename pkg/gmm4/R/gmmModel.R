@@ -69,7 +69,7 @@ gmmModel <- function(g, x=NULL, tet0=NULL,grad=NULL,
                                           momNames = model$momNames,eqnNames=model$eqnNames, 
                                           sameMom = TRUE, SUR = FALSE,
                                           varNames = model$varNames, 
-                                          isEndo = model$isEndo)
+                                          isEndo = model$isEndo, omit=model$na.action)
                         else
                             gmodel <- new("linearGmm", modelF=model$modelF, 
                                           instF=model$instF,
@@ -77,7 +77,7 @@ gmmModel <- function(g, x=NULL, tet0=NULL,grad=NULL,
                                           centeredVcov = centeredVcov, k=model$k,
                                           q=model$q, n=model$n, parNames=model$parNames,
                                           momNames=model$momNames, varNames=model$varNames,
-                                          isEndo=model$isEndo)
+                                          isEndo=model$isEndo, omit=model$na.action)
                     } else {
                         if (!all(chk))
                             stop("All parameters in tet0 must be in g for nl Gmm")
@@ -88,7 +88,7 @@ gmmModel <- function(g, x=NULL, tet0=NULL,grad=NULL,
                                       centeredVcov = centeredVcov, k=model$k, q=model$q,
                                       n=model$n, parNames=model$parNames,
                                       momNames=model$momNames, varNames=model$varNames,
-                                      isEndo=model$isEndo)
+                                      isEndo=model$isEndo, omit=model$na.action)
                     }
             } else if (class(g)=="function") {
                 model <- .fGmmData(g, x, tet0)
@@ -97,7 +97,7 @@ gmmModel <- function(g, x=NULL, tet0=NULL,grad=NULL,
                               centeredVcov = centeredVcov, k=model$k, q=model$q,
                               n=model$n, parNames=model$parNames,
                               momNames=model$momNames, varNames=model$varNames,
-                              isEndo=model$isEndo)
+                              isEndo=model$isEndo, omit=model$na.action)
             } else {
                 if (!is.null(x))
                     stop("For formula GMM, x must be NULL. The moments are only defined as a list of formulas")
@@ -112,7 +112,7 @@ gmmModel <- function(g, x=NULL, tet0=NULL,grad=NULL,
                               centeredVcov = centeredVcov, k=model$k, q=model$q,
                               n=model$n, parNames=model$parNames,
                               momNames=model$momNames, varNames=model$varNames,
-                              isEndo=model$isEndo, isMDE=model$isMDE)
+                              isEndo=model$isEndo, isMDE=model$isMDE, omit=model$na.action)
             }
         gmodel
     }

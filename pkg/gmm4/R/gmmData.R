@@ -77,18 +77,18 @@
         momNames <- colnames(model.matrix(terms(instF), instF))
         q <- length(momNames)
         isEndo <- !(parNames %in% momNames)
-        na <- attr(na.omit(cbind(modelF, instF)), "na.action")
+        na <- attr(na.omit(cbind(modelF, instF)), "na.action")[]
         if (!is.null(na) && omit)
         {
             modelF <- modelF[-na,,drop=FALSE]
             instF <- instF[-na,,drop=FALSE]
         }
+        if (is.null(na))
+            na <- integer()
         n <- nrow(modelF)
         list(modelF=modelF,  instF=instF, n=n, k=k, q=q, momNames=momNames,
              parNames=parNames, isEndo=isEndo, varNames=parNames, na.action=na)
     }
-
-
 
 .formGmmData <- function(formula, tet0, data,omit=TRUE)
     {
@@ -103,9 +103,11 @@
         isMDE <- all(chkLHS) |  all(chkRHS)        
         modelF <- sapply(varNames, function(n) data[[n]])
         modelF <- as.data.frame(modelF)
-        na <- attr(na.omit(modelF), "na.action")
+        na <- attr(na.omit(modelF), "na.action")[]
         if (!is.null(na) && omit)
             modelF <- modelF[-na,,drop=FALSE]
+        if (is.null(na))
+            na <- integer()
         k <- length(tet0)
         q <- length(formula)
         if (is.null(names(formula)))
@@ -175,12 +177,14 @@
         momNames <- colnames(model.matrix(terms(instF), instF))
         isEndo <- !(varNames %in% momNames)
         q <- length(momNames)
-        na <- attr(na.omit(cbind(modelF, instF)), "na.action")
+        na <- attr(na.omit(cbind(modelF, instF)), "na.action")[]
         if (!is.null(na) && omit)
         {
             modelF <- modelF[-na,,drop=FALSE]
             instF <- instF[-na,,drop=FALSE]
         }
+        if (is.null(na))
+            na <- integer()
         n <- nrow(modelF)
         list(modelF=modelF,  instF=instF, fRHS=fRHS, fLHS=fLHS, n=n, k=k, q=q,
              momNames=momNames, parNames=parNames, varNames=varNames, isEndo=isEndo,
@@ -198,8 +202,10 @@
         if (any(class(mom)=="try-error"))
             {
                 msg <- paste("Cannot evaluate the moments at thet0\n",
-                             attr(mom,"conditon"))
+                             attr(mom,"condition"))
                 stop(msg)
+            } else if (any(is.na(mom))) {
+                stop("Some moments are NA's. Make sure you remove missing values from x")
             } else {
                 q <-  ncol(mom)
                 n <- nrow(mom)                
@@ -209,7 +215,7 @@
                     momNames <- paste("h", 1:q, sep="")
             }
         list(q=q,n=n,k=k, momNames=momNames, parNames=parNames,
-             varNames=character(), isEndo=logical())
+             varNames=character(), isEndo=logical(), na.action=integer())
     }
 
 .slGmmData <- function(g,h,data,omit=TRUE)
@@ -220,9 +226,11 @@
         allDat <-  do.call(cbind, lapply(res, function(x) cbind(x$modelF, x$instF)))
         allDat <- allDat[,!duplicated(colnames(allDat))]
         allDat <- na.omit(allDat)
-        na <- attr(allDat, "na.action")
+        na <- attr(allDat, "na.action")[]
         if (omit && !is.null(na))
             allDat <- allDat[-na,]
+        if (is.null(na))
+            na <- integer()
         parNames <- lapply(1:length(g), function(i) res[[i]]$parNames)
         momNames <- lapply(1:length(g), function(i) res[[i]]$momNames)
         isEndo <- lapply(1:length(g), function(i) res[[i]]$isEndo)
@@ -249,9 +257,11 @@
         allDat <-  do.call(cbind, lapply(res, function(x) cbind(x$modelF, x$instF)))
         allDat <- allDat[,!duplicated(colnames(allDat))]
         allDat <- na.omit(allDat)
-        na <- attr(allDat, "na.action")
+        na <- attr(allDat, "na.action")[]
         if (omit && !is.null(na))
             allDat <- allDat[-na,]
+        if (is.null(na))
+            na <- integer()
         parNames <- lapply(1:length(g), function(i) res[[i]]$parNames)
         momNames <- lapply(1:length(g), function(i) res[[i]]$momNames)
         isEndo <- lapply(1:length(g), function(i) res[[i]]$isEndo)
