@@ -20,6 +20,11 @@ setMethod("print", "gmmModels",
                       else
                           cat(x@vcovOptions$bw, " bandwidth",  sep="")
                   }
+              if (x@vcov == "CL")
+                  cat("\nClustered based on: ",
+                      paste(colnames(x@vcovOptions$cluster), collapse=" and "), sep="")
+              if (length(x@survOptions)>0)
+                  cat("\nSurvey weights type: ", x@survOptions$type, sep="")
               cat("\n")
               d <- modelDims(x)
               cat("Number of regressors: ", d$k, "\n", sep="")
@@ -670,6 +675,13 @@ setMethod("subset", "regGmm",
           function(x, i) {
               x@modelF <- x@modelF[i,,drop=FALSE]
               x@instF <- x@instF[i,,drop=FALSE]
+              if (!is.null(x@vcovOptions$cluster))
+                  {
+                      if (!is.null(dim(x@vcovOptions$cluster)))
+                          x@vcovOptions$cluster <- x@vcovOptions$cluster[i]
+                      else
+                          x@vcovOptions$cluster <- x@vcovOptions$cluster[i,,drop=FALSE]
+                  }
               x@n <- nrow(x@modelF)
               x})
 
@@ -681,12 +693,26 @@ setMethod("subset", "functionGmm",
                   x@X <- x@X[i, drop=FALSE]
               else
                   stop("X is not subsetable")
+              if (!is.null(x@vcovOptions$cluster))
+                  {
+                      if (!is.null(dim(x@vcovOptions$cluster)))
+                          x@vcovOptions$cluster <- x@vcovOptions$cluster[i]
+                      else
+                          x@vcovOptions$cluster <- x@vcovOptions$cluster[i,,drop=FALSE]
+                  }              
               x@n <- nrow(x@X)
               x})
 
 setMethod("subset", "formulaGmm",
           function(x, i) {
               x@modelF <- x@modelF[i,,drop=FALSE]
+              if (!is.null(x@vcovOptions$cluster))
+                  {
+                      if (!is.null(dim(x@vcovOptions$cluster)))
+                          x@vcovOptions$cluster <- x@vcovOptions$cluster[i]
+                      else
+                          x@vcovOptions$cluster <- x@vcovOptions$cluster[i,,drop=FALSE]
+                  }              
               x@n <- nrow(x@modelF)
               x})
 

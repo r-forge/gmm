@@ -15,21 +15,24 @@ needs to changed. It is just a copy and paste from the gmm package
 \usage{
 gmm4(g, x, tet0 = NULL, grad = NULL, 
      type = c("twostep", "iter", "cue", "onestep"),
-     vcov = c("iid", "HAC", "MDS", "TrueFixed"),
+     vcov = c("iid", "HAC", "MDS", "TrueFixed", "CL"),
      initW = c("ident", "tsls", "EbyE"), weights = "optimal", 
      itermaxit = 50, cstLHS=NULL, cstRHS=NULL,
-     vcovOptions=list(), 
+     vcovOptions=list(), survOptions=list(),
      itertol = 1e-07, centeredVcov = TRUE,
      data = parent.frame(), ...)
 
-\S4method{tsls}{formula}(object, x, vcov = c("iid", "HAC", "MDS"),
-         vcovOptions=list(), centeredVcov = TRUE, data = parent.frame())
+\S4method{tsls}{formula}(object, x, vcov = c("iid", "HAC", "MDS", "CL"),
+         vcovOptions=list(), survOptions=list(), centeredVcov = TRUE,
+         data = parent.frame())
 
-\S4method{tsls}{list}(object, x=NULL, vcov = c("iid", "HAC", "MDS"),
-         vcovOptions=list(), centeredVcov = TRUE, data = parent.frame())
+\S4method{tsls}{list}(object, x=NULL, vcov = c("iid", "HAC", "MDS",
+          "CL"), vcovOptions=list(), survOptions=list(),
+          centeredVcov = TRUE, data = parent.frame())
 
-\S4method{ThreeSLS}{list}(object, x=NULL, vcov = c("iid", "HAC", "MDS"),
-         vcovOptions=list(), centeredVcov = TRUE, data = parent.frame())
+\S4method{ThreeSLS}{list}(object, x=NULL, vcov = c("iid", "HAC", "MDS",
+          "CL"), vcovOptions=list(), survOptions=list(),
+          centeredVcov = TRUE, data = parent.frame())
 }
 \arguments{
 \item{object}{A formula or a list of formulas.}  
@@ -67,7 +70,9 @@ gmm4(g, x, tet0 = NULL, grad = NULL,
   default, x is a weakly dependant process. The "iid" option will avoid
   using the HAC matrix which will accelerate the estimation if one is
   ready to make that assumption. The option "TrueFixed" is used only
-  when the matrix of weights is provided and it is the optimal one.}
+  when the matrix of weights is provided and it is the optimal one. For
+  type \code{CL}, clustered covariance matrix is computed. The options
+  are then included in \code{vcovOptions} (see \code{\link{meatCL}}).}
 
   \item{initW}{How should be compute the initial coefficient vector in
     the first. It only makes a difference for linear models for which
@@ -94,7 +99,11 @@ gmm4(g, x, tet0 = NULL, grad = NULL,
     coefficients. See \code{\link{restGmmModel}} for more details.}
 
   \item{vcovOptions}{A list of options for the covariance matrix of the
-  moment conditions. See \code{\link{vcovHAC}} for the default values.}
+    moment conditions. See \code{\link{vcovHAC}} for the default values.}
+
+  \item{survOptions}{If needed, a list with the type of survey weights and
+    the weights as a numeric vector, data.frame or formula. The type is either
+    \code{"sampling"} or \code{"fequency"}.}  
  
   \item{\dots}{Arguments to pass to \code{\link{optim}} when the model
     is nonlinear.}

@@ -27,7 +27,8 @@ It is however, recommended to use the constructor \code{\link{gmmModel}}.
     \item{\code{varNames}:}{Object of class \code{"character"} ~~ }
     \item{\code{isEndo}:}{Object of class \code{"logical"} ~~ }
     \item{\code{isMDE}:}{Object of class \code{"logical"} ~~ }
-    \item{\code{omit}:}{Object of class \code{"integer"} ~~ }        
+    \item{\code{omit}:}{Object of class \code{"integer"} ~~ }
+    \item{\code{survOptions}:}{Object of class \code{"list"} ~~ }        
   }
 }
 

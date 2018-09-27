@@ -11,8 +11,9 @@ before running any estimation algorithm.
 }
 \usage{
 gmmModel(g, x=NULL, tet0=NULL,grad=NULL,
-         vcov = c("iid", "HAC", "MDS"), vcovOptions=list(),
-         centeredVcov = TRUE, data=parent.frame())
+         vcov = c("iid", "HAC", "MDS", "CL"), vcovOptions=list(),
+         centeredVcov = TRUE, data=parent.frame(), na.action="na.omit",
+         survOptions=list())
 }
 \arguments{
 \item{g}{A function of the form \eqn{g(\theta,x)} and which returns a
@@ -47,7 +48,9 @@ gmmModel(g, x=NULL, tet0=NULL,grad=NULL,
   implies they are serially uncorrelated, but may be
   heteroscedastic. There is a difference between \code{iid} and
   \code{MDS} only when \code{g} is a formula. In that case, residuals
-  are assumed homoscedastic as well as serially uncorrelated.}
+  are assumed homoscedastic as well as serially uncorrelated. For type
+  \code{CL}, clustered covariance matrix is computed. The options are
+  then included in \code{vcovOptions} (see \code{\link{meatCL}}). }
 
 \item{vcovOptions}{A list of options for the covariance matrix of the
   moment conditions. See \code{\link{vcovHAC}} for the default values.}
@@ -56,6 +59,14 @@ gmmModel(g, x=NULL, tet0=NULL,grad=NULL,
   computing its covariance matrix. Doing so may improve inference.}
 
 \item{data}{A data.frame or a matrix with column names (Optional). }
+
+\item{na.action}{Action to take for missing values. If missing values
+  are present and the option is set to \code{"na.pass"}, the model won't
+  be estimable.}
+
+\item{survOptions}{If needed, a list with the type of survey weights and
+  the weights as a numeric vector, data.frame or formula. The type is either
+  \code{"sampling"} or \code{"fequency"}.}
 }
 
 \value{

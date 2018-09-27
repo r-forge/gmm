@@ -1,6 +1,7 @@
 ######### Function to arrange the data for the gmmModel objects #################
 
-.multiToSys <- function(formula, h, data, omit=TRUE)
+.multiToSys <- function(formula, h, data, survOptions=list(), vcovOptions=list(),
+                        na.action="na.omit")
 {
     modelF <- model.frame(formula, data, na.action="na.pass",
                           drop.unused.levels=TRUE)
@@ -40,10 +41,11 @@
     h <- lapply(1:ncol(Y), function(i) formula(terms(instF), .GlobalEnv))
     data <- cbind(modelF, instF)
     data <- data[,!duplicated(colnames(data))]
-    return(.slGmmData(g,h,data,omit))
+    return(.slGmmData(g,h,data,survOptions, vcovOptions,na.action))
 }
 
-.lGmmData <- function(formula, h, data, omit=TRUE)
+.lGmmData <- function(formula, h, data, survOptions=list(), vcovOptions=list(),
+                      na.action="na.omit")
     {
         modelF <- model.frame(formula, data, na.action="na.pass",
                               drop.unused.levels=TRUE)
@@ -77,20 +79,37 @@
         momNames <- colnames(model.matrix(terms(instF), instF))
         q <- length(momNames)
         isEndo <- !(parNames %in% momNames)
-        na <- attr(na.omit(cbind(modelF, instF)), "na.action")[]
-        if (!is.null(na) && omit)
+        tmpDat <- cbind(modelF, instF)
+        add  <- survOptions$weights
+        if (!is.null(vcovOptions$cluster))
+            add <- cbind(as.matrix(vcovOptions$cluster), add)        
+        if (!is.null(add))
+            tmpDat <- cbind(tmpDat, add)
+        na <- attr(get(na.action)(tmpDat), "na.action")[]
+        if (!is.null(na))
         {
             modelF <- modelF[-na,,drop=FALSE]
             instF <- instF[-na,,drop=FALSE]
+            if (!is.null(vcovOptions$cluster))
+                {
+                    if (is.null(dim(vcovOptions$cluster)))
+                        vcovOptions$cluster <- vcovOptions$cluster[-na]
+                    else
+                        vcovOptions$cluster <- vcovOptions$cluster[-na,,drop=FALSE]
+                }
+            if (!is.null(survOptions$weights))
+                survOptions$weights <- survOptions$weights[-na]
         }
         if (is.null(na))
             na <- integer()
         n <- nrow(modelF)
         list(modelF=modelF,  instF=instF, n=n, k=k, q=q, momNames=momNames,
-             parNames=parNames, isEndo=isEndo, varNames=parNames, na.action=na)
+             parNames=parNames, isEndo=isEndo, varNames=parNames, omit=na,
+             vcovOptions=vcovOptions, survOptions=survOptions)
     }
 
-.formGmmData <- function(formula, tet0, data,omit=TRUE)
+.formGmmData <- function(formula, tet0, data, survOptions=list(), vcovOptions=list(),
+                         na.action="na.omit")
     {
         res <- lapply(formula, function(f) .nlGmmData(f, ~1, tet0, data))
         fRHS <- lapply(res, function(r) r$fRHS)
@@ -103,9 +122,26 @@
         isMDE <- all(chkLHS) |  all(chkRHS)        
         modelF <- sapply(varNames, function(n) data[[n]])
         modelF <- as.data.frame(modelF)
-        na <- attr(na.omit(modelF), "na.action")[]
-        if (!is.null(na) && omit)
+        tmpDat <- modelF
+        add  <- survOptions$weights
+        if (!is.null(vcovOptions$cluster))
+            add <- cbind(as.matrix(vcovOptions$cluster), add)        
+        if (!is.null(add))
+            tmpDat <- cbind(tmpDat, add)
+        na <- attr(get(na.action)(tmpDat), "na.action")[]
+        if (!is.null(na))
+        {
             modelF <- modelF[-na,,drop=FALSE]
+            if (!is.null(vcovOptions$cluster))
+                {
+                    if (is.null(dim(vcovOptions$cluster)))
+                        vcovOptions$cluster <- vcovOptions$cluster[-na]
+                    else
+                        vcovOptions$cluster <- vcovOptions$cluster[-na,,drop=FALSE]
+                }
+            if (!is.null(survOptions$weights))
+                survOptions$weights <- survOptions$weights[-na]
+        }
         if (is.null(na))
             na <- integer()
         k <- length(tet0)
@@ -118,12 +154,13 @@
         n <- nrow(modelF)
         list(modelF=modelF,  fRHS=fRHS, fLHS=fLHS, n=n, k=k, q=q,
              momNames=momNames, parNames=parNames, varNames=varNames, isEndo=isEndo,
-             isMDE=isMDE,na.action=na)
+             isMDE=isMDE,omit=na, vcovOptions=vcovOptions, survOptions=survOptions)
     }
 
 
 
-.nlGmmData <- function(formula, h, tet0, data, omit=TRUE)
+.nlGmmData <- function(formula, h, tet0, data, survOptions=list(), vcovOptions=list(),
+                       na.action="na.omit")
     {
         varNames <- all.vars(formula)
         parNames <- names(tet0)
@@ -177,21 +214,37 @@
         momNames <- colnames(model.matrix(terms(instF), instF))
         isEndo <- !(varNames %in% momNames)
         q <- length(momNames)
-        na <- attr(na.omit(cbind(modelF, instF)), "na.action")[]
-        if (!is.null(na) && omit)
+        tmpDat <- cbind(modelF, instF)
+        add  <- survOptions$weights
+        if (!is.null(vcovOptions$cluster))
+            add <- cbind(as.matrix(vcovOptions$cluster), add)        
+        if (!is.null(add))
+            tmpDat <- cbind(tmpDat, add)
+        na <- attr(get(na.action)(tmpDat), "na.action")[]
+        if (!is.null(na))
         {
             modelF <- modelF[-na,,drop=FALSE]
             instF <- instF[-na,,drop=FALSE]
+            if (!is.null(vcovOptions$cluster))
+                {
+                    if (is.null(dim(vcovOptions$cluster)))
+                        vcovOptions$cluster <- vcovOptions$cluster[-na]
+                    else
+                        vcovOptions$cluster <- vcovOptions$cluster[-na,,drop=FALSE]
+                }
+            if (!is.null(survOptions$weights))
+                survOptions$weights <- survOptions$weights[-na]
         }
         if (is.null(na))
             na <- integer()
         n <- nrow(modelF)
         list(modelF=modelF,  instF=instF, fRHS=fRHS, fLHS=fLHS, n=n, k=k, q=q,
              momNames=momNames, parNames=parNames, varNames=varNames, isEndo=isEndo,
-             na.action=na)
+             omit=na, vcovOptions=vcovOptions, survOptions=survOptions)
     }
 
-.fGmmData <- function(g, x, thet0, omit=NULL)
+.fGmmData <- function(g, x, thet0, survOptions=list(), vcovOptions=list(),
+                      na.action="na.omit")
     {
         mom <- try(g(thet0, x))
         k <- length(thet0)        
@@ -199,6 +252,14 @@
             parNames <- paste("tet", 1:k, sep="")
         else
             parNames <- names(thet0)
+        add  <- survOptions$weights
+        if (!is.null(vcovOptions$cluster))
+            add <- cbind(as.matrix(vcovOptions$cluster), add)        
+        if (!is.null(add))
+            {
+                if (any(is.na(add)))
+                    stop("weights or cluster contains missing values")
+            }
         if (any(class(mom)=="try-error"))
             {
                 msg <- paste("Cannot evaluate the moments at thet0\n",
@@ -215,20 +276,40 @@
                     momNames <- paste("h", 1:q, sep="")
             }
         list(q=q,n=n,k=k, momNames=momNames, parNames=parNames,
-             varNames=character(), isEndo=logical(), na.action=integer())
+             varNames=character(), isEndo=logical(), omit=integer(),
+             vcovOptions=vcovOptions, survOptions=survOptions)
     }
 
-.slGmmData <- function(g,h,data,omit=TRUE)
+.slGmmData <- function(g,h,data, survOptions=list(), vcovOptions=list(),
+                       na.action="na.omit")
     {
-        res <- lapply(1:length(g), function(i) .lGmmData(g[[i]], h[[i]], data, FALSE))
+        res <- lapply(1:length(g), function(i) .lGmmData(g[[i]], h[[i]], data,
+                                                         list(), list(), "na.pass"))
         modelT <- lapply(res, function(x) terms(x$modelF))
         instT <-  lapply(res, function(x) terms(x$instF))
         allDat <-  do.call(cbind, lapply(res, function(x) cbind(x$modelF, x$instF)))
         allDat <- allDat[,!duplicated(colnames(allDat))]
-        allDat <- na.omit(allDat)
-        na <- attr(allDat, "na.action")[]
-        if (omit && !is.null(na))
-            allDat <- allDat[-na,]
+        add  <- survOptions$weights
+        if (!is.null(vcovOptions$cluster))
+            add <- cbind(as.matrix(vcovOptions$cluster), add)        
+        if (!is.null(add))
+            tmpDat <- cbind(allDat, add)
+        else
+            tmpDat <- allDat
+        na <- attr(get(na.action)(tmpDat), "na.action")[]
+        if (!is.null(na))
+        {
+            allDat <- allDat[-na,,drop=FALSE]
+            if (!is.null(vcovOptions$cluster))
+                {
+                    if (is.null(dim(vcovOptions$cluster)))
+                        vcovOptions$cluster <- vcovOptions$cluster[-na]
+                    else
+                        vcovOptions$cluster <- vcovOptions$cluster[-na,,drop=FALSE]
+                }
+            if (!is.null(survOptions$weights))
+                survOptions$weights <- survOptions$weights[-na]
+        }
         if (is.null(na))
             na <- integer()
         parNames <- lapply(1:length(g), function(i) res[[i]]$parNames)
@@ -244,22 +325,42 @@
             eqnNames <- paste("Eqn", 1:length(g), sep="")
         list(data=allDat, modelT=modelT, instT=instT, parNames=parNames,
              momNames=momNames, k=k,q=q,n=n, eqnNames=eqnNames,
-             varNames=varNames, isEndo=isEndo, na.action=na)
+             varNames=varNames, isEndo=isEndo, omit=na,
+             vcovOptions=vcovOptions, survOptions=survOptions)
     }
 
-.snlGmmData <- function(g,h,tet0, data, omit=TRUE)
+.snlGmmData <- function(g,h,tet0, data, survOptions=list(), vcovOptions=list(),
+                        na.action="na.omit")
     {
         res <- lapply(1:length(g), function(i) .nlGmmData(g[[i]], h[[i]],
-                                                          tet0[[i]], data, FALSE))
+                                                          tet0[[i]], data, list(),
+                                                          list(), "na.pass"))
         fRHS <- lapply(res, function(x) x$fRHS)
         fLHS <- lapply(res, function(x) x$fLHS)
         instT <-  lapply(res, function(x) terms(x$instF))
         allDat <-  do.call(cbind, lapply(res, function(x) cbind(x$modelF, x$instF)))
         allDat <- allDat[,!duplicated(colnames(allDat))]
-        allDat <- na.omit(allDat)
-        na <- attr(allDat, "na.action")[]
-        if (omit && !is.null(na))
-            allDat <- allDat[-na,]
+        add  <- survOptions$weights
+        if (!is.null(vcovOptions$cluster))
+            add <- cbind(as.matrix(vcovOptions$cluster), add)        
+        if (!is.null(add))
+            tmpDat <- cbind(allDat, add)
+        else
+            tmpDat <- allDat
+        na <- attr(get(na.action)(tmpDat), "na.action")[]
+        if (!is.null(na))
+        {
+            allDat <- allDat[-na,,drop=FALSE]
+            if (!is.null(vcovOptions$cluster))
+                {
+                    if (is.null(dim(vcovOptions$cluster)))
+                        vcovOptions$cluster <- vcovOptions$cluster[-na]
+                    else
+                        vcovOptions$cluster <- vcovOptions$cluster[-na,,drop=FALSE]
+                }
+            if (!is.null(survOptions$weights))
+                survOptions$weights <- survOptions$weights[-na]
+        }
         if (is.null(na))
             na <- integer()
         parNames <- lapply(1:length(g), function(i) res[[i]]$parNames)
@@ -275,5 +376,6 @@
             eqnNames <- paste("Eqn", 1:length(g), sep="")
         list(data=allDat, fRHS=fRHS, fLHS=fLHS, parNames=parNames,
              momNames=momNames, k=k,q=q,n=n, eqnNames=eqnNames, instT=instT,
-             varNames=varNames, isEndo=isEndo, na.action=na)
+             varNames=varNames, isEndo=isEndo, omit=na,
+             vcovOptions=vcovOptions, survOptions=survOptions)
     }

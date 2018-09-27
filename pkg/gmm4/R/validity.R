@@ -4,7 +4,7 @@
 .checkBased <- function(object)
     {
         error <- character()
-        vcov <- c("HAC","MDS","iid")
+        vcov <- c("HAC","MDS","iid","CL")
         chk <- try(.getVcovOptions(object@vcov, object@vcovOptions), silent=TRUE)
         if (class(chk) == "try-error")
             {
@@ -21,7 +21,7 @@
             {
                 vcov <- paste(vcov, collapse=", ")
                 msg <- paste("vcov must be one of ",
-                             vcov, "/n", sep="")
+                             vcov, sep="")
                 error <- c(error, msg)
             }        
     }

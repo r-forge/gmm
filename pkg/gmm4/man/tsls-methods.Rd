@@ -12,7 +12,7 @@ It estimates a linear model using two-stage least squares.
 \S4method{tsls}{linearGmm}(object)
 }
 \arguments{
-  \item{object}{An object of class \code{gmmModels}}
+  \item{object}{An object of class \code{gmmModels}.}
   }
 \section{Methods}{
 \describe{
@@ -23,6 +23,7 @@ It estimates a linear model using two-stage least squares.
 \item{\code{signature(object = "slinearGmm")}}{
   2SLS for equation by equation estimation of a system of equations.
 }
+
 }}
 \examples{
 x <- rchisq(200,5)

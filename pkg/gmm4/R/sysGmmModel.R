@@ -1,15 +1,16 @@
 
 ##################  Constructor for the sysGmmModels classes   #####################
 
-
 sysGmmModel <- function(g, h=NULL, tet0=NULL,
-                        vcov = c("iid", "HAC", "MDS"),
-                        vcovOptions=list(), centeredVcov = TRUE, data=parent.frame())
+                        vcov = c("iid", "HAC", "MDS", "CL"),
+                        vcovOptions=list(), centeredVcov = TRUE, data=parent.frame(),
+                        na.action="na.omit", survOptions=list())
     {
         vcov <- match.arg(vcov)
-        if (!is.list(vcovOptions))
-            stop("vcovOptions must be a list")
-        vcovOptions <- do.call(.getVcovOptions, c(vcovOptions, type=vcov))
+        if (!is.list(vcovOptions) | !is.list(survOptions))
+            stop("vcovOptions and survOptions must be a list")
+        vcovOptions <- .getVcovOptions(vcov, data, vcovOptions)
+        survOptions <- .getSurvOptions(data, survOptions)
         if (!is.list(data) && !is.environment(data)) 
             stop("'data' must be a list or an environment")
         if (!is.list(g))
@@ -85,26 +86,28 @@ sysGmmModel <- function(g, h=NULL, tet0=NULL,
         }
         if (!nonlin)
         {
-            model <- .slGmmData(g,h,data)
+            model <- .slGmmData(g,h,data, survOptions, vcovOptions, na.action)
             isEndo <- lapply(1:length(g),
                              function(i) model$parNames[[i]] %in% model$momNames[[i]])
             gmodel <- new("slinearGmm", data=model$data, 
                           instT=model$instT, modelT=model$modelT,
-                          vcov=vcov, vcovOptions=vcovOptions,
+                          vcov=vcov, vcovOptions=model$vcovOptions,
                           centeredVcov = centeredVcov, k=model$k,
                           q=model$q, n=model$n, parNames=model$parNames,
                           momNames=model$momNames, eqnNames=model$eqnNames,
                           sameMom=sameMom, SUR=SUR, varNames=model$varNames,
-                          isEndo=model$isEndo, omit=model$na.action)
+                          isEndo=model$isEndo, omit=model$omit,
+                          survOptions=model$survOptions)
         } else {
-            model <- .snlGmmData(g, h, tet0, data)
+            model <- .snlGmmData(g, h, tet0, data, survOptions, vcovOptions, na.action)
             gmodel <- new("snonlinearGmm", data=model$data, instT=model$instT,
                           theta0=tet0,fRHS=model$fRHS,eqnNames=model$eqnNames,
-                          fLHS=model$fLHS, vcov=vcov, vcovOptions=vcovOptions,
+                          fLHS=model$fLHS, vcov=vcov, vcovOptions=model$vcovOptions,
                           centeredVcov = centeredVcov, k=model$k, q=model$q,
                           n=model$n, parNames=model$parNames,
                           momNames=model$momNames, sameMom=sameMom, SUR=SUR,
-                          varNames=model$varNames, isEndo=model$isEndo, omit=model$na.action)
+                          varNames=model$varNames, isEndo=model$isEndo, omit=model$omit,
+                          survOptions=model$survOptions)
         }
         gmodel
     }

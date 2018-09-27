@@ -27,6 +27,8 @@ But the \code{\link{restGmmModel}} method is the constructor.
     \item{\code{centeredVcov}:}{Object of class \code{"logical"} ~~ }
     \item{\code{varNames}:}{Object of class \code{"character"} ~~ }
     \item{\code{isEndo}:}{Object of class \code{"logical"} ~~ }
+    \item{\code{omit}:}{Object of class \code{"integer"} ~~ }
+    \item{\code{survOptions}:}{Object of class \code{"list"} ~~ }    
   }
 }
 \section{Extends}{

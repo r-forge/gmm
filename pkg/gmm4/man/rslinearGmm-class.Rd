@@ -31,6 +31,7 @@ The constructor is \code{\link{restGmmModel}}.
     \item{\code{SUR}:}{Object of class \code{"logical"} ~~ }
     \item{\code{varNames}:}{Object of class \code{"list"} ~~ }
     \item{\code{isEndo}:}{Object of class \code{"list"} ~~ }
+    \item{\code{survOptions}:}{Object of class \code{"list"} ~~ }      	    
   }
 }
 \section{Extends}{

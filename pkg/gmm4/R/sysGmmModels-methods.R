@@ -122,7 +122,7 @@ setMethod("[", c("snonlinearGmm", "numeric", "missing"),
                   k=x@k[[1]], parNames=x@parNames[[1]], momNames=x@momNames[[1]],
                   vcov=x@vcov, n=spec$n,vcovOptions=x@vcovOptions,
                   centeredVcov=x@centeredVcov, varNames=x@varNames[[1]],
-                  isEndo=x@isEndo[[1]])
+                  isEndo=x@isEndo[[1]], survOptions=x@survOptions)
           })
 
 
@@ -153,7 +153,7 @@ setMethod("[", c("slinearGmm", "numeric", "missing"),
                   k=x@k[[1]], parNames=x@parNames[[1]], momNames=x@momNames[[1]],
                   vcov=x@vcov, n=spec$n, vcovOptions=x@vcovOptions,
                   centeredVcov=x@centeredVcov, varNames=x@varNames[[1]],
-                  isEndo=x@isEndo[[1]])
+                  isEndo=x@isEndo[[1]],survOptions=x@survOptions)
           })
 
 setMethod("[", c("sysGmmModels", "numeric", "list"),
@@ -177,10 +177,15 @@ setMethod("[", c("sysGmmModels", "missing", "missing"),
 setMethod("subset", "sysGmmModels",
           function(x, i) {
               x@data <- x@data[i,,drop=FALSE]
+              if (!is.null(x@vcovOptions$cluster))
+                  {
+                      if (!is.null(dim(x@vcovOptions$cluster)))
+                          x@vcovOptions$cluster <- x@vcovOptions$cluster[i]
+                      else
+                          x@vcovOptions$cluster <- x@vcovOptions$cluster[i,,drop=FALSE]
+                  }
               x@n <- nrow(x@data)
               x})
-
-
 ### merge
 
 setGeneric("merge")
@@ -208,7 +213,7 @@ setMethod("merge", c("linearGmm", "linearGmm"),
                   eqnNames=eqnNames, vcov=x@vcov, vcovOptions=x@vcovOptions,
                   centeredVcov = x@centeredVcov, k=k, q=q, n=n[1], parNames=parNames,
                   momNames=momNames, sameMom=FALSE, isEndo=isEndo, varNames=varNames,
-                  SUR=FALSE)              
+                  SUR=FALSE,survOptions=x@survOptions)              
           })
 
 setMethod("merge", c("nonlinearGmm", "nonlinearGmm"),
@@ -238,7 +243,8 @@ setMethod("merge", c("nonlinearGmm", "nonlinearGmm"),
                   fLHS=fLHS, vcov=x@vcov, vcovOptions=x@vcovOptions,
                   centeredVcov = x@centeredVcov, k=k, q=q,
                   n=n[1], parNames=parNames, isEndo=isEndo, varNames=varNames, 
-                  momNames=momNames, sameMom=FALSE, SUR=FALSE)
+                  momNames=momNames, sameMom=FALSE, SUR=FALSE,
+                  survOptions=x@survOptions)
           })
 
 
@@ -272,7 +278,8 @@ setMethod("merge", c("snonlinearGmm", "nonlinearGmm"),
                   fLHS=fLHS, vcov=x@vcov,vcovOptions=x@vcovOptions,
                   centeredVcov = x@centeredVcov, k=k, q=q,
                   n=n[1], parNames=parNames, isEndo=isEndo, varNames=varNames,
-                  momNames=momNames, sameMom=FALSE, SUR=FALSE)
+                  momNames=momNames, sameMom=FALSE, SUR=FALSE,
+                  survOptions=x@survOptions)
           })
 
 setMethod("merge", c("slinearGmm", "linearGmm"),
@@ -302,7 +309,7 @@ setMethod("merge", c("slinearGmm", "linearGmm"),
                   eqnNames=eqnNames, vcov=x@vcov, vcovOptions=x@vcovOptions,
                   centeredVcov = x@centeredVcov, k=k, q=q, n=n[1], parNames=parNames,
                   momNames=momNames, sameMom=FALSE, isEndo=isEndo, varNames=varNames,
-                  SUR=FALSE)              
+                  SUR=FALSE, survOptions=x@survOptions)              
           })
 
 ## residuals

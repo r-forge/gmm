@@ -30,6 +30,8 @@ Objects can be created by calls of the form \code{new("rnonlinearGmm",
     \item{\code{centeredVcov}:}{Object of class \code{"logical"} ~~ }
     \item{\code{varNames}:}{Object of class \code{"character"} ~~ }
     \item{\code{isEndo}:}{Object of class \code{"logical"} ~~ }
+    \item{\code{omit}:}{Object of class \code{"integer"} ~~ }
+    \item{\code{survOptions}:}{Object of class \code{"list"} ~~ }    
   }
 }
 \section{Extends}{

@@ -31,7 +31,8 @@ But the constructor is \code{\link{sysGmmModel}}.
     \item{\code{sameMom}:}{Object of class \code{"logical"} ~~ }
     \item{\code{varNames}:}{Object of class \code{"list"} ~~ }
     \item{\code{isEndo}:}{Object of class \code{"list"} ~~ }
-    \item{\code{omit}:}{Object of class \code{"integer"} ~~ }    
+    \item{\code{omit}:}{Object of class \code{"integer"} ~~ }
+    \item{\code{survOptions}:}{Object of class \code{"list"} ~~ }        
   }
 }
 \section{Extends}{
