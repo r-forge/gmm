@@ -31,7 +31,12 @@ setMethod("print", "gmmModels",
               cat("Number of moment conditions: ", d$q, "\n", sep="")
               if (!inherits(x, "functionGmm"))
                   cat("Number of Endogenous Variables: ", sum(x@isEndo), "\n", sep="")
-              cat("Sample size: ", d$n, "\n")})             
+              if (!is.null(x@survOptions$weights) && x@survOptions$type == "frequency")
+                  cat("Implied sample size (sum of weights): ", d$n, "\n")
+              else
+                  cat("Sample size: ", d$n, "\n")})
+
+
 
 setMethod("show", "gmmModels", function(object) print(object))
 
@@ -405,9 +410,14 @@ setMethod("momentVcov", signature("gmmModels"),
                       sig <- sd(residuals(object, theta))
                       Z <- model.matrix(object, "instrument")
                       w <- sig^2*crossprod(Z)/nrow(Z)
+                  } else if (object@vcov == "CL") {
+                      gt <- evalMoment(object, theta)
+                      class(gt) <- "gmmFct"
+                      opt <- object@vcovOptions
+                      opt$x <- gt
+                      w <- do.call(meatCL, opt)                                            
                   } else {
                       w <- vcovHAC(object, theta)
-                      attr(w, "inv") <- TRUE
                   }
               w})
 
@@ -448,6 +458,13 @@ setMethod("evalWeights", signature("gmmModels"),valueClass="gmmWeights",
                                           if (w$rank < object@q)
                                               warning("The moment matrix is not full column rank")
                                           type <- "qr"
+                                      } else if (object@vcov == "CL") {
+                                          gt <- evalMoment(object, theta)
+                                          class(gt) <- "gmmFct"
+                                          opt <- object@vcovOptions
+                                          opt$x <- gt
+                                          w <- chol(do.call(meatCL, opt))
+                                          type <- "chol"
                                       } else {
                                           w <- vcovHAC(object, theta)
                                           wSpec <- attr(w,"Spec")
@@ -558,7 +575,7 @@ setMethod("momentStrength", signature("formulaGmm"),
           })
 
 setMethod("momentStrength", signature("linearGmm"), 
-          function(object, theta, vcovType=c("OLS","HC","HAC")){
+          function(object, theta, vcovType=c("OLS","HC","HAC","CL")){
               spec <- modelDims(object)
               EndoVars <- !(spec$parNames %in% spec$momNames)
               exoInst <- spec$momNames %in% spec$parNames
@@ -577,9 +594,11 @@ setMethod("momentStrength", signature("linearGmm"),
                           {
                               resu <- lm(X[,i   ]~Z-1)                              
                               v <- switch(vcovType,
-                                         OLS=vcov(resu),
-                                         HC=vcovHC(resu,"HC1"),
-                                         HAC=vcovHAC(resu))[!exoInst,!exoInst]
+                                          OLS=vcov(resu),
+                                          HC=vcovHC(resu,"HC1"),
+                                          HAC=vcovHAC(resu),
+                                          CL=do.call(vcovCL,c(object@vcovOptions, x=resu)))
+                              v <- v[!exoInst,!exoInst]
                               b <- coef(resu)[!exoInst]
                               f <- b%*%solve(v, b)/df1
                               df2 <- resu$df.residual
@@ -676,12 +695,9 @@ setMethod("subset", "regGmm",
               x@modelF <- x@modelF[i,,drop=FALSE]
               x@instF <- x@instF[i,,drop=FALSE]
               if (!is.null(x@vcovOptions$cluster))
-                  {
-                      if (!is.null(dim(x@vcovOptions$cluster)))
-                          x@vcovOptions$cluster <- x@vcovOptions$cluster[i]
-                      else
-                          x@vcovOptions$cluster <- x@vcovOptions$cluster[i,,drop=FALSE]
-                  }
+                  x@vcovOptions$cluster <- x@vcovOptions$cluster[i,,drop=FALSE]
+              if (!is.null(x@survOptions$weights))
+                  x@survOptions$weights <- x@survOptions$weights[i]
               x@n <- nrow(x@modelF)
               x})
 
@@ -694,12 +710,9 @@ setMethod("subset", "functionGmm",
               else
                   stop("X is not subsetable")
               if (!is.null(x@vcovOptions$cluster))
-                  {
-                      if (!is.null(dim(x@vcovOptions$cluster)))
-                          x@vcovOptions$cluster <- x@vcovOptions$cluster[i]
-                      else
-                          x@vcovOptions$cluster <- x@vcovOptions$cluster[i,,drop=FALSE]
-                  }              
+                  x@vcovOptions$cluster <- x@vcovOptions$cluster[i,,drop=FALSE]
+              if (!is.null(x@survOptions$weights))
+                  x@survOptions$weights <- x@survOptions$weights[i]              
               x@n <- nrow(x@X)
               x})
 
@@ -707,12 +720,9 @@ setMethod("subset", "formulaGmm",
           function(x, i) {
               x@modelF <- x@modelF[i,,drop=FALSE]
               if (!is.null(x@vcovOptions$cluster))
-                  {
-                      if (!is.null(dim(x@vcovOptions$cluster)))
-                          x@vcovOptions$cluster <- x@vcovOptions$cluster[i]
-                      else
-                          x@vcovOptions$cluster <- x@vcovOptions$cluster[i,,drop=FALSE]
-                  }              
+                  x@vcovOptions$cluster <- x@vcovOptions$cluster[i,,drop=FALSE]
+              if (!is.null(x@survOptions$weights))
+                  x@survOptions$weights <- x@survOptions$weights[i]              
               x@n <- nrow(x@modelF)
               x})
 

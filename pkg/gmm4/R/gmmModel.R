@@ -26,7 +26,7 @@
                     names(option$bw) <- "Fixed"
             } else if (type=="CL") {
                 option <- list(cluster=NULL, type="HC0", cadjust=TRUE,
-                               milti0=FALSE)
+                               multi0=FALSE)
                 if (length(addO) > 0)
                     {
                         if (!all(names(addO) %in% names(option)))

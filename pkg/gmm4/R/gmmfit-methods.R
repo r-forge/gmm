@@ -187,7 +187,8 @@ setMethod("summary", "gmmfit",
               vcovType <- switch(object@model@vcov,
                                  HAC="HAC",
                                  iid="OLS",
-                                 MDS="HC")
+                                 MDS="HC",
+                                 CL="CL")
               strength <- momentStrength(object@model, coef(object), vcovType) 
               dimnames(coef) <- list(names(par), 
                                      c("Estimate", "Std. Error", "t value", "Pr(>|t|)"))

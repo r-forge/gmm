@@ -93,7 +93,7 @@ We want to distinguish three types of $g_i(\theta)$:
 \[
 Y_i = X_i'\theta + \epsilon_i,
 \]
-with the moment condition $\E[\epsilon_i(\theta)Z_i]=0$, where $X_i$ is $k\times 1$ and $Z_i$ is $q\times 1$ with $q\geq k$. We consider three possibilities for the asymptotic variance of $\sqrt{n}\bar{g}_i(\theta)$:
+with the moment condition $\E[\epsilon_i(\theta)Z_i]=0$, where $X_i$ is $k\times 1$ and $Z_i$ is $q\times 1$ with $q\geq k$. We consider four possibilities for the asymptotic variance of $\sqrt{n}\bar{g}_i(\theta)$:
 \begin{enumerate}
 \item[a)] ``iid'': Here we assume no autocorrelation and homoscedastic error with $\Var(\epsilon_i|Z_i)=\sigma^2$, which implies that the asymptotic variance $V$ is $\sigma^2\E[Z_iZ_i']$ and can be estimated by:
   \[
@@ -110,6 +110,11 @@ which represents the HC0 version of the heteroscedasticity consistent covariance
   \hat{V} = \sum_{i=-M}^{M} K_h(i)\hat{\Gamma}_i,
   \]
   where $K_h(i)$ is a kernel that depends on the bandwidth $h$, and $\hat{\Gamma}_i$ is an estimator of $\Gamma_i$.
+\item[d)] ``CL'': The sample is clustered. For one dimensional clusters, let $\bar{g}_i(\theta)$ be the sample mean of the moment function for cluster $i$ and $n_i$ be the number of observations in that cluster. Then, the clustered covariance matrix of the sample moment $\sqrt{n}\bar{g}(\theta)$ can be estimated as:
+  \[
+  \hat{V} = \frac{1}{n}\sum_{i=1}^{N_{cl}} n_i^2 \bar{g}_i(\hat{\theta}) \bar{g}_i'(\hat{\theta})
+  \]
+where $N_{cl}$ is the number of clusters. For higher dimensional clusters, like cities within provinces for example, we need to take into account that observations belong to more than one group. For a more detailed presentation with reference to recent developments, see \cite{berger-graham-zeileis17}.
 \end{enumerate}
 \item The nonlinear model:
 \[
@@ -237,6 +242,42 @@ gform <- list(x~mu,
 mod4 <- gmmModel(gform, NULL, theta0, vcov="MDS", data=dat)
 @ 
 But the first approach may speed up estimation quite a bit for large dataset because it reduces the number of operations. 
+
+Covariance matrix options can be modified using the argument ``vcovOptions''. For example, if we want a HAC matrix, several options such as the kernel and bandwidth can be modified. By default, the HAC is computed using the Quadratic Spectral kernel the optimal bandwidth of \cite{andrews91}. To modify the options, we proceed this way:
+
+<<>>=
+mod.hac <- gmmModel(y~x1+x2, ~x1+z2+z3, vcov="HAC", 
+                    vcovOptions=list(kernel="Bartlett", bw="NeweyWest"),
+                    data=simData)
+mod.hac
+@ 
+
+See the help on ``vcovHAC'' of the sandwich package for more details on all possible parameters. For clustered covariance, we need to specify the clusters and some other options.  Lets consider the following dataset:
+
+<<>>=
+data("InstInnovation", package = "sandwich")
+@ 
+
+We can use one-way clustering:
+
+<<>>=
+mod.cl1 <- gmmModel(sales~value, ~value, vcov="CL", 
+                    vcovOptions=list(cluster=~company),
+                    data=InstInnovation)
+mod.cl1
+@ 
+
+or a two-way clustering:
+
+<<>>=
+mod.cl2 <- gmmModel(sales~value, ~value, vcov="CL", 
+                    vcovOptions=list(cluster=~company+year, multi0=TRUE),
+                    data=InstInnovation)
+mod.cl2
+@ 
+
+The clustered covariance is computed using the ``meatCL'' function of the sandwich package. For more options, see its help file. 
+
 
 \subsection{Methods for gmmModels Classes} \label{sec:gmmmodels-methods}
 

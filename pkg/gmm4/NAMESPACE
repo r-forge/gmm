@@ -10,7 +10,7 @@ importFrom("stats", "ar", "as.formula", "model.matrix","vcov",
            "fitted", "lm.fit", "pchisq", "pnorm", "printCoefmat", "anova",
            "model.frame", "reformulate", "formula", "nlminb", "kernapply",
            "constrOptim", "kernel")
-importFrom("sandwich", "vcovHAC", "estfun","kernHAC",
+importFrom("sandwich", "vcovHAC", "estfun","kernHAC","vcovCL", "meatCL",
            "bread","bwAndrews","bwNeweyWest","weightsAndrews",
            "weightsLumley", "vcovHC")
 ### S4 Methods and Classes

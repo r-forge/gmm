@@ -13,7 +13,7 @@ It produces measures of the strength of the moment conditons.
 }
 \usage{
 \S4method{momentStrength}{linearGmm}(object, theta,
-vcovType=c("OLS","HC","HAC"))
+vcovType=c("OLS","HC","HAC","CL"))
 }
 \arguments{
   \item{object}{An object of class \code{"linearGmm"}}
@@ -25,7 +25,11 @@ vcovType=c("OLS","HC","HAC"))
     the function \code{\link{vcovHC}} is used with "HC1", and
     \code{\link{vcovHAC}} is used with the default setup is "HAC" is
     chosen. In \code{summary} for \code{gmmfit} objects, it is adjusted
-    to the type of covariance that is set in the object} 
+    to the type of covariance that is set in the object. For type
+  \code{CL}, clustered covariance matrix is computed. The options are
+  the one included in the \code{vcovOptions} slot of the object (see
+  \code{\link{meatCL}}). The object must have be defined with clusters
+  for that to work. See \code{\link{gmmModel}}.} 
 }
 \section{Methods}{
 \describe{

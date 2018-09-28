@@ -1,11 +1,12 @@
 #############  Validity Methods  ##################
 #### All validity Methods for all objects are here
 
-.checkBased <- function(object)
+.checkBased <- function(object, n)
     {
         error <- character()
         vcov <- c("HAC","MDS","iid","CL")
-        chk <- try(.getVcovOptions(object@vcov, object@vcovOptions), silent=TRUE)
+        chk <- try(.getVcovOptions(object@vcov, NULL, object@vcovOptions), silent=TRUE)
+        chk2 <- try(.getSurvOptions(NULL, object@survOptions), silent=TRUE)
         if (class(chk) == "try-error")
             {
                 msg <- "Invalid vcovOptions"
@@ -17,23 +18,62 @@
                         error <- c(error, msg)
                     }
             }
+        if (class(chk2) == "try-error")
+            {
+                msg <- "Invalid survOptions"
+                error <- c(error, msg)
+            } else {
+                if (!isTRUE(all.equal(chk2, object@survOptions)))
+                    {
+                        msg <- "Invalid vcovOptions"
+                        error <- c(error, msg)
+                    }
+            }
         if ( !(object@vcov%in%vcov))
             {
                 vcov <- paste(vcov, collapse=", ")
                 msg <- paste("vcov must be one of ",
                              vcov, sep="")
                 error <- c(error, msg)
-            }        
+            }
+        if (object@vcov == "CL")
+            {
+                if (!is.data.frame(object@vcovOptions$cluster))
+                    {
+                        msg <- "cluster must be a data.frame"
+                        error <- c(error, msg)
+                    } else {
+                        if (nrow(object@vcovOptions$cluster) != n)
+                            {
+                                msg <- "Wrong number of observations in cluster"
+                                error <- c(error, msg)
+                            }
+                    }
+            }
+        if (length(object@survOptions)>0)
+            {
+                if (!inherits(object@survOptions$weights, c("integer","numeric")))
+                    {
+                        msg <- "weights must be a numeric or integer vector"
+                        error <- c(error, msg)
+                    } else {
+                        if (length(object@survOptions$weights) != n)
+                            {
+                                msg <- "Wrong number of observations in weights"
+                                error <- c(error, msg)
+                            }
+                    }
+            }
     }
 
 .checkLinGmm <- function(object)
     {
-        error <- .checkBased(object)
         ny <- NCOL(object@modelF[[1L]])
         nM <- nrow(object@modelF)
         nI <- nrow(object@instF)
         k <- ncol(model.matrix(object))
         q <- ncol(model.matrix(object, "instrument"))
+        error <- .checkBased(object, nM)
         if (k != object@k)
             {
                 msg <- "k does not correspond to the number of regressor in modelF"
@@ -121,17 +161,6 @@ setValidity("linearGmm", .checkLinGmm)
                 msg <- "The Hypothesis matrix if not full rank"
                 error <- c(error, msg)
             }
-        #res <- try(.imposeRestrict(R,rhs, spec$originParNames), silent=TRUE)
-        #if (any(class(res)=="try-error"))
-        #    {
-        #        msg <- "Fail to generate constraint specifications"
-        #        error <- c(error, msg)
-        #    }
-        #if (!identical(res[-which(names(res)=="isEndo")], spec))
-        #    {
-        #        msg <- "cstSpec does not seem to correspond to cstLHS and cstRHS"
-        #        error <- c(error, msg)            
-        #    }    
         if (length(error)==0)
             TRUE
         else
@@ -142,10 +171,10 @@ setValidity("rlinearGmm", .checkRestLGmm)
 
 .checkNLinGmm <- function(object)
     {
-        error <- .checkBased(object)
         nM <- nrow(object@modelF)
         nI <- nrow(object@instF)
         k <-  length(object@theta0)
+        error <- .checkBased(object, nM)
         if (k != object@k)
             {
                 msg <- "k does not correspond to the number of resgressor in modelF"
@@ -206,16 +235,82 @@ setValidity("rlinearGmm", .checkRestLGmm)
 
 setValidity("nonlinearGmm", .checkNLinGmm)
 
+.checkformGmm <- function(object)
+    {
+        n <- nrow(object@modelF)
+        error <- .checkBased(object, n)        
+        k <-  length(object@theta0)
+        if (k != object@k)
+            {
+                msg <- "k does not correspond to the number of regressor in modelF"
+                error <- c(error, msg)
+            }
+        varList <- c(as.list(object@theta0), as.list(object@modelF))
+        rhs <- sapply(object@fRHS, function(l)
+            class(try(eval(l, varList), silent=TRUE))=="try-error")
+        lhs <- sapply(object@fLHS, function(l)
+            class(try(eval(l, varList), silent=TRUE))=="try-error")
+        ql <- length(lhs)
+        qr <- length(rhs)
+        if (any(rhs))
+            {
+                msg <- paste("Some RHS's cannot be evaluated at theta0")
+                error <- c(error, msg)
+            }
+        if (any(lhs))
+            {
+                msg <- paste("Some LHS's cannot be evaluated at theta0")
+                error <- c(error, msg)
+            }
+        if (any(c(ql,qr) != length(object@momNames)))
+            {
+                msg <- "the length fRHS or fLHS does not match the length of momNames"
+                error <- c(error, msg)                
+            }
+        if (k != length(object@parNames))
+            {
+                msg <- "the length of parNames is not equal to k"
+                error <- c(error, msg)                
+            }
+        if (length(error)==0)
+            TRUE
+        else
+            error
+    }
+
+setValidity("formulaGmm", .checkformGmm)
+
 .checkfGmm <- function(object)
     {
-        error <- .checkBased(object)
+        mom <- try(object@fct(object@theta0, object@X))
         k <-  length(object@theta0)
+        error <- character()
+        if (any(class(mom)=="try-error"))
+            {
+                msg <- paste("Cannot evaluate the moments at theta0\n",
+                             attr(mom,"conditon"))
+                error <- c(error, msg)
+            } else {
+                q <-  ncol(mom)
+                n <- nrow(mom)
+                error <- c(error, .checkBased(object, n))
+                if (q != object@q)
+                    {
+                        msg <- paste("q does not correspond to the number of ",
+                                     "instruments in intF",sep="")
+                        error <- c(error, msg)
+                    }
+                if (q<k | n<q)
+                    {
+                        msg <- "The model is under-identified"
+                        error <- c(error, msg)
+                    }
+            }
         if (k != object@k)
             {
                 msg <- "k does not correspond to the number of resgressor in modelF"
                 error <- c(error, msg)
             }
-        mom <- try(object@fct(object@theta0, object@X))
         if (!is.null(object@dfct))
             {
                 dmom <- try(object@dfct(object@theta0, object@X))
@@ -232,26 +327,6 @@ setValidity("nonlinearGmm", .checkNLinGmm)
                                              "moments is not qxk",sep="")
                                 error <- c(error, msg)
                             }
-                    }
-            }
-        if (any(class(mom)=="try-error"))
-            {
-                msg <- paste("Cannot evaluate the moments at theta0\n",
-                             attr(mom,"conditon"))
-                error <- c(error, msg)
-            } else {
-                q <-  ncol(mom)
-                n <- nrow(mom)
-                if (q != object@q)
-                    {
-                        msg <- paste("q does not correspond to the number of ",
-                                     "instruments in intF",sep="")
-                        error <- c(error, msg)
-                    }
-                if (q<k | n<q)
-                    {
-                        msg <- "The model is under-identified"
-                        error <- c(error, msg)
                     }
             }
         if (q != length(object@momNames))
