@@ -4,7 +4,7 @@ ATEgel <- function(g, balm, w=NULL, y=NULL, treat=NULL, tet0=NULL,
                    type = c("EL", "ET", "CUE", "ETEL", "HD", "ETHD"),
                    tol_lam = 1e-9, tol_obj = 1e-9, tol_mom = 1e-9, maxiterlam = 100,
                    optfct = c("optim", "nlminb"), 
-                   optlam = c("nlminb", "optim", "iter", "Wu"),
+                   optlam = c("nlminb", "optim", "iter", "Wu", "RCue"),
                    data=NULL, Lambdacontrol = list(),
                    model = TRUE, X = FALSE, Y = FALSE, ...)
     {
@@ -325,7 +325,7 @@ marginal.ategel <- function(object, ...)
         coef
     }
 
-checkConv <- function(obj, tolConv=1e-4,verbose=TRUE)
+checkConv <- function(obj, tolConv=1e-4,verbose=TRUE, ...)
     {
         if (!any(class(obj)=="ategel"))
             stop("The function is for ategel objects produced by ATEgel()")
@@ -337,7 +337,7 @@ checkConv <- function(obj, tolConv=1e-4,verbose=TRUE)
         nZ <- attr(obj$dat, "k")-1
         z <- dat[,3:(2+nZ),drop=FALSE]
         x <- dat[,-(1:(2+nZ)),drop=FALSE]
-        pt <- obj$pt
+        pt <- getImpProb(obj, ...)
         pt1 <- lapply(1:nZ, function(i) pt[z[,i]==1]/sum(pt[z[,i]==1]))
         pt0 <- pt[rowSums(z)==0]/sum(pt[rowSums(z)==0])
         m0 <- colSums(x[rowSums(z)==0,,drop=FALSE]*pt0)

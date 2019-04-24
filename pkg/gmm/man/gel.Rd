@@ -15,7 +15,7 @@ gel(g, x, tet0 = NULL, gradv = NULL, smooth = FALSE,
     approx = c("AR(1)", "ARMA(1,1)"), prewhite = 1, ar.method = "ols", 
     tol_weights = 1e-7, tol_lam = 1e-9, tol_obj = 1e-9, tol_mom = 1e-9, 
     maxiterlam = 100, constraint = FALSE, optfct = c("optim", "optimize", 
-    "nlminb"), optlam = c("nlminb", "optim", "iter", "Wu"), data,
+    "nlminb"), optlam = c("nlminb", "optim", "iter", "Wu", "RCue"), data,
     Lambdacontrol = list(), model = TRUE, X = FALSE, Y = FALSE,
     TypeGel = "baseGel", alpha = NULL, eqConst = NULL,
     eqConstFullVcov = FALSE, onlyCoefficients=FALSE, ...)
@@ -25,8 +25,8 @@ evalGel(g, x, tet0, gradv = NULL, smooth = FALSE,
         approx = c("AR(1)", "ARMA(1,1)"), prewhite = 1,
         ar.method = "ols", tol_weights = 1e-7, tol_lam = 1e-9, tol_obj = 1e-9, 
         tol_mom = 1e-9, maxiterlam = 100, optlam = c("nlminb", "optim",
-        "iter", "Wu"), data, Lambdacontrol = list(), model = TRUE, X = FALSE,
-        Y = FALSE, alpha = NULL, ...)
+        "iter", "Wu", "RCue"), data, Lambdacontrol = list(),
+        model = TRUE, X = FALSE, Y = FALSE, alpha = NULL, ...)
 }
 \arguments{
 \item{g}{A function of the form \eqn{g(\theta,x)} and which returns a \eqn{n \times q} matrix with typical element \eqn{g_i(\theta,x_t)} for \eqn{i=1,...q} and \eqn{t=1,...,n}. This matrix is then used to build the q sample moment conditions. It can also be a formula if the model is linear (see details below).  }
@@ -73,7 +73,12 @@ evalGel(g, x, tet0, gradv = NULL, smooth = FALSE,
 \item{tol_mom}{It is the tolerance for the moment condition \eqn{\sum_{t=1}^n p_t g(\theta(x_t)=0}, where \eqn{p_t=\frac{1}{n}D\rho(<g_t,\lambda>)} is the implied probability. It adds a penalty if the solution diverges from its goal.}
 
 \item{optlam}{Algorithm used to solve for the lagrange multiplier in
-  \code{\link{getLamb}}. The algorithm Wu is only for \code{type="EL"}. }
+  \code{\link{getLamb}}. The algorithm Wu is only for
+  \code{type="EL"}. The last method, is for "CUE". By default, the
+  analytical solution is used for lambda, which may result in negative
+  implied probabilities. The "RCue" method uses
+  \code{\link{constrOptim}} as for "EL" to restrict implied
+  probabiltities to be positive.}
 
 \item{data}{A data.frame or a matrix with column names (Optional). }
 

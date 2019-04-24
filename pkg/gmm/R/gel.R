@@ -149,18 +149,56 @@
                         mean(.rho(gt,-M,derive=0,type="EL",k=K))))        
     }
 
+.CUE_lam <- function(gt, K=1, control=list(), numSol=FALSE)
+    {
+        if (!numSol)
+            {
+                q <- qr(gt)
+                n <- nrow(gt)
+                l0 <- -qr.coef(q, rep(1,n))
+                conv <- list(convergence=0)
+            } else {
+		fct <- function(l,X,k)
+                    {
+			r0 <- .rho(X,l,derive=0,type="CUE",k=k)
+			-mean(r0)
+                    }
+		Dfct <- function(l,X,k)
+                    {
+			r1 <- .rho(X,l,derive=1,type="CUE",k=k)
+		        -colMeans(r1*X)
+                    }
+                ui <- gt
+                ci <- rep(-1,nrow(gt))
+                res <- constrOptim(rep(0,ncol(gt)),fct,Dfct,ui,ci,
+                                   control=control,
+                                   X=gt,k=K)
+                l0 <- res$par
+                conv <- list(convergence = res$convergence, counts = res$counts,
+                             message = res$message)                
+            }        
+        list(lambda = l0, convergence = conv, obj =
+                 mean(.rho(gt,l0,derive=0,type="CUE",k=K)))
+    }
+
 getLamb <- function(gt, l0, type = c('EL', 'ET', 'CUE', "ETEL", "HD", "ETHD"),
                     tol_lam = 1e-7, maxiterlam = 100, tol_obj = 1e-7, 
-                    k = 1, method = c("nlminb", "optim", "iter", "Wu"), control=list())
+                    k = 1, method = c("nlminb", "optim", "iter", "Wu", "RCue"),
+                    control=list())
     {
 	method <- match.arg(method)
-	if(is.null(dim(gt)))
-            gt <- matrix(gt,ncol=1)
-
+        gt <- as.matrix(gt)
         if (method == "Wu" & type != "EL")
             stop("Wu (2005) method to compute Lambda is for EL only")
+        if (method == "RCue" & type != "CUE")
+            {
+                warning("RCue is for CUE only. optlam set to optim")
+                method <- "optim"
+            }
         if (method == "Wu")
             return(.Wu(gt, tol_lam, maxiterlam, k))
+        if (type == "CUE")
+            return(.CUE_lam(gt, k, control, method=="RCue"))
 	if (method == "iter")
             {
 		if ((type == "ETEL") | (type == "ETHD"))
@@ -279,7 +317,8 @@ gel <- function(g, x, tet0 = NULL, gradv = NULL, smooth = FALSE,
                 tol_weights = 1e-7, tol_lam = 1e-9, tol_obj = 1e-9, 
 		tol_mom = 1e-9, maxiterlam = 100, constraint = FALSE,
                 optfct = c("optim", "optimize", "nlminb"), 
-                optlam = c("nlminb", "optim", "iter", "Wu"), data, Lambdacontrol = list(),
+                optlam = c("nlminb", "optim", "iter", "Wu", "RCue"), data,
+                Lambdacontrol = list(),
                 model = TRUE, X = FALSE, Y = FALSE, TypeGel = "baseGel", alpha = NULL,
                 eqConst = NULL, eqConstFullVcov = FALSE, onlyCoefficients=FALSE, ...)
     {
@@ -303,7 +342,8 @@ gel <- function(g, x, tet0 = NULL, gradv = NULL, smooth = FALSE,
                          optlam = optlam, model = model, X = X, Y = Y,
                          TypeGel = TypeGel, call = match.call(),
                          Lambdacontrol = Lambdacontrol, alpha = alpha, data = data,
-                         eqConst = eqConst, eqConstFullVcov = eqConstFullVcov, onlyCoefficients=onlyCoefficients)
+                         eqConst = eqConst, eqConstFullVcov = eqConstFullVcov,
+                         onlyCoefficients=onlyCoefficients)
 	class(all_args)<-TypeGel
 	Model_info<-getModel(all_args)
 	z <- momentEstim(Model_info, ...)
@@ -318,7 +358,7 @@ evalGel <- function(g, x, tet0, gradv = NULL, smooth = FALSE,
                     approx = c("AR(1)", "ARMA(1,1)"), prewhite = 1,
                     ar.method = "ols", tol_weights = 1e-7, tol_lam = 1e-9,
                     tol_obj = 1e-9, tol_mom = 1e-9, maxiterlam = 100,
-                    optlam = c("nlminb", "optim", "iter", "Wu"), data,
+                    optlam = c("nlminb", "optim", "iter", "Wu", "RCue"), data,
                     Lambdacontrol = list(),
                     model = TRUE, X = FALSE, Y = FALSE, alpha = NULL, ...)
     {
@@ -423,7 +463,6 @@ evalGel <- function(g, x, tet0, gradv = NULL, smooth = FALSE,
         pt
     }
 
-                
 .vcovGel <- function(gt, G, k1, k2, bw, pt=NULL,tol=1e-16)
     {
         q <- NCOL(gt)

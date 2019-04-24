@@ -10,7 +10,7 @@
 \usage{
 getLamb(gt, l0, type = c("EL","ET","CUE", "ETEL", "HD","ETHD"),
         tol_lam = 1e-7, maxiterlam = 100, 
-	tol_obj = 1e-7, k = 1, method = c("nlminb", "optim", "iter", "Wu"),
+	tol_obj = 1e-7, k = 1, method = c("nlminb", "optim", "iter", "Wu","RCue"),
         control = list())
 }
 \arguments{
@@ -36,7 +36,11 @@ getLamb(gt, l0, type = c("EL","ET","CUE", "ETEL", "HD","ETHD"),
   \code{\link{constrOptim}} is called to prevent \eqn{log(1-gt'\lambda)}
   from producing NA. The gradient and hessian is provided to
   \code{nlminb} which speed up the convergence. The latter is therefore
-  the default value. "Wu" is for "EL" only. It uses the algorithm of Wu (2005).}
+  the default value. "Wu" is for "EL" only. It uses the algorithm of Wu
+  (2005). The last method, is for "CUE". By default, the analytical
+  solution is used for lambda, which may result in negative implied
+  probabilities. The "RCue" method uses \code{\link{constrOptim}} as for
+  "EL" to restrict implied probabiltities to be positive.}
 
 \item{control}{Controls to send to \code{\link{optim}}, \code{\link{nlminb}} or \code{\link{constrOptim}}}
 }

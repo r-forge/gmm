@@ -15,10 +15,10 @@ ATEgel(g, balm, w=NULL, y=NULL, treat=NULL, tet0=NULL,momType=c("bal","balSample
                    type = c("EL", "ET", "CUE", "ETEL", "HD", "ETHD"),
                    tol_lam = 1e-9, tol_obj = 1e-9, tol_mom = 1e-9, maxiterlam = 100,
                    optfct = c("optim", "nlminb"), 
-                   optlam = c("nlminb", "optim", "iter", "Wu"), data=NULL,
+                   optlam = c("nlminb", "optim", "iter", "Wu", "RCue"), data=NULL,
                    Lambdacontrol = list(),
                    model = TRUE, X = FALSE, Y = FALSE, ...)
-checkConv(obj, tolConv=1e-4, verbose=TRUE)
+checkConv(obj, tolConv=1e-4, verbose=TRUE, ...)
 }
 \arguments{
 \item{g}{A formula as \code{y~z}, where code{y} is the response and
@@ -77,7 +77,12 @@ checkConv(obj, tolConv=1e-4, verbose=TRUE)
 \item{tol_mom}{It is the tolerance for the moment condition \eqn{\sum_{t=1}^n p_t g(\theta(x_t)=0}, where \eqn{p_t=\frac{1}{n}D\rho(<g_t,\lambda>)} is the implied probability. It adds a penalty if the solution diverges from its goal.}
 
 \item{optlam}{Algorithm used to solve for the lagrange multiplier in
-  \code{\link{getLamb}}. The algorithm Wu is only for \code{type="EL"}. }
+  \code{\link{getLamb}}. The algorithm Wu is only for
+  \code{type="EL"}. By default, the analytical solution is used for
+  lambda, which may result in negative implied probabilities. The "RCue"
+  method uses \code{\link{constrOptim}} as for "EL" to restrict implied
+  probabiltities to be positive. If the non-negativity constraint is
+  binding, the samples will not be properly balanced.}
 
 \item{data}{A data.frame or a matrix with column names (Optional). }
 
@@ -89,7 +94,9 @@ checkConv(obj, tolConv=1e-4, verbose=TRUE)
 
 \item{tolConv}{The tolerance for comparing moments between groups}
 
-\item{...}{More options to give to \code{\link{optim}} or \code{\link{nlminb}}.}
+\item{...}{More options to give to \code{\link{optim}} or
+  \code{\link{nlminb}}. In \code{checkConv}, they are options passed to
+  \code{\link{getImpProb}}.}
 
 }
 
