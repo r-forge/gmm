@@ -11,12 +11,13 @@
 #  A copy of the GNU General Public License is available at
 #  http://www.r-project.org/Licenses/
 
-.rho <- function(x, lamb, derive = 0, type = c("EL", "ET", "CUE", "HD", "ETEL", "ETHD"),
-                 k = 1)
+.rho <- function(x, lamb, derive = 0, type = c("EL", "ET", "CUE", "HD", "ETEL", "ETHD",
+                                          "RCUE"), k = 1)
     {
 	type <- match.arg(type)
-	lamb <- matrix(lamb, ncol = 1)
-	gml <- x%*%lamb*k
+        if (type == "RCUE")
+            type <- "CUE"
+	gml <- x%*%c(lamb)*k
 	if (derive == 0)
             {
 		if (type == "EL")
@@ -111,7 +112,8 @@
             }
         
 	return(list(lambda = res$par, convergence = conv, 
-                    obj = mean(.rho(gt,res$par, derive=0,type=type,k=k))))	
+                    obj = mean(.rho(gt,res$par, derive=0,type=type,k=k)) -
+                        .rho(1,0, derive=0,type=type,k=k)))
     }
 
 .Wu <- function(gt, tol_lam = 1e-8, maxiterlam = 50, K=1)
@@ -149,56 +151,104 @@
                         mean(.rho(gt,-M,derive=0,type="EL",k=K))))        
     }
 
-.CUE_lam <- function(gt, K=1, control=list(), numSol=FALSE)
+.Wu2 <- function(gt, tol_lam = 1e-8, maxiter = 50, K = 1)
     {
-        if (!numSol)
-            {
-                q <- qr(gt)
-                n <- nrow(gt)
-                l0 <- -qr.coef(q, rep(1,n))
-                conv <- list(convergence=0)
-            } else {
-		fct <- function(l,X,k)
-                    {
-			r0 <- .rho(X,l,derive=0,type="CUE",k=k)
-			-mean(r0)
-                    }
-		Dfct <- function(l,X,k)
-                    {
-			r1 <- .rho(X,l,derive=1,type="CUE",k=k)
-		        -colMeans(r1*X)
-                    }
-                ui <- gt
-                ci <- rep(-1,nrow(gt))
-                res <- constrOptim(rep(0,ncol(gt)),fct,Dfct,ui,ci,
-                                   control=control,
-                                   X=gt,k=K)
-                l0 <- res$par
-                conv <- list(convergence = res$convergence, counts = res$counts,
-                             message = res$message)                
-            }        
+        gt <- as.matrix(gt)
+        res <- .Fortran("wu", as.double(gt), as.double(tol_lam),
+                        as.integer(maxiter), as.integer(nrow(gt)),
+                        as.integer(ncol(gt)), as.double(K),
+                        conv=integer(1), obj=double(1),
+                        lambda=double(ncol(gt)))
+        list(lambda=res$lambda, convergence=list(convergence=res$conv),
+             obj = res$obj)
+    }
+
+.CUE_lam <- function(gt, K=1)
+    {
+        q <- qr(gt)
+        n <- nrow(gt)
+        l0 <- -qr.coef(q, rep(1,n))
+        conv <- list(convergence=0)
         list(lambda = l0, convergence = conv, obj =
                  mean(.rho(gt,l0,derive=0,type="CUE",k=K)))
     }
 
-getLamb <- function(gt, l0, type = c('EL', 'ET', 'CUE', "ETEL", "HD", "ETHD"),
+.CUE_lamPos <- function(gt, K=1, control=list())
+    {
+        getpt <- function(gt,lam)
+            {
+                gl <- c(gt%*%lam)
+                pt <- 1 + gl
+                pt/sum(pt)
+            }
+        maxit <- ifelse("maxit" %in% names(control),
+                        control$maxit, 50)
+        res <-.CUE_lam(gt, K)
+        n <- nrow(gt)
+        i <- 1
+        pt <- getpt(gt, res$lambda)
+        w <- pt<0        
+        while (TRUE)
+            {
+                gt2 <- gt[!w,]
+                n1 <- nrow(gt2)
+                if (n1 == n)
+                    break
+                res <-  try(.CUE_lam(gt2), silent=TRUE)
+                if (i > maxit)
+                    return(list(lambda=rep(0,ncol(gt)), obj=0, pt=rep(1/n,n),
+                                convergence=list(convergence=1)))
+                if (class(res) == "try-error")                    
+                    return(list(lambda=rep(0,ncol(gt)), obj=0, pt=rep(1/n,n),
+                                convergence=list(convergence=2)))
+                pt[!w] <- getpt(gt2, res$lambda)
+                pt[w] <- 0
+                if (all(pt>=0))
+                    break
+                i <- i+1
+                w[!w] <- pt[!w]<0
+            }
+        n0 <- n-n1
+        res$obj <- res$obj*n1/n + n0/(2*n)
+        res
+    }
+
+.CUE_lamPos2 <- function(gt, K=1, control=list())
+    {
+        gt <- as.matrix(gt)
+        n <- nrow(gt)
+        q <- ncol(gt)
+        maxit <- ifelse("maxit" %in% names(control),
+                        control$maxit, 50)        
+        res <- try(.Fortran("lamcuep", as.double(gt),
+                        as.integer(n), as.integer(q), as.double(K),
+                        as.integer(maxit),conv=integer(1),
+                        lam=double(q),pt=double(n),
+                        obj=double(1)
+                            ), silent=TRUE)
+        if (class(res) == "try-error")
+            return(list(lambda=rep(0,q), obj=0, pt=rep(1/n,n),
+                        convergence=list(convergence=3)))
+        list(lambda=res$lam, obj=res$obj, pt=res$pt,
+             convergence=list(convergence=res$conv))
+    }
+
+getLamb <- function(gt, l0, type = c('EL', 'ET', 'CUE', "ETEL", "HD", "ETHD", "RCUE"),
                     tol_lam = 1e-7, maxiterlam = 100, tol_obj = 1e-7, 
-                    k = 1, method = c("nlminb", "optim", "iter", "Wu", "RCue"),
+                    k = 1, method = c("nlminb", "optim", "iter", "Wu"),
                     control=list())
     {
 	method <- match.arg(method)
+        type <- match.arg(type)
         gt <- as.matrix(gt)
         if (method == "Wu" & type != "EL")
             stop("Wu (2005) method to compute Lambda is for EL only")
-        if (method == "RCue" & type != "CUE")
-            {
-                warning("RCue is for CUE only. optlam set to optim")
-                method <- "optim"
-            }
         if (method == "Wu")
-            return(.Wu(gt, tol_lam, maxiterlam, k))
+            return(.Wu2(gt, tol_lam, maxiterlam, k))
         if (type == "CUE")
-            return(.CUE_lam(gt, k, control, method=="RCue"))
+            return(.CUE_lam(gt, k))
+        if (type == "RCUE")
+            return(.CUE_lamPos2(gt, k, control))
 	if (method == "iter")
             {
 		if ((type == "ETEL") | (type == "ETHD"))
@@ -266,7 +316,8 @@ getLamb <- function(gt, l0, type = c('EL', 'ET', 'CUE', "ETEL", "HD", "ETHD"),
                                      res$evaluations, message = res$message)
             }
 	return(list(lambda = l0, convergence = conv, obj =
-                        mean(.rho(gt,l0,derive=0,type=type,k=k))))
+                        mean(.rho(gt,l0,derive=0,type=type,k=k))-
+                            .rho(1, 0, type = type, derive = 0, k = k)))
     }
 
 smoothG <- function (x, bw = bwAndrews, prewhite = 1, ar.method = "ols",
@@ -309,15 +360,14 @@ smoothG <- function (x, bw = bwAndrews, prewhite = 1, ar.method = "ols",
         return(sx)		
     }
                       
-
 gel <- function(g, x, tet0 = NULL, gradv = NULL, smooth = FALSE,
-                type = c("EL", "ET", "CUE", "ETEL", "HD", "ETHD"), 
+                type = c("EL", "ET", "CUE", "ETEL", "HD", "ETHD","RCUE"), 
                 kernel = c("Truncated", "Bartlett"), bw = bwAndrews,
                 approx = c("AR(1)", "ARMA(1,1)"), prewhite = 1, ar.method = "ols",
                 tol_weights = 1e-7, tol_lam = 1e-9, tol_obj = 1e-9, 
 		tol_mom = 1e-9, maxiterlam = 100, constraint = FALSE,
                 optfct = c("optim", "optimize", "nlminb"), 
-                optlam = c("nlminb", "optim", "iter", "Wu", "RCue"), data,
+                optlam = c("nlminb", "optim", "iter", "Wu"), data,
                 Lambdacontrol = list(),
                 model = TRUE, X = FALSE, Y = FALSE, TypeGel = "baseGel", alpha = NULL,
                 eqConst = NULL, eqConstFullVcov = FALSE, onlyCoefficients=FALSE, ...)
@@ -353,12 +403,12 @@ gel <- function(g, x, tet0 = NULL, gradv = NULL, smooth = FALSE,
 	}
 
 evalGel <- function(g, x, tet0, gradv = NULL, smooth = FALSE,
-                    type = c("EL", "ET", "CUE", "ETEL", "HD", "ETHD"), 
+                    type = c("EL", "ET", "CUE", "ETEL", "HD", "ETHD","RCUE"), 
                     kernel = c("Truncated", "Bartlett"), bw = bwAndrews,
                     approx = c("AR(1)", "ARMA(1,1)"), prewhite = 1,
                     ar.method = "ols", tol_weights = 1e-7, tol_lam = 1e-9,
                     tol_obj = 1e-9, tol_mom = 1e-9, maxiterlam = 100,
-                    optlam = c("nlminb", "optim", "iter", "Wu", "RCue"), data,
+                    optlam = c("nlminb", "optim", "iter", "Wu"), data,
                     Lambdacontrol = list(),
                     model = TRUE, X = FALSE, Y = FALSE, alpha = NULL, ...)
     {
@@ -385,7 +435,7 @@ evalGel <- function(g, x, tet0, gradv = NULL, smooth = FALSE,
 	z <- momentEstim(Model_info, ...)
 	class(z) <- "gel"
 	return(z)
-	}
+      }
 
 .thetf <- function(tet, P, output=c("obj","all"), l0Env)
     {
@@ -427,14 +477,16 @@ evalGel <- function(g, x, tet0, gradv = NULL, smooth = FALSE,
                                             control=P$Lambdacontrol, 
                                             k = P$k1/P$k2, alpha = P$CGEL),silent=TRUE)
             }
-        if (P$type != "ETHD")
-            obj <- mean(.rho(gt, lamb$lambda, type = P$type, derive = 0,
-                             k = P$k1/P$k2) - .rho(1, 0, type = P$type,
-                                 derive = 0, k = P$k1/P$k2))
-        else
-            obj <- sum(.rho(gt, lamb$lambda, type = P$type, derive = 0,
-                            k = P$k1/P$k2) - .rho(1, 0, type = P$type, derive = 0,
-                                k = P$k1/P$k2))
+            if (P$type == "ETEL")
+                obj <- mean(.rho(gt, lamb$lambda, type = P$type, derive = 0,
+                                 k = P$k1/P$k2) - .rho(1, 0, type = P$type,
+                                     derive = 0, k = P$k1/P$k2))
+            else if (P$type == "ETHD")
+                obj <- sum(.rho(gt, lamb$lambda, type = P$type, derive = 0,
+                                k = P$k1/P$k2) - .rho(1, 0, type = P$type, derive = 0,
+                                    k = P$k1/P$k2))
+            else
+                obj <- lamb$obj
         assign("l0",lamb$lambda,envir=l0Env)
         if(output == "obj")
 	    return(obj)
@@ -454,6 +506,8 @@ evalGel <- function(g, x, tet0, gradv = NULL, smooth = FALSE,
                 eps <- -length(pt)*min(min(pt),0)
                 pt <- (pt+eps/length(pt))/(1+eps)
             }
+        if (type=="RCUE")
+            pt[pt<0] <- 0
         ###################
         conv_moment <- colSums(pt*gt)
         conv_pt <- sum(as.numeric(pt))

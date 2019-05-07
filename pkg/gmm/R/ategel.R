@@ -1,10 +1,10 @@
 ATEgel <- function(g, balm, w=NULL, y=NULL, treat=NULL, tet0=NULL,
                    momType=c("bal","balSample","ATT"),
                    popMom = NULL, family=c("linear","logit", "probit"),
-                   type = c("EL", "ET", "CUE", "ETEL", "HD", "ETHD"),
+                   type = c("EL", "ET", "CUE", "ETEL", "HD", "ETHD","RCUE"),
                    tol_lam = 1e-9, tol_obj = 1e-9, tol_mom = 1e-9, maxiterlam = 100,
                    optfct = c("optim", "nlminb"), 
-                   optlam = c("nlminb", "optim", "iter", "Wu", "RCue"),
+                   optlam = c("nlminb", "optim", "iter", "Wu"),
                    data=NULL, Lambdacontrol = list(),
                    model = TRUE, X = FALSE, Y = FALSE, ...)
     {

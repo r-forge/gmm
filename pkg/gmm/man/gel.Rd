@@ -10,22 +10,22 @@ Function to estimate a vector of parameters based on moment conditions using the
 }
 \usage{
 gel(g, x, tet0 = NULL, gradv = NULL, smooth = FALSE,
-    type = c("EL","ET","CUE","ETEL","HD","ETHD"), 
+    type = c("EL","ET","CUE","ETEL","HD","ETHD","RCUE"), 
     kernel = c("Truncated", "Bartlett"), bw = bwAndrews, 
     approx = c("AR(1)", "ARMA(1,1)"), prewhite = 1, ar.method = "ols", 
     tol_weights = 1e-7, tol_lam = 1e-9, tol_obj = 1e-9, tol_mom = 1e-9, 
     maxiterlam = 100, constraint = FALSE, optfct = c("optim", "optimize", 
-    "nlminb"), optlam = c("nlminb", "optim", "iter", "Wu", "RCue"), data,
+    "nlminb"), optlam = c("nlminb", "optim", "iter", "Wu"), data,
     Lambdacontrol = list(), model = TRUE, X = FALSE, Y = FALSE,
     TypeGel = "baseGel", alpha = NULL, eqConst = NULL,
     eqConstFullVcov = FALSE, onlyCoefficients=FALSE, ...)
 evalGel(g, x, tet0, gradv = NULL, smooth = FALSE,
-        type = c("EL", "ET", "CUE", "ETEL", "HD", "ETHD"),
+        type = c("EL", "ET", "CUE", "ETEL", "HD", "ETHD","RCUE"),
         kernel = c("Truncated", "Bartlett"), bw = bwAndrews,
         approx = c("AR(1)", "ARMA(1,1)"), prewhite = 1,
         ar.method = "ols", tol_weights = 1e-7, tol_lam = 1e-9, tol_obj = 1e-9, 
         tol_mom = 1e-9, maxiterlam = 100, optlam = c("nlminb", "optim",
-        "iter", "Wu", "RCue"), data, Lambdacontrol = list(),
+        "iter", "Wu"), data, Lambdacontrol = list(),
         model = TRUE, X = FALSE, Y = FALSE, alpha = NULL, ...)
 }
 \arguments{
@@ -46,7 +46,10 @@ evalGel(g, x, tet0, gradv = NULL, smooth = FALSE,
   "CUE" for continuous updated estimator, "ETEL" for exponentially
   tilted empirical likelihood of Schennach(2007), "HD" for Hellinger
   Distance of Kitamura-Otsu-Evdokimov (2013), and "ETHD" for the
-  exponentially tilted Hellinger distance of Antoine-Dovonon (2015).}
+  exponentially tilted Hellinger distance of Antoine-Dovonon
+  (2015). "RCUE" is a restricted version of "CUE" in which the
+  probabilities are bounded below by zero. In that case, an analytical
+  Kuhn-Tucker method is used to find the solution.}
 
 \item{kernel}{type of kernel used to compute the covariance matrix of the vector of sample moment conditions (see \code{\link{kernHAC}} for more details) and to smooth the moment conditions if "smooth" is set to TRUE. Only two types of kernel are available. The truncated implies a Bartlett kernel for the HAC matrix and the Bartlett implies a Parzen kernel (see Smith 2004).}
 
@@ -74,11 +77,8 @@ evalGel(g, x, tet0, gradv = NULL, smooth = FALSE,
 
 \item{optlam}{Algorithm used to solve for the lagrange multiplier in
   \code{\link{getLamb}}. The algorithm Wu is only for
-  \code{type="EL"}. The last method, is for "CUE". By default, the
-  analytical solution is used for lambda, which may result in negative
-  implied probabilities. The "RCue" method uses
-  \code{\link{constrOptim}} as for "EL" to restrict implied
-  probabiltities to be positive.}
+  \code{type="EL"}. The value of \code{optlam} is ignored for "CUE"
+  because in that case, the analytical solution exists.}
 
 \item{data}{A data.frame or a matrix with column names (Optional). }
 
