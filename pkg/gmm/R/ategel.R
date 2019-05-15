@@ -34,9 +34,11 @@ ATEgel <- function(g, balm, w=NULL, y=NULL, treat=NULL, tet0=NULL,
         if (any(class(res)=="try-error"))
             {
                 warning("Could not compute the robust-to misspecification standard errors")
+                z$robVcov <- FALSE
             } else {
                 z$vcov_par <- res$vcov_par
                 z$vcov_lambda <- res$vcov_lambda
+                z$robVcov <- TRUE
             }
 	return(z)
     }

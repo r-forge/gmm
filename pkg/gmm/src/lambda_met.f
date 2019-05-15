@@ -81,26 +81,38 @@
       pt = pt*k
       obj = sum(-pt-(pt**2)/2)/n
       pt = 1+pt
+      where (pt < 0)
+         pt = 0.0d0
+      end where
       pt = pt/sum(pt)
       end
 
+      subroutine getpt(gt,n,q,k,lam,pt)
+      integer n, q
+      double precision gt(n,q), lam(q), k, pt(n)      
+      call dgemv('n', n, q, 1.0d0, gt, n, lam, 1, 0.0d0,
+     *     pt, 1)
+      pt = 1.0d0 + pt*k
+      where (pt < 0)
+         pt = 0.0d0
+      end where
+      pt = pt/sum(pt)
+      end
 
       subroutine lamcuep(gt, n, q, k, maxit, conv, lam, pt, obj)
-      integer n, q, i, maxit, n0, n1, conv, ind(n)
+      integer n, q, i, maxit, n0, n1, conv, ind(n), wi(n)
       double precision gt(n,q), lam(q), pt(n), obj, pt0(n), k
-      integer wi(n), wni(n)
+      double precision pt2(n)
       logical w(n)
 
       call lamcue(gt, n, q, k, lam, pt, obj)
       ind = (/ (i, i=1,n) /)
       i = 1
       conv = 0
-      w = (pt < 0)
-      do while (.not. all(pt >= 0))
-         n0 = count(w)
-         n1 = n-n0
-         wi(1:n1) = pack(ind, .not. w)
-         wni(1:n0) = pack(ind, w)
+      do 
+         w = pt > 0
+         n1 = count(w)
+         n0 = n-n1         
          if (n1 < (q+1)) then
             pt = 1.0d0/n
             conv = 2
@@ -115,12 +127,15 @@
             lam = 0.0d0
             exit
          end if
+         wi(1:n1) = pack(ind, w)
          call lamcue(gt(wi(1:n1),:), n1, q, k, lam,
      *        pt0(1:n1), obj)
-         pt(wi(1:n1)) = pt0(1:n1)
-         pt(wni(1:n0)) = 0.0d0
+         call getpt(gt,n,q,k,lam,pt2)
+         if (all(pt==pt2)) then
+            exit
+         end if
+         pt = pt2
          i = i+1
-         w = w .or. (pt<0)
       end do
       if (conv == 0) then
          obj = obj*n1/n + dble(n0)/(2*n)

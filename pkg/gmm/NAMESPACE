@@ -1,4 +1,4 @@
-useDynLib(gmm)
+useDynLib(gmm, .registration = TRUE, .fixes="F_")
 import(stats)
 importFrom(sandwich, estfun, bread, kernHAC, weightsAndrews, vcovHAC, bwAndrews, meatHC)
 importFrom(methods, is)

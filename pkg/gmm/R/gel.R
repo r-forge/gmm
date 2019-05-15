@@ -154,7 +154,7 @@
 .Wu2 <- function(gt, tol_lam = 1e-8, maxiter = 50, K = 1)
     {
         gt <- as.matrix(gt)
-        res <- .Fortran("wu", as.double(gt), as.double(tol_lam),
+        res <- .Fortran(F_wu, as.double(gt), as.double(tol_lam),
                         as.integer(maxiter), as.integer(nrow(gt)),
                         as.integer(ncol(gt)), as.double(K),
                         conv=integer(1), obj=double(1),
@@ -220,7 +220,7 @@
         q <- ncol(gt)
         maxit <- ifelse("maxit" %in% names(control),
                         control$maxit, 50)        
-        res <- try(.Fortran("lamcuep", as.double(gt),
+        res <- try(.Fortran(F_lamcuep, as.double(gt),
                         as.integer(n), as.integer(q), as.double(K),
                         as.integer(maxit),conv=integer(1),
                         lam=double(q),pt=double(n),
