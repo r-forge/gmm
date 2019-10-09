@@ -438,7 +438,7 @@ setMethod("evalWeights", signature("gmmModels"),valueClass="gmmWeights",
                               {
                                   type <- "weights"
                               } else {
-                                  if (class(object) == "functionGmm" & object@vcov == "iid")
+                                  if (class(object) %in% c("formulaGmm", "functionGmm") & object@vcov == "iid")
                                       object@vcov <- "MDS"
                                   if (object@vcov == "MDS")
                                       {
