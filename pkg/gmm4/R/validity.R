@@ -564,9 +564,9 @@ setValidity("sysGmmWeights", .checkSysGmmWeights)
                     } else {
                         if (is.null(gtype$fct))
                             {
-                                if (!(gtype$name %in% c("EL","ET","EEL","HD")))
+                                if (!(gtype$name %in% c("EL","ET","EEL","HD","REEL")))
                                     {
-                                        msg <- "name in gelType must be ET, EL, HD or EEL"
+                                        msg <- "name in gelType must be ET, EL, HD, EEL or REEL"
                                         error <- c(error, msg)
                                     }
                             } else {

@@ -92,7 +92,7 @@ gmmModel <- function(g, x=NULL, tet0=NULL,grad=NULL,
             stop("vcovOptions and survOptions must be a list")
         vcovOptions <- .getVcovOptions(vcov, data, vcovOptions)
         survOptions <- .getSurvOptions(data, survOptions)
-        if (!is.list(data) && !is.environment(data)) 
+        if (!is.list(data) & !is.environment(data) & !is.function(g)) 
             stop("'data' must be a list or an environment")    
         if (any(class(g)=="formula"))
             {
@@ -136,7 +136,7 @@ gmmModel <- function(g, x=NULL, tet0=NULL,grad=NULL,
                                       isEndo=model$isEndo, omit=model$omit,
                                       survOptions=model$survOptions)
                     }
-            } else if (class(g)=="function") {
+            } else if (is.function(g)) {
                 model <- .fGmmData(g, x, tet0, survOptions, vcovOptions, na.action)
                 gmodel <- new("functionGmm", X=x, fct=g,
                               theta0=tet0, vcov=vcov,vcovOptions=model$vcovOptions,

@@ -1,6 +1,6 @@
 Package: gmm4
-Version: 0.0-2
-Date: 2019-10-09
+Version: 0.0-3
+Date: 2019-10-17
 Title: S4 Generalized Method of Moments
 Author: Pierre Chausse <pchausse@uwaterloo.ca>
 Maintainer: Pierre Chausse <pchausse@uwaterloo.ca>
@@ -16,5 +16,5 @@ Collate: 'allClasses.R' 'validity.R' 'gmmData.R' 'gmmModels-methods.R'
 	'sgmmfit-methods.R' 'gmm4.R' 'gel.R' 'gelModels-methods.R'
 	'gelfit-methods.R'
 License: GPL (>= 2)
-NeedsCompilation: no
+NeedsCompilation: yes
 VignetteBuilder: knitr

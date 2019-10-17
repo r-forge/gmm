@@ -3,6 +3,7 @@
 \alias{rhoEL}
 \alias{rhoET}
 \alias{rhoEEL}
+\alias{rhoREEL}
 \alias{rhoHD}
 	
 \title{GEL objective functions}
@@ -17,6 +18,8 @@ rhoET(gmat, lambda, derive = 0, k = 1)
 rhoEL(gmat, lambda, derive = 0, k = 1)
 
 rhoEEL(gmat, lambda, derive = 0, k = 1)
+
+rhoREEL(gmat, lambda, derive = 0, k = 1)
 
 rhoHD(gmat, lambda, derive = 0, k = 1) 
 }

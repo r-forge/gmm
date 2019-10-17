@@ -3,11 +3,9 @@ gelModel <- function(g, x=NULL, gelType, rhoFct=NULL, tet0=NULL,grad=NULL,
                      vcovOptions=list(), centeredVcov = TRUE, data=parent.frame())
     {
         vcov <- match.arg(vcov)
-        args <- as.list(match.call())
-        args$rhoFct <- NULL
-        args$gelType <- NULL
-        args$data <- data
-        model <- do.call(gmmModel, args)
+        model <- gmmModel(g=g, x=x, grad=grad, vcov=vcov, vcovOptions=vcovOptions,
+                          centeredVcov=centeredVcov,
+                          tet0=tet0, data=data)
         gmmToGel(model, gelType, rhoFct)
     }
 
@@ -57,6 +55,11 @@ rhoEEL <- function(gmat, lambda, derive = 0, k = 1)
                rep(-1, nrow(gmat)))               
     }
 
+rhoREEL <- function(gmat, lambda, derive = 0, k = 1)
+{
+    rhoEEL(gmat, lambda, derive, k)
+}
+
 rhoHD <- function(gmat, lambda, derive = 0, k = 1) 
     {
         lambda <- c(lambda)*k
@@ -68,37 +71,46 @@ rhoHD <- function(gmat, lambda, derive = 0, k = 1)
                -2/((1 + gml)^3))               
     }
 
-EL.Wu <- function (gmat, l0=NULL, tol = 1e-08, maxiter = 50, k=1) 
+Wu_lam <- function(gmat, tol=1e-8, maxiter=50, k=1)
     {
-        gmat <- as.matrix(gmat)*k
-        if (is.null(l0))
-            l0 <- rep(0, ncol(gmat))
-        n = nrow(gmat)
-        dif = 1
-        j = 0
-        while (dif > tol & j <= maxiter) {
-            D1 = t(gmat) %*% ((1/(1 + gmat %*% l0)))
-            DD = -t(gmat) %*% (c((1/(1 + gmat %*% l0)^2)) * gmat)
-            D2 = solve(DD, D1, tol = 1e-40)
-            dif = max(abs(D2))
-            rule = 1
-            while (rule > 0) {
-                rule = 0
-                if (min(1 + t(l0 - D2) %*% t(gmat)) <= 0) 
-                    rule = rule + 1
-                if (rule > 0) 
-                    D2 = D2/2
-            }
-            l0 = l0 - D2
-            j = j + 1
-        }
-        if (j >= maxiter) {
-            l0 = rep(0, ncol(gmat))
-            conv = list(convergence = 1)
-        } else {
-            conv = list(convergence = 0)
-        }
-        return(list(lambda = c(-l0), convergence = conv))
+        gmat <- as.matrix(gmat)
+        res <- .Fortran(F_wu, as.double(gmat), as.double(tol),
+                        as.integer(maxiter), as.integer(nrow(gmat)),
+                        as.integer(ncol(gmat)), as.double(k),
+                        conv=integer(1), obj=double(1),
+                        lambda=double(ncol(gmat)))
+        list(lambda=res$lambda, convergence=list(convergence=res$conv),
+             obj = res$obj)
+    }
+
+REEL_lam <- function(gmat, k=1, control=list())
+{
+        gmat <- as.matrix(gmat)
+        n <- nrow(gmat)
+        q <- ncol(gmat)
+        maxit <- ifelse("maxit" %in% names(control),
+                        control$maxit, 50)        
+        res <- try(.Fortran(F_lamcuep, as.double(gmat),
+                            as.integer(n), as.integer(q), as.double(k),
+                            as.integer(maxit),conv=integer(1),
+                            lam=double(q),pt=double(n),
+                            obj=double(1)
+                            ), silent=TRUE)
+        if (class(res) == "try-error")
+            return(list(lambda=rep(0,q), obj=0, pt=rep(1/n,n),
+                        convergence=list(convergence=3)))
+        list(lambda=res$lam, obj=res$obj, pt=res$pt,
+             convergence=list(convergence=res$conv))
+    }
+
+EEL_lam <- function(gmat, k=1)
+    {
+        q <- qr(gmat)
+        n <- nrow(gmat)
+        l0 <- -qr.coef(q, rep(1,n))
+        conv <- list(convergence=0)
+        list(lambda = l0, convergence = conv, obj =
+                 mean(rhoEEL(gmat,l0,0,k)))
     }
 
 getLambda <- function (gmat, l0=NULL, gelType, rhoFct=NULL, 
@@ -114,7 +126,11 @@ getLambda <- function (gmat, l0=NULL, gelType, rhoFct=NULL,
         if (algo == "Wu" & gelType != "EL") 
             stop("Wu (2005) algo to compute Lambda is for EL only")
         if (algo == "Wu") 
-            return(EL.Wu(gmat, l0, tol, maxiter, k))
+            return(Wu_lam(gmat, tol, maxiter, k))
+        if (gelType == "EEL")
+            return(EEL_lam(gmat, k))
+        if (gelType == "REEL")
+            return(REEL_lam(gmat, k, control))
         
         fct <- function(l, X, rhoFct, k) {
             r0 <- rhoFct(X, l, derive = 0, k = k)

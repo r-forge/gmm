@@ -1,6 +1,8 @@
 \name{lambdaAlgo}
 
-\alias{EL.Wu}
+\alias{Wu_lam}
+\alias{EEL_lam}
+\alias{REEL_lam}
 \alias{getLambda}
 	
 \title{Algorithms to solve for the Lagrange multiplier}
@@ -10,7 +12,11 @@ The algorithms finds the vector or Lagrange multipliers that maximizes
 the GEL objective function for a given vector of coefficient \eqn{\theta}.
 }
 \usage{
-EL.Wu(gmat, l0=NULL, tol = 1e-08, maxiter = 50, k=1) 
+Wu_lam(gmat, tol = 1e-08, maxiter = 50, k=1)
+
+EEL_lam(gmat, k=1) 
+
+REEL_lam(gmat, k=1, control=list())
 
 getLambda(gmat, l0=NULL, gelType, rhoFct=NULL, 
           tol = 1e-07, maxiter = 100, k = 1, method="BFGS", 
@@ -27,8 +33,9 @@ getLambda(gmat, l0=NULL, gelType, rhoFct=NULL,
 \item{maxiter}{The maximum number of iteration in the Wu algorithm}
 
 \item{gelType}{A character string specifying the type of GEL. The
-  available types are \code{"EL"}, \code{"ET"}, \code{"EEL"} and
-  \code{"HD"}.} 
+  available types are \code{"EL"}, \code{"ET"}, \code{"EEL"},
+  \code{"HD"} and "REEL". For the latter, the algorithm restricts the
+  implied probabilities to be non negative.} 
 
 \item{rhoFct}{An optional function that return \eqn{\rho(v)}. This is
   for users who want a GEL model that is not built in the package. The

@@ -1,3 +1,4 @@
+useDynLib(gmm4, .registration = TRUE, .fixes="F_")
 importFrom("methods", is, new, show, "slot<-", "slotNames", "validObject",
            "getClassDef", "selectMethod", "callNextMethod", "as", "setAs",
            "getMethod")
@@ -30,8 +31,8 @@ export(gmmModel, evalMoment, Dresiduals, evalDMoment, momentVcov, estfun.gmmFct,
        evalWeights, quadra, evalObjective, solveGmm, momentStrength,evalModel, 
        tsls, modelFit, meatGmm, specTest, gmm4, restGmmModel, modelResponse, DWH,
        modelDims, printRestrict, getRestrict, sysGmmModel, ThreeSLS, gelModel,
-       rhoET, rhoEL, rhoEEL, rhoHD, EL.Wu, getLambda, gmmToGel, smoothGel,
-       solveGel, getImpProb)
+       rhoET, rhoEL, rhoEEL, rhoHD, Wu_lam, EEL_lam, REEL_lam, getLambda, gmmToGel,
+       smoothGel, solveGel, getImpProb)
  
 ###  S3 methods ###
 

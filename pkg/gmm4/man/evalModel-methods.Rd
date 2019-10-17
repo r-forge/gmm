@@ -29,7 +29,8 @@ creates a \code{"gmmfit"} or \code{"gelfit"} object using that fixed vector.
     is only used if we want to fit the model with a different GEL
     method. see \code{\link{gelModel}}.}
   \item{lamSlv}{An alternative solver for the Lagrange multiplier. By
-    default, either \code{\link{EL.Wu}} or \code{\link{getLambda}} is
+    default, either \code{\link{Wu_lam}}, \code{\link{EEL_lam}},
+    \code{\link{REEL_lam}} or \code{\link{getLambda}} is
     used.}
   \item{lControl}{A list of controls for the Lagrange multiplier
     algorithm.}

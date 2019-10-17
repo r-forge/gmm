@@ -22,7 +22,8 @@
   \item{lambda0}{The \eqn{q \times 1} vector of starting values for the
     Lagrange multipliers. By default a zero vector is used.}
   \item{lamSlv}{An alternative solver for the Lagrange multiplier. By
-    default, either \code{\link{EL.Wu}} or \code{\link{getLambda}} is
+    default, either \code{\link{Wu_lam}}, \code{\link{EEL_lam}},
+    \code{\link{REEL_lam}} or \code{\link{getLambda}} is
     used.}
   \item{coefSlv}{Minimization solver for the coefficient vector.}
   \item{lControl}{A list of controls for the Lagrange multiplier
