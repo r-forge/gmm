@@ -16,9 +16,9 @@ causalModel <- function(g, balm, data,theta0=NULL,
         }    
     tmp_model <- gmm4:::.lGmmData(g, balm, data)
     if (attr(terms(tmp_model$modelF), "intercept") != 1)
-        stop("You cannot remve the intercept from g")
+        stop("You cannot remove the intercept from g")
     if (attr(terms(tmp_model$instF), "intercept") != 1)
-        stop("You cannot remve the intercept from balm")
+        stop("You cannot remove the intercept from balm")
     k <- tmp_model$k
     ncoef <- 1+2*(k-1)
     name_coef <- c("control",paste("treat", 1:(k-1), sep=""),
@@ -42,7 +42,7 @@ causalModel <- function(g, balm, data,theta0=NULL,
             if (momType == "ACE") {
                 popMom <- colMeans(X[,-1, drop=FALSE])
             } else if (momType == "ACT") {
-                popMom <- colMeans(Z[X[,1+ACTmom]==1,-1, drop=FALSE])
+                popMom <- colMeans(X[Z[,1+ACTmom]==1,-1, drop=FALSE])
             }
         }    
     modData <- new("causalData", reg=tmp_model$modelF, bal=tmp_model$instF,

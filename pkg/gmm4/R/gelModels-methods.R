@@ -120,7 +120,7 @@ setMethod("solveGel", signature("gelModels"),
                           res <- do.call(slv, args)
                           if (returnL)
                               return(res)
-                          evalObjective(model, theta, , res$lambda)
+                          res$obj
                       }
                   if (is.null(lambda0))
                       lambda0 <- rep(0, modelDims(object)$q)

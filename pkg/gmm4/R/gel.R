@@ -169,7 +169,7 @@ getLambda <- function (gmat, l0=NULL, gelType, rhoFct=NULL,
         else
             conv <- list(convergence = res$convergence, counts = res$evaluations, 
                          message = res$message)    
-        return(list(lambda = l0, convergence = conv))
+        return(list(lambda = l0, convergence = conv, obj= mean(rhoFct(gmat,l0,0,k))))
     }
 
 smoothGel <- function (object, theta=NULL) 
