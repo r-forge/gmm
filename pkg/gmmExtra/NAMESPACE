@@ -4,11 +4,11 @@ importFrom(parallel, mclapply)
 importFrom(gmm, gmm, specTest, gmmWithConst, KTest)
 importFrom(graphics, plot)
 
-export(KConfid, bootGmm, plot.bootGmm, summary.bootGmm, bootJ, linearHypothesis.bootGmm, print.bootGmm)
+export(KConfid, bootGmm, plot.bootGmm, summary.bootGmm, bootJ, hypothesisTest, print.bootGmm)
 
 S3method(plot, bootGmm)
 S3method(print, bootGmm)
 S3method(summary, bootGmm)
-S3method(linearHypothesis, bootGmm)
+
  
 

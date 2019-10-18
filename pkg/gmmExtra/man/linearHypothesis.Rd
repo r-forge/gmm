@@ -1,15 +1,15 @@
-\name{linearHypothesis}
-\alias{linearHypothesis.bootGmm}
+\name{hypothesisTest}
+\alias{hypothesisTest}
 \title{Bootstrap linear hypothesis testing}
 \description{Compute the Bootstrap ECDF of the Chi-square test and the P-value}
 \usage{
-\method{linearHypothesis}{bootGmm}(model, hypothesis.matrix, rhs = NULL, ...)
+hypothesisTest(model, hypothesis.matrix, rhs = NULL, ...)
 }
 \arguments{
 \item{model}{Object of class "bootGmm" returned by \link{bootGmm}}
-\item{hypothesis.matrix}{Either the R matrix in the hypothesis \eqn{R\theta=c} or a vector of characters (see /link{linearHypothesis})}
-\item{rhs}{The right hand side of the linear test (see /link{linearHypothesis})}
-\item{...}{Arguments to pass to \link{linearHypothesis}}
+\item{hypothesis.matrix}{Either the R matrix in the hypothesis \eqn{R\theta=c} or a vector of characters.}
+\item{rhs}{The right hand side of the linear test.}
+\item{...}{Arguments to pass to linearHypothesis}
 }
 
 \value{
@@ -50,7 +50,7 @@ d <- getdat(500)
 res <- gmm(Y~X-1,~Z-1, data=d)
 # Just resampling 25 time to save time
 resB <- bootGmm(res, 25, seed = 123, niter = 1)
-T <- linearHypothesis(resB, "X2 = 2")
+T <- hypothesisTest(resB, "X2 = 2")
 T
 }
 

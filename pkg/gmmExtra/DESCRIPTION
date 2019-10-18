@@ -1,11 +1,11 @@
 Package: gmmExtra
 Version: 0.0-3
-Date: 2017-06-13
+Date: 2019-10-17
 Title: Methods for Generalize Method of Moments Estimation
 Author: Pierre Chausse <pchausse@uwaterloo.ca>
 Maintainer: Pierre Chausse <pchausse@uwaterloo.ca>
-Description: Tools for GMM such as additional tests or robust confidence regions. They only apply to gmm class object for the gmm package.
-Depends: R (>= 2.10.0), gmm (>= 1.6-2), car, parallel
-Imports: stats
+Description: Tools for Generalize Method of Moments estimation methods MM such as additional tests or robust confidence regions. They only apply to 'gmm' class object for the 'gmm' package.
+Depends: R (>= 3.0.0), gmm (>= 1.6-2), parallel 
+Imports: stats, car
 License: GPL (>= 2)
 
