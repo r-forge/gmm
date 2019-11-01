@@ -15,7 +15,8 @@ Objects can be created by calls of the form \code{new("causalData", ...)}.
 \section{Slots}{
   \describe{
     \item{\code{momType}:}{Object of class \code{"character"} ~~ }
-    \item{\code{popMom}:}{Object of class \code{"numericORNULL"} ~~ }
+    \item{\code{balCov}:}{Object of class \code{"character"} ~~ }    
+    \item{\code{balMom}:}{Object of class \code{"numericORNULL"} ~~ }
     \item{\code{ACTmom}:}{Object of class \code{"integer"} ~~ }
     \item{\code{reg}:}{Object of class \code{"data.frame"} ~~ }
     \item{\code{bal}:}{Object of class \code{"data.frame"} ~~ }

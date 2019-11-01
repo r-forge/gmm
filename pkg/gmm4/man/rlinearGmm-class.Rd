@@ -8,7 +8,7 @@ It is a \code{linearGmm} class with linear restrictions imposed on the coefficie
 }
 \section{Objects from the Class}{
 Objects can be created by calls of the form \code{new("rlinearGmm", ...)}.
-But the \code{\link{restGmmModel}} method is the constructor.
+But the \code{\link{restModel}} method is the constructor.
 }
 \section{Slots}{
   \describe{

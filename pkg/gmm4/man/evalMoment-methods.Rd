@@ -61,7 +61,7 @@ dfct <- function(tet, x)
         return(jacobian)
         }
 X <- rnorm(200)
-model3 <- gmmModel(fct, X, tet0=c(beta0=1, beta1=2), grad=dfct)
+model3 <- gmmModel(fct, X, theta0=c(beta0=1, beta1=2), grad=dfct)
 gt <- evalMoment(model3, c(beta0=1, beta1=2))
 }
 \keyword{methods}

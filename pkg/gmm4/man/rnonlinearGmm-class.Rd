@@ -9,7 +9,7 @@ imposed on the coefficients
 }
 \section{Objects from the Class}{
 Objects can be created by calls of the form \code{new("rnonlinearGmm",
-  ...)}. But the \code{\link{restGmmModel}} method is the constructor.
+  ...)}. But the \code{\link{restModel}} method is the constructor.
 }
 \section{Slots}{
   \describe{

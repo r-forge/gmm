@@ -3,6 +3,7 @@
 \alias{modelDims}
 \alias{modelDims-methods}
 \alias{modelDims,linearGmm-method}
+\alias{modelDims,rgelModels-method}
 \alias{modelDims,rslinearGmm-method}
 \alias{modelDims,sysGmmModels-method}
 \alias{modelDims,slinearGmm-method}
@@ -24,6 +25,9 @@ when restrictions have been imposed on coefficients.
 \describe{
 
 \item{\code{signature(object = "rlinearGmm")}}{
+}
+
+\item{\code{signature(object = "rgelModels")}}{
 }
 
 \item{\code{signature(object = "rnonlinearGmm")}}{
@@ -64,7 +68,7 @@ modelDims(model1)
 
 ## Unrestricted model
 
-rmodel1 <- restGmmModel(model1, R=c("x1+x2=4"))
+rmodel1 <- restModel(model1, R=c("x1+x2=4"))
 modelDims(rmodel1)
 
 

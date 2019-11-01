@@ -7,10 +7,11 @@
 setClass("causalGel", contains="functionGel")
  
 setClass("causalData", representation(momType="character",
-                                      popMom="numericORNULL",
+                                      balCov="character",
+                                      balMom="numericORNULL",
                                       ACTmom="integer",
                                       reg="data.frame",
                                       bal="data.frame"))
 
-
+setClass("causalGelfit", contains="gelfit")
 

@@ -49,7 +49,7 @@ dat <- data.frame(Y=Y,Y1=Y1,Y2=Y2,C=C,C1=C1)
 theta0=c(alpha=468, beta=0.0971, gamma=1.24)
 
 ## Greene (2012) seems to assume iid errors (probably wrong assumption here)
-model <- gmmModel(C~alpha+beta*Y^gamma, ~C1+Y1+Y2, data=dat, tet0=theta0, vcov="iid")
+model <- gmmModel(C~alpha+beta*Y^gamma, ~C1+Y1+Y2, data=dat, theta0=theta0, vcov="iid")
 
 ### Scaling the parameters increase the speed of convergence
 res <- modelFit(model, control=list(parscale=c(1000,.1,1)))

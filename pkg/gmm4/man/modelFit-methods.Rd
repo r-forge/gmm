@@ -4,6 +4,7 @@
 \alias{modelFit-methods}
 \alias{modelFit,gmmModels-method}
 \alias{modelFit,gelModels-method}
+\alias{modelFit,rgelModels-method}
 \alias{modelFit,formulaGmm-method}
 \alias{modelFit,sysGmmModels-method}
 \alias{modelFit,rlinearGmm-method}
@@ -18,22 +19,22 @@ Method to fit a model using GMM, from an object of class \code{"gmmModels"}.
 \S4method{modelFit}{gmmModels}(object, type=c("twostep", "iter","cue",
               "onestep"), itertol=1e-7, initW=c("ident", "tsls"),
               weights="optimal", itermaxit=100,
-              efficientWeights=FALSE, start=NULL, \dots)
+              efficientWeights=FALSE, theta0=NULL, \dots)
 
 \S4method{modelFit}{formulaGmm}(object, type=c("twostep", "iter","cue",
               "onestep"), itertol=1e-7, initW=c("ident", "tsls"),
               weights="optimal", itermaxit=100,
-              efficientWeights=FALSE, start=NULL, \dots)
+              efficientWeights=FALSE, theta0=NULL, \dots)
 
 \S4method{modelFit}{sysGmmModels}(object, type=c("twostep", "iter","cue",
               "onestep"), itertol=1e-7, initW=c("ident", "tsls", "EbyE"),
               weights="optimal", itermaxit=100,
-              efficientWeights=FALSE, start=NULL, EbyE=FALSE, \dots)
+              efficientWeights=FALSE, theta0=NULL, EbyE=FALSE, \dots)
 
 \S4method{modelFit}{rnonlinearGmm}(object, type=c("twostep", "iter","cue",
               "onestep"), itertol=1e-7, initW=c("ident", "tsls"),
               weights="optimal", itermaxit=100,
-              efficientWeights=FALSE, start=NULL, \dots)
+              efficientWeights=FALSE, theta0=NULL, \dots)
 
 \S4method{modelFit}{rlinearGmm}(object, type=c("twostep", "iter","cue",
               "onestep"), itertol=1e-7, initW=c("ident", "tsls"),
@@ -43,16 +44,20 @@ Method to fit a model using GMM, from an object of class \code{"gmmModels"}.
 \S4method{modelFit}{rformulaGmm}(object, type=c("twostep", "iter","cue",
               "onestep"), itertol=1e-7, initW=c("ident", "tsls"),
               weights="optimal", itermaxit=100,
-              efficientWeights=FALSE, start=NULL, \dots)
+              efficientWeights=FALSE, theta0=NULL, \dots)
 
 \S4method{modelFit}{rslinearGmm}(object, type=c("twostep", "iter","cue",
               "onestep"), itertol=1e-7, initW=c("ident", "tsls", "EbyE"),
               weights="optimal", itermaxit=100,
-              efficientWeights=FALSE, start=NULL, EbyE=FALSE, \dots)
+              efficientWeights=FALSE, theta0=NULL, EbyE=FALSE, \dots)
 
 \S4method{modelFit}{gelModels}(object, gelType=NULL, rhoFct=NULL,
-              initTheta=c("gmm", "theta0"), start.tet=NULL,
-              start.lam=NULL, vcov=FALSE, ...)
+              initTheta=c("gmm", "modelTheta0"), theta0=NULL,
+              lambda0=NULL, vcov=FALSE, ...)
+
+\S4method{modelFit}{rgelModels}(object, gelType=NULL, rhoFct=NULL,
+              initTheta=c("gmm", "modelTheta0"), theta0=NULL,
+              lambda0=NULL, vcov=FALSE, ...)
 }
 \arguments{
   \item{object}{An object of class \code{"gmmModels"}}
@@ -79,7 +84,7 @@ Method to fit a model using GMM, from an object of class \code{"gmmModels"}.
     \code{TRUE} implies that the resulting one-step GMM is
     efficient. As a result, the default covariance matrix for the
     coefficient estimates will not be a sandwich type.}
-  \item{start}{An optional initial vector for \code{\link{optim}} when
+  \item{theta0}{An optional initial vector for \code{\link{optim}} when
     the model is nonlinear. By default, the theta0 argument of the model
     is used}
   \item{EbyE}{Should we estimate the system equation by equation?}
@@ -94,8 +99,7 @@ Method to fit a model using GMM, from an object of class \code{"gmmModels"}.
     coefficient vector. By default the GMM estimate with identity matrix
     is used. The second argument means that the theta0 of the
     object, if any, should be used.}
-  \item{start.tet}{Manual starting values for the coeffficient vector.}
-  \item{start.lam}{Manual starting values for the Lagrange
+  \item{lambda0}{Manual starting values for the Lagrange
     multiplier. By default, it is a vector of zeros.}
   \item{vcov}{Should the method computes the covariance matrices of the
               coefficients and Lagrange multipliers.}
@@ -167,13 +171,13 @@ coeftest(resLm, vcov=vcovHC(resLm, "HC1"))
 ### All constrained
 R <- diag(2)
 q <- c(1,2)
-rmodel1 <- restGmmModel(model1, R, q)
+rmodel1 <- restModel(model1, R, q)
 modelFit(rmodel1)
 
 ## Only one constraint
 R <- matrix(c(0,1), ncol=2)
 q <- 2
-rmodel1 <- restGmmModel(model1, R, q)
+rmodel1 <- restModel(model1, R, q)
 modelFit(rmodel1)
 
 }

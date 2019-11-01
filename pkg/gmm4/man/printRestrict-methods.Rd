@@ -3,6 +3,7 @@
 \alias{printRestrict}
 \alias{printRestrict-methods}
 \alias{printRestrict,rlinearGmm-method}
+\alias{printRestrict,rgelModels-method}
 \alias{printRestrict,rformulaGmm-method}
 \alias{printRestrict,rslinearGmm-method}
 \alias{printRestrict,rnonlinearGmm-method}
@@ -14,6 +15,9 @@ It prints the detailed restrictions imposed on \code{gmmModels}.
 \section{Methods}{
 \describe{
 
+\item{\code{signature(object = "rgelModels")}}{
+}  
+  
 \item{\code{signature(object = "rlinearGmm")}}{
 }
 
@@ -39,7 +43,7 @@ model1 <- gmmModel(y~x1+x2+x3+z1, ~x1+x2+z1+z2+z3+z4, data=simData)
 ## restricted model
 R <- matrix(c(1,1,0,0,0,0,0,2,0,0,0,0,0,1,-1),3,5, byrow=TRUE)
 q <- c(0,1,3)
-rmodel1 <- restGmmModel(model1, R, q)
+rmodel1 <- restModel(model1, R, q)
 printRestrict(rmodel1)
 }
 \keyword{methods}

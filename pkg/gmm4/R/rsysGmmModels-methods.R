@@ -3,7 +3,7 @@
 
 ## Constructor of restricted models
 
-setMethod("restGmmModel", signature("slinearGmm"),
+setMethod("restModel", signature("slinearGmm"),
           function(object, R, rhs=NULL)
               {
                   parNames <- paste(rep(object@eqnNames, object@k), ".",
@@ -146,7 +146,7 @@ setMethod("print", "rslinearGmm",
 
 setMethod("getRestrict", "sysGmmModels",
           function(object, theta, R, rhs=NULL) {
-              robject <- restGmmModel(object, R, rhs)
+              robject <- restModel(object, R, rhs)
               getRestrict(robject, theta)
           })
 
@@ -186,7 +186,7 @@ setMethod("[", c("rslinearGmm", "numeric", "missing"),
                   return(m)
               R <- R[!chk,,drop=FALSE]
               rhs <- x@cstRHS[!chk]
-              restGmmModel(m, R, rhs)
+              restModel(m, R, rhs)
           })
 
 ### model.matrix
@@ -304,13 +304,13 @@ setMethod("evalWeights", "rslinearGmm",
                   callNextMethod()
               })
 
- ## modelFit. Almost like sysGmmModels method, bu we need to check a few things
+## modelFit. Almost like sysGmmModels method, bu we need to check a few things
 
 setMethod("modelFit", signature("rslinearGmm"), valueClass="sgmmfit", 
           function(object, type=c("twostep", "iter","cue", "onestep"),
                    itertol=1e-7, initW=c("ident", "tsls", "EbyE"),
                    weights="optimal", itermaxit=100,
-                   efficientWeights=FALSE, start=NULL, EbyE=FALSE, ...)
+                   efficientWeights=FALSE, theta0=NULL, EbyE=FALSE, ...)
               {
                   type <- match.arg(type)
                   initW <- match.arg(initW)

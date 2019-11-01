@@ -10,8 +10,8 @@ It builds the object of either class \code{"linearGmm"},
 before running any estimation algorithm.
 }
 \usage{
-causalModel(g, balm, data, theta0=NULL,
-            momType=c("ACE","ACT","uncondBal","fixedMom"),
+causalModel(g, balm, data,theta0=NULL,
+            momType=c("ACE","ACT","ACC", "uncondBal","fixedMom"),
             popMom = NULL, rhoFct=NULL,ACTmom=1L, 
             gelType = c("EL", "ET", "EEL", "ETEL", "HD", "ETHD","REEL"))
 }
@@ -27,11 +27,12 @@ causalModel(g, balm, data, theta0=NULL,
   \item{theta0}{A vector of starting values (optional). If not provided,
     the least squares method is use to generate them}
 
-  \item{momType}{How the moments of the covariates should be balanced. By
-    default, it is balanced using the sample mean of the covariates,
-    which corresponds to the ACE. Alternatively, to the sample
-    moments of the treated group (ACT), or to a known population mean. The
-    option 'uncondBal' means that it is unconditionally balanced.}
+  \item{momType}{How the moments of the covariates should be
+    balanced. By default, it is balanced using the sample mean of the
+    covariates, which corresponds to the ACE. Alternatively, to the
+    sample moments of the treated group (ACT), the control group (ACC),
+    or to a known population mean. The option 'uncondBal' means that it
+    is unconditionally balanced.}
         
   \item{popMom}{A vector of population moments to use for balancing. It
     can be used if those moments are available from a census, for

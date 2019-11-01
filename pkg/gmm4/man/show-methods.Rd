@@ -2,6 +2,7 @@
 \docType{methods}
 \alias{show-methods}
 \alias{show,ANY-method}
+\alias{show,confint-method}
 \alias{show,gmmModels-method}
 \alias{show,sysGmmModels-method}
 \alias{show,gmmfit-method}
@@ -16,12 +17,15 @@
 \alias{show,hypothesisTest-method}  
 \title{ ~~ Methods for Function \code{show} in Package \pkg{methods} ~~}
 \description{
-Display method for all \code{"gmmModels"} and \code{"gmmfit"} objects.   
+Display method for all objects.   
 }
 \section{Methods}{
 \describe{
 
 \item{\code{signature(object = "ANY")}}{
+}
+
+\item{\code{signature(object = "confint")}}{
 }
 
 \item{\code{signature(object = "gmmModels")}}{

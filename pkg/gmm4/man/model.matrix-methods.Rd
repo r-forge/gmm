@@ -5,6 +5,7 @@
 \alias{model.matrix,linearGmm-method}
 \alias{model.matrix,nonlinearGmm-method}
 \alias{model.matrix,rlinearGmm-method}
+\alias{model.matrix,rlinearGel-method}
 \alias{model.matrix,slinearGmm-method}
 \alias{model.matrix,rslinearGmm-method}
 \alias{model.matrix,snonlinearGmm-method}
@@ -72,7 +73,7 @@ model.matrix(model1)[1:3,]
 
 ## Restrictions change the response
 R <- c("x2=2","x3+x1=3")
-rmodel1 <- restGmmModel(model1, R)
+rmodel1 <- restModel(model1, R)
 rmodel1
 model.matrix(rmodel1)[1:3,]
 }

@@ -10,9 +10,11 @@ Method to simply evaluate a model at a fixed coefficient vector. It
 creates a \code{"gmmfit"} or \code{"gelfit"} object using that fixed vector. 
 }
 \usage{
-\S4method{evalModel}{gmmModels}(object, theta, wObj=NULL)
+\S4method{evalModel}{gmmModels}(object, theta, wObj=NULL, \dots)
 \S4method{evalModel}{gelModels}(object, theta, lambda=NULL,
-          gelType=NULL, rhoFct=NULL, lamSlv=NULL, lControl=list())
+          gelType=NULL, rhoFct=NULL, lamSlv=NULL, lControl=list(),
+          \dots)
+
 
 }
 \arguments{
@@ -34,6 +36,7 @@ creates a \code{"gmmfit"} or \code{"gelfit"} object using that fixed vector.
     used.}
   \item{lControl}{A list of controls for the Lagrange multiplier
     algorithm.}
+  \item{\dots}{Other arguments to pass. Not used for the moment.}
   }
 \section{Methods}{
 \describe{
@@ -71,7 +74,7 @@ dfct <- function(tet, x)
 			   -6*tet[1]*tet[2]), nrow=3,ncol=2)
         return(jacobian)
         }
-model3 <- gmmModel(fct, simData$x3, tet0=c(beta0=1, beta1=2), grad=dfct)
+model3 <- gmmModel(fct, simData$x3, theta0=c(beta0=1, beta1=2), grad=dfct)
 evalModel(model3, theta=c(beta1=.1, beta0=0.3))
 }
 \keyword{methods}

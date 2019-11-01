@@ -1,26 +1,13 @@
-gelModel <- function(g, x=NULL, gelType, rhoFct=NULL, tet0=NULL,grad=NULL,
-                     vcov = c("HAC", "MDS", "iid"),
+gelModel <- function(g, x=NULL, gelType, rhoFct=NULL, theta0=NULL,grad=NULL,
+                     vcov = c("MDS", "iid", "HAC"),
                      vcovOptions=list(), centeredVcov = TRUE, data=parent.frame())
     {
         vcov <- match.arg(vcov)
         model <- gmmModel(g=g, x=x, grad=grad, vcov=vcov, vcovOptions=vcovOptions,
                           centeredVcov=centeredVcov,
-                          tet0=tet0, data=data)
+                          theta0=theta0, data=data)
         gmmToGel(model, gelType, rhoFct)
     }
-
-gmmToGel <- function(object, gelType, rhoFct=NULL)
-    {
-        cls <- strsplit(class(object), "Gmm")[[1]][1]
-        cls <- paste(cls, "Gel", sep="")
-        if (object@vcov == "HAC")
-            wSpec <- smoothGel(object)
-        else
-            wSpec <- list(k=c(1,1), w=kernel(1), bw=1, kernel="None")                
-        new(cls, wSpec=wSpec, gelType=list(name=gelType, fct=rhoFct),
-            object)
-    }
-
 
 rhoEL <- function(gmat, lambda, derive = 0, k = 1) 
     {
@@ -176,7 +163,7 @@ smoothGel <- function (object, theta=NULL)
 {
     if (inherits(object, "gelModels"))
         {
-            gt <- evalMoment(as(object, "gmmModels"), theta)
+            gt <- evalMoment(as(object,"gmmModels"), theta)
             x <- kernapply(gt, object@wSpec$w)
             sx <- list(smoothx = x, w = object@wSpec$w,
                        bw = object@wSpec$bw, k = object@wSpec$k)

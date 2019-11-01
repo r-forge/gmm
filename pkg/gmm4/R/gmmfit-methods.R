@@ -199,37 +199,68 @@ setMethod("summary", "gmmfit",
                          convergence=object@convergence,wSpec=wSpec, 
                          convIter=object@convIter, sandwich=attr(v, "type")$sandwich)
               ans })
-              
-## update
 
-setGeneric("update")
-setMethod("update", "gmmfit",
-          function(object, ...)
-              {
-                  arg <- list(...)
-                  fct <- object@call
-                  if (fct[[1L]] == "Gmm")
-                      {
-                          fct[names(arg)] <- arg
-                          eval(fct, parent.frame())
-                      } else {
-                          ev <- new.env(parent.frame())
-                          model <- object@model
-                          modarg <- which(names(arg) %in% slotNames(object@model))
-                          for (i in modarg)
-                              slot(model, names(arg)[i]) <- arg[[i]]
-                          isValid <- validObject(model)
-                          fct[["object"]] <- quote(model)
-                          ev$model <- model
-                          fct[[1L]] <- quote(modelFit)
-                          arg <- arg[-modarg]
-                          if (length(arg) > 0)
-                              for (n in names(arg))
-                                  fct[[n]] <- arg[[n]]
-                          eval(fct, ev)
-                      }
+## confint
+
+setGeneric("confint")
+setMethod("confint", "gmmfit",
+          function(object, parm, level = 0.95, vcov=NULL, ...)
+          {
+              ntest <- "Wald type confidence interval"
+              if (is.null(vcov))
+                  vcov <- vcov(object, ...)
+              se <- sqrt(diag(vcov))
+              theta <- coef(object)
+              if (missing(parm))
+                  parm <- 1:length(theta)
+              if (is.character(parm))
+                  parm <- sort(unique(match(parm, names(theta))))
+              theta <- theta[parm]
+              se <- se[parm]
+              zs <- qnorm((1 - level)/2, lower.tail = FALSE)              
+              ch <- zs * se
+              ans <- cbind(theta - ch, theta + ch)              
+              dimnames(ans) <- list(names(theta), c((1 - level)/2, 0.5 + level/2))
+              new("confint", interval=ans, type=ntest, level=level)
               })
 
+
+## Its print method
+
+setMethod("print", "confint",
+          function(x, digits=4, ...)
+          {
+              cat("\n", x@type, "\n")
+              print.default(x@interval, digits = digits, print.gap = 2, 
+                            quote = FALSE)
+              cat("\n")
+          })
+
+setMethod("show", "confint", function(object) print(object))
+
+## update
+
+setMethod("update", "gmmfit",
+          function(object, ..., evaluate=TRUE)
+              {
+                  if (is.null(call <- getCall(object)))
+                      stop("No call argument")
+                  arg <- list(...)
+                  if (length(arg) == 0)
+                      return(object)
+                  model <- update(object@model, ...)
+                  ev <- new.env(parent.frame())
+                  arg <- arg[which(is.na(match(names(arg), slotNames(model))))]
+                  call[["object"]] <- quote(model)
+                  ev$model <- model                  
+                  if (length(arg) > 0)
+                      for (n in names(arg))
+                          call[[n]] <- arg[[n]]
+                  if (evaluate)
+                      eval(call, ev)
+                  else
+                      call
+              })
 
 ## hypothesisTest
 
@@ -434,5 +465,6 @@ setMethod("DWH", signature("gmmfit", "lm"),
                                                           "df", "pvalue"))
                   new("specTest", test=test, testname="Hausman Test")
               })
+
 
 

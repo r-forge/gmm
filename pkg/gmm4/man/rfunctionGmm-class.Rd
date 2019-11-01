@@ -9,7 +9,7 @@ function and the coefficients are restricted.
 }
 \section{Objects from the Class}{
 Objects can be created by calls of the form \code{new("rfunctionGmm", ...)}.
-The constructor is \code{\link{restGmmModel}}.
+The constructor is \code{\link{restModel}}.
 }
 \section{Slots}{
   \describe{

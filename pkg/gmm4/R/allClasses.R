@@ -10,7 +10,8 @@ setClassUnion("numericORcharacter", c("numeric", "character"))
 setClassUnion("numericORNULL", c("numeric", "NULL"))
 setClassUnion("numericORmatrixORNULL", c("matrix", "numeric", "NULL"))
 setClassUnion("expressionORNULL", c("expression", "NULL"))
-setClassUnion("functionORNULL", c("function", "NULL"))                                 
+setClassUnion("functionORNULL", c("function", "NULL"))
+setClassUnion("callORNULL", c("call", "NULL"))
 setClass("linearGmm", representation(modelF="data.frame", instF="data.frame",
                                      vcov="character",n="integer", q="integer", k="integer",
                                      parNames="character", momNames="character",
@@ -65,7 +66,7 @@ setClass("gmmWeights", representation(w="ANY", type="character", wSpec="list"))
 ## gmmfit
 
 setClass("gmmfit", representation(theta = "numeric", convergence = "numericORNULL",
-                                  convIter="numericORNULL",call="call",
+                                  convIter="numericORNULL",call="callORNULL",
                                   type="character", wObj="gmmWeights",niter="integer",
                                   efficientGmm="logical", model="gmmModels"))
 
@@ -75,12 +76,17 @@ setClass("tsls", contains="gmmfit")
 
 setClass("gelfit", representation(theta = "numeric", convergence = "numeric",
                                   lambda = "numeric", lconvergence = "numeric",
-                                  call="call", type="character", vcov="list",
+                                  call="callORNULL", type="character", vcov="list",
                                   model="gelModels"))
 
 ## specTest
 
 setClass("specTest", representation(test = "matrix", testname="character"))
+
+## confint
+
+setClass("confint", representation(interval = "matrix", type="character",
+                                   level="numeric"))
 
 ## summaryGmm
 
@@ -111,6 +117,24 @@ setClass("rformulaGmm", representation(R="list", cstSpec="list"),
 
 setClassUnion("rgmmModels", c("rlinearGmm", "rnonlinearGmm", "rfunctionGmm",
                               "rformulaGmm"))
+
+## Restricted gel Models
+
+
+setClass("rlinearGel", representation(cstLHS="matrix", cstRHS="numeric", cstSpec="list"),
+         contains="linearGel")
+
+setClass("rnonlinearGel", representation(R="list", cstSpec="list"),
+         contains="nonlinearGel")
+
+setClass("rfunctionGel", representation(R="list", cstSpec="list"),
+         contains="functionGel")
+
+setClass("rformulaGel", representation(R="list", cstSpec="list"),
+         contains="formulaGel")
+
+setClassUnion("rgelModels", c("rlinearGel", "rnonlinearGel", "rfunctionGel",
+                              "rformulaGel"))
 
 ## hypothesisTest
 
@@ -165,6 +189,18 @@ setClass("summarySysGmm",
                         df.adj="logical", breadOnly="logical"))
 
 ## Class converters
+
+setAs("rgelModels", "rgmmModels",
+      function(from) {
+          obj <- as(from, "gmmModels")
+          cls <- strsplit(class(from), "Gel")[[1]][1]
+          cls <- paste(cls, "Gmm", sep="")
+          if (grepl("linear", class(from)))
+              new("rlinearGmm", cstLHS=from@cstLHS, cstRHS=from@cstRHS,
+                  cstSpec=from@cstSpec, obj)
+          else
+              new(cls, R=from@R, cstSpec=from@cstSpec, obj)
+      })
 
 setAs("linearGmm", "nonlinearGmm",
       function(from) {
@@ -281,7 +317,7 @@ setAs("rslinearGmm", "rlinearGmm",
       function(from) {
           m <- as(from, "slinearGmm")
           m <- as(m, "linearGmm")
-          restGmmModel(m, from@cstLHS, from@cstRHS)
+          restModel(m, from@cstLHS, from@cstRHS)
       })
 
 setAs("sysGmmWeights", "gmmWeights",
@@ -297,8 +333,8 @@ setAs("sysGmmWeights", "gmmWeights",
 ### system GMM fit
 
 setClass("sgmmfit", representation(theta = "list", convergence = "numericORNULL",
-                                  convIter="numericORNULL",call="call",
-                                  type="character", wObj="sysGmmWeights",niter="integer",
+                                   convIter="numericORNULL",call="callORNULL",
+                                   type="character", wObj="sysGmmWeights",niter="integer",
                                    efficientGmm="logical", model="sysGmmModels"))
 
 setClass("stsls", contains="sgmmfit")

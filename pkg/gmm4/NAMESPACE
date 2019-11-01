@@ -10,7 +10,7 @@ importFrom("stats", "ar", "as.formula", "model.matrix","vcov",
            "D", "numericDeriv", "sd", "optim", "lm", "pf", "coef", "update",
            "fitted", "lm.fit", "pchisq", "pnorm", "printCoefmat", "anova",
            "model.frame", "reformulate", "formula", "nlminb", "kernapply",
-           "constrOptim", "kernel")
+           "constrOptim", "kernel", "confint", "qnorm", "uniroot", "getCall")
 importFrom("sandwich", "vcovHAC", "estfun","kernHAC","vcovCL", "meatCL",
            "bread","bwAndrews","bwNeweyWest","weightsAndrews",
            "weightsLumley", "vcovHC")
@@ -23,15 +23,17 @@ exportClasses("nonlinearGmm", "linearGmm", "functionGmm", "gmmModels",
               "numericORcharacter", "tsls", "rnonlinearGmm", "rfunctionGmm",
               "slinearGmm", "snonlinearGmm", "sysGmmModels",
               "sgmmfit","stsls", "rslinearGmm", "rsnonlinearGmm", "rsysGmmModels",
-              "formulaGmm","rfunctionGmm", "gelfit", "summaryGel")
+              "formulaGmm","rfunctionGmm", "gelfit", "summaryGel", "confint",
+              "rlinearGel", "nonlinearGel", "rfunctionGel", "rformulaGel",
+              "rgelModels","callORNULL")
 exportMethods(residuals, print, show, vcovHAC, coef, vcov, bread, summary, update,
-              model.matrix, hypothesisTest, "[", merge, subset)
+              model.matrix, hypothesisTest, "[", merge, subset, confint, gmmToGel)
 
 export(gmmModel, evalMoment, Dresiduals, evalDMoment, momentVcov, estfun.gmmFct,
        evalWeights, quadra, evalObjective, solveGmm, momentStrength,evalModel, 
-       tsls, modelFit, meatGmm, specTest, gmm4, restGmmModel, modelResponse, DWH,
+       tsls, modelFit, meatGmm, specTest, gmm4, restModel, modelResponse, DWH,
        modelDims, printRestrict, getRestrict, sysGmmModel, ThreeSLS, gelModel,
-       rhoET, rhoEL, rhoEEL, rhoHD, Wu_lam, EEL_lam, REEL_lam, getLambda, gmmToGel,
+       rhoET, rhoEL, rhoEEL, rhoHD, Wu_lam, EEL_lam, REEL_lam, getLambda, 
        smoothGel, solveGel, getImpProb)
  
 ###  S3 methods ###

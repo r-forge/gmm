@@ -9,7 +9,7 @@ restricted.
 }
 \section{Objects from the Class}{
 Objects can be created by calls of the form \code{new("rsnonlinearGmm", ...)}.
-The constructor is \code{\link{restGmmModel}}
+The constructor is \code{\link{restModel}}
 }
 \section{Slots}{
   \describe{

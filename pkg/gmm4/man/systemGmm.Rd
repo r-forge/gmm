@@ -71,12 +71,12 @@ res <- modelFit(smodel)
 
 ## no cross-equation restrictions
 R1 <- list(c("x1=-12*x4"), character(), c("x2=0.8", "x4=0.3"))
-rm1 <- restGmmModel(smodel, R1)
+rm1 <- restModel(smodel, R1)
 (res1 <- modelFit(rm1))
 
 ## Cross equation restrictions
 R2<- c("Eqn1.x1=1", "Eqn2.x1=Eqn3.x2")
-rm2 <- restGmmModel(smodel, R2)
+rm2 <- restModel(smodel, R2)
 (es2 <- modelFit(rm2))## no longer expressed as a system
 
 ## testing the restriction

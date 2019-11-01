@@ -134,7 +134,7 @@ hypothesisTest(object.u=res1, R=R)
 
 ## LR tests
 
-rmodel1 <- restGmmModel(model1, R)
+rmodel1 <- restModel(model1, R)
 res2 <- modelFit(rmodel1)
 hypothesisTest(object.u=res1, object.r=res2, type="LR")
 
@@ -159,7 +159,7 @@ model <- gmmModel(log(wage)~educ+exper+I(exper^2),
                   ~exper+I(exper^2)+fatheduc+motheduc, vcov="MDS",
                   data=Mroz, centeredVcov=FALSE)
 R <- c("educ=0","I(exper^2)=0")
-rmodel <- restGmmModel(model, R)
+rmodel <- restModel(model, R)
 
 res1 <- modelFit(model)
 res2 <- modelFit(rmodel, weights=res1@wObj)
@@ -179,7 +179,7 @@ hypothesisTest(object.u=res1, object.r=res2, type="LM")
 ## the linear model into a nonlinear one
 NLmodel <- as(model1, "nonlinearGmm")
 R1 <- c("theta2=2", "theta3=theta4^2")
-rNLmodel <- restGmmModel(NLmodel, R1)
+rNLmodel <- restModel(NLmodel, R1)
 res.u <- modelFit(NLmodel)
 res.r <- modelFit(rNLmodel)
 hypothesisTest(object.u=res.u, R=R1)

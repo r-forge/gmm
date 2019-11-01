@@ -1,17 +1,19 @@
-\name{nonlinearGel-class}
+\name{rnonlinearGel-class}
 \docType{class}
-\alias{nonlinearGel-class}
+\alias{rnonlinearGel-class}
 
-\title{Class \code{"nonlinearGel"}}
+\title{Class \code{"rnonlinearGel"}}
 \description{
-GEL model class for nonlinear regression models and instruments.
+Restricted GEL model class for nonlinear regression models and instruments.
 }
 \section{Objects from the Class}{
-Objects can be created by calls of the form \code{new("nonlinearGel", ...)}.
-It is however, recommended to use the constructor \code{\link{gelModel}}.
+Objects can be created by calls of the form \code{new("rnonlinearGel", ...)}.
+It is however, recommended to use the \code{\link{restModel}} method.
 }
 \section{Slots}{
   \describe{
+    \item{\code{R}:}{Object of class \code{"list"} ~~ }
+    \item{\code{cstSpec}:}{Object of class \code{"list"} ~~ }    
     \item{\code{wSpec}:}{Object of class \code{"list"} ~~ }
     \item{\code{gelType}:}{Object of class \code{"list"} ~~ }    
     \item{\code{modelF}:}{Object of class \code{"data.frame"} ~~ }
@@ -34,14 +36,16 @@ It is however, recommended to use the constructor \code{\link{gelModel}}.
   }
 }
 \section{Extends}{
-Class \code{"\linkS4class{nonlinearGmm}"}, directly.
-Class \code{"\linkS4class{gelModels}"}, directly.
-Class \code{"regGmm"}, by class \code{"nonlinearGmm"}, distance 2.
-Class \code{"allNLGmm"}, by class \code{"nonlinearGmm"}, distance 2.
-Class \code{"gmmModels"}, by class \code{"nonlinearGmm"}, distance 2
+Class \code{"\linkS4class{nonlinearGel}"}, directly.
+Class \code{"\linkS4class{rgelModels}"}, directly.
+Class \code{"nonlinearGmm"}, by class \code{"nonlinearGel"}, distance 2.
+Class \code{"gelModels"}, by class \code{"nonlinearGel"}, distance 2.
+Class \code{"regGmm"}, by class \code{"nonlinearGel"}, distance 3.
+Class \code{"allNLGmm"}, by class \code{"nonlinearGel"}, distance 3.
+Class \code{"gmmModels"}, by class \code{"nonlinearGel"}, distance 3.
 }
 
 \examples{
-showClass("nonlinearGel")
+showClass("rnonlinearGel")
 }
 \keyword{classes}

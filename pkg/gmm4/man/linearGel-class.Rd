@@ -38,6 +38,6 @@ Class \code{"gmmModels"}, by class \code{"linearGmm"}, distance 2
 }
 
 \examples{
-showClass("linearGmm")
+showClass("linearGel")
 }
 \keyword{classes}

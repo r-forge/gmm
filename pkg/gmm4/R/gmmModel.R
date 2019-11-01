@@ -82,7 +82,7 @@
 
 ##################  Constructor for the gmmModels Classes  #####################
 
-gmmModel <- function(g, x=NULL, tet0=NULL,grad=NULL,
+gmmModel <- function(g, x=NULL, theta0=NULL,grad=NULL,
                      vcov = c("iid", "HAC", "MDS", "CL"),
                      vcovOptions=list(), centeredVcov = TRUE, data=parent.frame(),
                      na.action="na.omit", survOptions=list())
@@ -96,7 +96,7 @@ gmmModel <- function(g, x=NULL, tet0=NULL,grad=NULL,
             stop("'data' must be a list or an environment")    
         if (any(class(g)=="formula"))
             {
-                chk <- names(tet0) %in% all.vars(g)
+                chk <- names(theta0) %in% all.vars(g)
                 if (length(chk) == 0 | all(!chk))
                     {
                         model <- .lGmmData(g,x,data, survOptions, vcovOptions, na.action)
@@ -123,11 +123,11 @@ gmmModel <- function(g, x=NULL, tet0=NULL,grad=NULL,
                                           survOptions=model$survOptions)
                     } else {
                         if (!all(chk))
-                            stop("All parameters in tet0 must be in g for nl Gmm")
-                        model <- .nlGmmData(g, x, tet0, data, survOptions, vcovOptions,
+                            stop("All parameters in theta0 must be in g for nl Gmm")
+                        model <- .nlGmmData(g, x, theta0, data, survOptions, vcovOptions,
                                             na.action)
                         gmodel <- new("nonlinearGmm", modelF=model$modelF, 
-                                      instF=model$instF,theta0=tet0,fRHS=model$fRHS,
+                                      instF=model$instF,theta0=theta0,fRHS=model$fRHS,
                                       fLHS=model$fLHS, vcov=vcov,
                                       vcovOptions=model$vcovOptions,
                                       centeredVcov = centeredVcov, k=model$k, q=model$q,
@@ -137,9 +137,9 @@ gmmModel <- function(g, x=NULL, tet0=NULL,grad=NULL,
                                       survOptions=model$survOptions)
                     }
             } else if (is.function(g)) {
-                model <- .fGmmData(g, x, tet0, survOptions, vcovOptions, na.action)
+                model <- .fGmmData(g, x, theta0, survOptions, vcovOptions, na.action)
                 gmodel <- new("functionGmm", X=x, fct=g,
-                              theta0=tet0, vcov=vcov,vcovOptions=model$vcovOptions,
+                              theta0=model$theta0, vcov=vcov,vcovOptions=model$vcovOptions,
                               centeredVcov = centeredVcov, k=model$k, q=model$q,
                               n=model$n, parNames=model$parNames,
                               momNames=model$momNames, varNames=model$varNames,
@@ -152,9 +152,9 @@ gmmModel <- function(g, x=NULL, tet0=NULL,grad=NULL,
                     stop("For formula GMM, g must be a list of formulas")
                 if (any(sapply(g, function(gi) class(gi)) != "formula"))
                     stop("For formula GMM, g must be a list of formulas")
-                model <- .formGmmData(g, tet0, data, survOptions, vcovOptions, na.action)
+                model <- .formGmmData(g, theta0, data, survOptions, vcovOptions, na.action)
                 gmodel <- new("formulaGmm", modelF=model$modelF, 
-                              vcov=vcov, theta0=tet0,fRHS=model$fRHS,
+                              vcov=vcov, theta0=theta0,fRHS=model$fRHS,
                               fLHS=model$fLHS,vcovOptions=model$vcovOptions,
                               centeredVcov = centeredVcov, k=model$k, q=model$q,
                               n=model$n, parNames=model$parNames,

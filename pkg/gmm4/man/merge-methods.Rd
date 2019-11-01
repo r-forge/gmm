@@ -72,13 +72,13 @@ sys2[1:2]
 nlg <- list(y1~theta0+theta1*x1+theta2*x4,
             y2~alpha0+alpha1*x1+alpha2*x2+alpha3*x3,
             y3~beta0+beta1*x2+beta2*x3+beta3*x4)
-tet0 <- list(c(theta0=1,theta1=2,theta2=3),
+theta0 <- list(c(theta0=1,theta1=2,theta2=3),
               c(alpha0=1,alpha1=2,alpha2=3, alpha3=4),
               c(beta0=1,beta1=2,beta2=3,beta3=4))
 
-nm1 <- gmmModel(nlg[[1]], h1, tet0[[1]], data=simData)
-nm2 <- gmmModel(nlg[[2]], h2, tet0[[2]], data=simData)
-nm3 <- gmmModel(nlg[[3]], h3, tet0[[3]], data=simData)
+nm1 <- gmmModel(nlg[[1]], h1, theta0[[1]], data=simData)
+nm2 <- gmmModel(nlg[[2]], h2, theta0[[2]], data=simData)
+nm3 <- gmmModel(nlg[[3]], h3, theta0[[3]], data=simData)
 
 merge(nm1, nm2, nm3)
 

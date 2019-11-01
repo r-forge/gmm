@@ -40,6 +40,6 @@ Class \code{"gmmModels"}, by class \code{"functionGmm"}, distance 2
 }
 
 \examples{
-showClass("functionGmm")
+showClass("functionGel")
 }
 \keyword{classes}

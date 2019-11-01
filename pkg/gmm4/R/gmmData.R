@@ -108,17 +108,17 @@
              vcovOptions=vcovOptions, survOptions=survOptions)
     }
 
-.formGmmData <- function(formula, tet0, data, survOptions=list(), vcovOptions=list(),
+.formGmmData <- function(formula, theta0, data, survOptions=list(), vcovOptions=list(),
                          na.action="na.omit")
     {
-        res <- lapply(formula, function(f) .nlGmmData(f, ~1, tet0, data))
+        res <- lapply(formula, function(f) .nlGmmData(f, ~1, theta0, data))
         fRHS <- lapply(res, function(r) r$fRHS)
         fLHS <- lapply(res, function(r) r$fLHS)
         parNames <- res[[1]]$parNames
         varNames <- do.call("c", lapply(res, function(r) r$varNames))
         varNames <- unique(varNames)       
-        chkLHS <- sapply(fLHS, function(r) any(all.vars(r) %in% names(tet0)))
-        chkRHS <- sapply(fRHS, function(r) any(all.vars(r) %in% names(tet0)))
+        chkLHS <- sapply(fLHS, function(r) any(all.vars(r) %in% names(theta0)))
+        chkRHS <- sapply(fRHS, function(r) any(all.vars(r) %in% names(theta0)))
         isMDE <- all(chkLHS) |  all(chkRHS)        
         modelF <- sapply(varNames, function(n) data[[n]])
         modelF <- as.data.frame(modelF)
@@ -144,7 +144,7 @@
         }
         if (is.null(na))
             na <- integer()
-        k <- length(tet0)
+        k <- length(theta0)
         q <- length(formula)
         if (is.null(names(formula)))
             momNames <- paste("Mom_", 1:q, sep="")
@@ -159,18 +159,18 @@
 
 
 
-.nlGmmData <- function(formula, h, tet0, data, survOptions=list(), vcovOptions=list(),
+.nlGmmData <- function(formula, h, theta0, data, survOptions=list(), vcovOptions=list(),
                        na.action="na.omit")
     {
         varNames <- all.vars(formula)
-        parNames <- names(tet0)
+        parNames <- names(theta0)
         varNames <- varNames[!(varNames %in% parNames)]
         modelF <- try(sapply(varNames, function(n) data[[n]]), silent=TRUE)
         if (any(class(modelF)=="try-error"))
             stop("some variables are missing from data")
         modelF <- as.data.frame(modelF)        
-        allVar <- c(as.list(modelF), as.list(tet0))
-        k <- length(tet0)
+        allVar <- c(as.list(modelF), as.list(theta0))
+        k <- length(theta0)
         if (length(formula) == 3L)
         { 
             fLHS <- as.expression(formula[[2]])
@@ -243,15 +243,18 @@
              omit=na, vcovOptions=vcovOptions, survOptions=survOptions)
     }
 
-.fGmmData <- function(g, x, thet0, survOptions=list(), vcovOptions=list(),
+.fGmmData <- function(g, x, theta0, survOptions=list(), vcovOptions=list(),
                       na.action="na.omit")
     {
-        mom <- try(g(thet0, x))
-        k <- length(thet0)        
-        if (is.null(names(thet0)))
-            parNames <- paste("tet", 1:k, sep="")
-        else
-            parNames <- names(thet0)
+        mom <- try(g(theta0, x))
+        k <- length(theta0)        
+        if (is.null(names(theta0)))
+            {
+                parNames <- paste("theta", 1:k, sep="")
+                names(theta0) <- parNames
+            } else {
+                parNames <- names(theta0)
+            }
         add  <- survOptions$weights
         if (!is.null(vcovOptions$cluster))
             add <- cbind(as.matrix(vcovOptions$cluster), add)        
@@ -262,7 +265,7 @@
             }
         if (any(class(mom)=="try-error"))
             {
-                msg <- paste("Cannot evaluate the moments at thet0\n",
+                msg <- paste("Cannot evaluate the moments at theta0\n",
                              attr(mom,"condition"))
                 stop(msg)
             } else if (any(is.na(mom))) {
@@ -277,7 +280,7 @@
             }
         list(q=q,n=n,k=k, momNames=momNames, parNames=parNames,
              varNames=character(), isEndo=logical(), omit=integer(),
-             vcovOptions=vcovOptions, survOptions=survOptions)
+             vcovOptions=vcovOptions, survOptions=survOptions, theta0=theta0)
     }
 
 .slGmmData <- function(g,h,data, survOptions=list(), vcovOptions=list(),
@@ -329,11 +332,11 @@
              vcovOptions=vcovOptions, survOptions=survOptions)
     }
 
-.snlGmmData <- function(g,h,tet0, data, survOptions=list(), vcovOptions=list(),
+.snlGmmData <- function(g,h,theta0, data, survOptions=list(), vcovOptions=list(),
                         na.action="na.omit")
     {
         res <- lapply(1:length(g), function(i) .nlGmmData(g[[i]], h[[i]],
-                                                          tet0[[i]], data, list(),
+                                                          theta0[[i]], data, list(),
                                                           list(), "na.pass"))
         fRHS <- lapply(res, function(x) x$fRHS)
         fLHS <- lapply(res, function(x) x$fLHS)

@@ -6,6 +6,7 @@
 \alias{modelResponse,slinearGmm-method}
 \alias{modelResponse,rslinearGmm-method}
 \alias{modelResponse,rlinearGmm-method}
+\alias{modelResponse,rlinearGel-method}
 \title{ ~~ Methods for Function \code{modelResponse} in Package \pkg{gmm4} ~~}
 \description{
 Return the response vector in models with and without restrictions
@@ -38,7 +39,7 @@ y <- modelResponse(model1)
 
 ## Restrictions change the response
 R <- c("x2=2","x3=3")
-rmodel1 <- restGmmModel(model1, R)
+rmodel1 <- restModel(model1, R)
 rmodel1
 restY <- modelResponse(rmodel1)
 

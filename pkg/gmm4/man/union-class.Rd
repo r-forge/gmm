@@ -1,7 +1,7 @@
 \name{union-class}
 \docType{class}
 \alias{numericORNULL-class}
-\alias{numericORNULL-class}
+\alias{callORNULL-class}
 \alias{functionORNULL-class}
 \alias{numericORcharacter-class}
 \alias{matrixORnumeric-class}
@@ -18,7 +18,4 @@ A set of union classes for some methods.
 No methods defined for those classes in the signature.
 }
 
-\examples{
-showClass("numericORNULL")
-}
 \keyword{classes}

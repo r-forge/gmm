@@ -13,7 +13,7 @@ the functions. It is meant to be more user friendly. This document
 needs to changed. It is just a copy and paste from the gmm package
 }
 \usage{
-gmm4(g, x, tet0 = NULL, grad = NULL, 
+gmm4(g, x, theta0 = NULL, grad = NULL, 
      type = c("twostep", "iter", "cue", "onestep"),
      vcov = c("iid", "HAC", "MDS", "TrueFixed", "CL"),
      initW = c("ident", "tsls", "EbyE"), weights = "optimal", 
@@ -46,7 +46,7 @@ gmm4(g, x, tet0 = NULL, grad = NULL,
   \eqn{g(\theta,x)} is computed. If "g" is a formula, it is an \eqn{n
     \times Nh} matrix of instruments or a formula (see details below).}
 
-\item{tet0}{A \eqn{k \times 1} vector of starting values. It is required
+\item{theta0}{A \eqn{k \times 1} vector of starting values. It is required
   only when "g" is a function or a nonlinear equation defined by a
   formula, in which case, it must be a named vector}
 
@@ -93,10 +93,10 @@ gmm4(g, x, tet0 = NULL, grad = NULL,
   \item{data}{A data.frame or a matrix with column names (Optional). }
   
   \item{cstLHS}{The left hand side of the constraints to impose on the
-    coefficients. See \code{\link{restGmmModel}} for more details.}
+    coefficients. See \code{\link{restModel}} for more details.}
   
   \item{cstRHS}{The right hand side of the constraints to impose on the
-    coefficients. See \code{\link{restGmmModel}} for more details.}
+    coefficients. See \code{\link{restModel}} for more details.}
 
   \item{vcovOptions}{A list of options for the covariance matrix of the
     moment conditions. See \code{\link{vcovHAC}} for the default values.}

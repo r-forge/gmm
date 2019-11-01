@@ -10,7 +10,7 @@ It builds the object of either class \code{"linearGmm"},
 before running any estimation algorithm.
 }
 \usage{
-gmmModel(g, x=NULL, tet0=NULL,grad=NULL,
+gmmModel(g, x=NULL, theta0=NULL,grad=NULL,
          vcov = c("iid", "HAC", "MDS", "CL"), vcovOptions=list(),
          centeredVcov = TRUE, data=parent.frame(), na.action="na.omit",
          survOptions=list())
@@ -26,7 +26,7 @@ gmmModel(g, x=NULL, tet0=NULL,grad=NULL,
   \eqn{g(\theta,x)} is computed. If "g" is a formula, it is an \eqn{n
     \times Nh} matrix of instruments or a formula (see details below).}
 
-\item{tet0}{A \eqn{k \times 1} vector of starting values. It is required
+\item{theta0}{A \eqn{k \times 1} vector of starting values. It is required
   only when "g" is a function because only then a numerical algorithm is
   used to minimize the objective function. If the dimension of
   \eqn{\theta} is one, see the argument "optfct".}
@@ -113,6 +113,6 @@ dfct <- function(tet, x)
 			   -6*tet[1]*tet[2]), nrow=3,ncol=2)
         return(jacobian)
         }
-model3 <- gmmModel(fct, simData$x3, tet0=c(beta0=1, beta1=2), grad=dfct)
+model3 <- gmmModel(fct, simData$x3, theta0=c(beta0=1, beta1=2), grad=dfct)
 }
 

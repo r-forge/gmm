@@ -1,8 +1,10 @@
 \name{print-methods}
 \docType{methods}
 \alias{print-methods}
+\alias{print,confint-method}
 \alias{print,ANY-method}
 \alias{print,gmmModels-method}
+\alias{print,rgelModels-method}
 \alias{print,gelModels-method}
 \alias{print,gmmfit-method}
 \alias{print,gelfit-method}
@@ -33,6 +35,12 @@ Print method for all \code{"gmmModels"}, \code{"gmmfit"},
 \item{\code{signature(x = "gmmModels")}}{
 }
 \item{\code{signature(x = "gelModels")}}{
+}
+
+\item{\code{signature(x = "rgelModels")}}{
+}
+
+\item{\code{signature(x = "confint")}}{
 }
 
 \item{\code{signature(x = "sysGmmModels")}}{

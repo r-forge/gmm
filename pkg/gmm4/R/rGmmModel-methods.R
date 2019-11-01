@@ -133,53 +133,10 @@
         rest <- sapply(R, function(r) as.character(r[[2]]))
         if (!all(sapply(rest, function(x) length(x)==1)))
             stop("LHS of R formulas must contain only one coefficient")
-        fct <- function(theta, x)
-            {
-                cst <- attr(x, "cstSpec")
-                theta2 <- rep(0, length(cst$parNames))
-                names(theta2) <- cst$parNames
-                theta2[names(theta)] <- theta
-                chk <- sapply(cst$R, function(r) is.numeric(r[[3]]))
-                for (r in cst$R[chk])
-                    theta2[as.character(r[[2]])] <- r[[3]]
-                for (r in cst$R[!chk])
-                    theta2[as.character(r[[2]])] <- eval(r[[3]], as.list(theta2))
-                cst$fct(theta2, x)
-            }
-        if (!is.null(object@dfct))
-            {
-                dfct <- function(theta, x)
-                    {
-                        cst <- attr(x, "cstSpec")
-                        theta2 <- rep(0,length(cst$parNames))
-                        names(theta2) <- cst$parNames
-                        theta2[names(theta)] <- theta
-                        exc <- !(names(theta2)%in%names(theta))
-                        tr <- diag(length(theta2))[,!exc]
-                        chk <- sapply(cst$R, function(r) is.numeric(r[[3]]))
-                        for (r in cst$R[chk])
-                            {
-                                w <- which(names(theta2)==as.character(r[[2]]))
-                                theta2[w] <- r[[3]]
-                                tr[w,] <- 0
-                            }
-                        for (r in cst$R[!chk])
-                            {
-                                w <- which(names(theta2)==as.character(r[[2]]))
-                                theta2[w] <- eval(r[[3]], as.list(theta2))
-                                tr[w,] <- sapply(names(theta), function(n)
-                                    eval(D(r[[3]], n), as.list(theta2)))
-                            }
-                        G <- cst$dfct(theta2, x)%*%tr
-                        G
-                    }
-            } else {
-                dfct <- NULL
-            }
         k <- object@k-length(R)
         parNames <- object@parNames[!(object@parNames %in% rest)]
         theta0 <- object@theta0[!(object@parNames %in% rest)]        
-        list(fct=fct, dfct=dfct, parNames=parNames, theta0=theta0, k=k)
+        list(parNames=parNames, theta0=theta0, k=k)
     }
 
 .imposeFORMRestrict <- function(R, object)
@@ -498,11 +455,11 @@ setMethod("print", "rfunctionGmm",
               printRestrict(x)
           })
 
-## resGmmModel constructor
+## restModel constructor
 
-setGeneric("restGmmModel", function(object, ...) standardGeneric("restGmmModel"))
+setGeneric("restModel", function(object, ...) standardGeneric("restModel"))
 
-setMethod("restGmmModel", signature("linearGmm"),
+setMethod("restModel", signature("linearGmm"),
           function(object, R, rhs=NULL)
           {
               if (is.character(R))
@@ -524,7 +481,7 @@ setMethod("restGmmModel", signature("linearGmm"),
                   cstSpec=res, object)
           })
 
-setMethod("restGmmModel", signature("nonlinearGmm"),
+setMethod("restModel", signature("nonlinearGmm"),
           function(object, R, rhs=NULL) {
               if (!is.null(rhs))
                   warning("rhs is ignored for nonlinear models")
@@ -554,7 +511,7 @@ setMethod("restGmmModel", signature("nonlinearGmm"),
               new("rnonlinearGmm", R=R, cstSpec=cstSpec, object)
           })
 
-setMethod("restGmmModel", signature("functionGmm"),
+setMethod("restModel", signature("functionGmm"),
           function(object, R, rhs=NULL) {
               if (!is.null(rhs))
                   warning("rhs is ignored for functional models")
@@ -580,13 +537,11 @@ setMethod("restGmmModel", signature("functionGmm"),
               res <- .imposefRestrict(R, object)
               cstSpec <- list(newParNames = res$parNames,
                               originParNames=object@parNames,
-                              k=res$k, theta0=res$theta0, fct=res$fct, dfct=res$dfct)
-              attr(object@X, "cstSpec") <- list(fct=object@fct, dfct=object@dfct,
-                                                parNames=object@parNames, R=R)
+                              k=res$k, theta0=res$theta0)
               new("rfunctionGmm", R=R, cstSpec=cstSpec, object)
           })
 
-setMethod("restGmmModel", signature("formulaGmm"),
+setMethod("restModel", signature("formulaGmm"),
           function(object, R, rhs=NULL) {
               if (!is.null(rhs))
                   warning("rhs is ignored for nonlinear models")
@@ -666,7 +621,7 @@ setMethod("getRestrict", "rfunctionGmm",
 
 setMethod("getRestrict", "gmmModels",
           function(object, theta, R, rhs=NULL) {
-              robject <- restGmmModel(object, R, rhs)
+              robject <- restModel(object, R, rhs)
               getRestrict(robject, theta)
           })
 
@@ -693,23 +648,31 @@ setMethod("coef", "rlinearGmm",
 
 setMethod("coef", "rnonlinearGmm",
           function(object, theta)
+          {
+              
+              spec <- modelDims(object)
+              if (length(theta)>0)
               {
-                  spec <- modelDims(object)
-                  if (length(theta)>0)
-                      if (is.null(names(theta)))
-                          stop("theta must be a named vector")
-                  if (!all(names(theta)%in%spec$parNames))
-                      stop("theta has wrong names")
-                  theta2 <- rep(0,object@k)
-                  names(theta2) <- object@parNames
-                  theta2[names(theta)] <- theta
-                  chk <- sapply(object@R, function(r) is.numeric(r[[3]]))
-                  for (r in object@R[chk])
-                      theta2[as.character(r[[2]])] <- r[[3]]
-                  for (r in object@R[!chk])
-                      theta2[as.character(r[[2]])] <- eval(r[[3]], as.list(theta2))
-                  theta2
-              })
+                  if (is.null(names(theta)))
+                  {
+                      if (length(theta)!=length(spec$parNames))
+                          stop("Wrong number of coefficients")
+                      names(theta) <- spec$parNames
+                  } else {
+                      if (!all(names(theta)%in%spec$parNames))
+                          stop("theta has wrong names")
+                  }
+              }
+              theta2 <- rep(0,object@k)
+              names(theta2) <- object@parNames
+              theta2[names(theta)] <- theta
+              chk <- sapply(object@R, function(r) is.numeric(r[[3]]))
+              for (r in object@R[chk])
+                  theta2[as.character(r[[2]])] <- r[[3]]
+              for (r in object@R[!chk])
+                  theta2[as.character(r[[2]])] <- eval(r[[3]], as.list(theta2))
+              theta2
+          })
 
 setMethod("coef", "rfunctionGmm",
           function(object, theta)
@@ -726,10 +689,10 @@ setMethod("coef", "rformulaGmm",
 
 setMethod("[", c("rfunctionGmm", "numeric", "missing"),
           function(x, i, j){
-              x <- callNextMethod()
-              attr(x@X, "cstSpec")$fct <- x@fct
-              attr(x@X, "cstSpec")$dfct <- x@dfct
-              x
+              Call <- match.call(call=sys.call(sys.parent()))
+              obj <- callNextMethod()
+              obj@call <- Call
+              obj
           })
 
 ## gmmfit
@@ -738,6 +701,9 @@ setMethod("modelFit", signature("rlinearGmm"), valueClass="gmmfit",
           definition = function(object, type=c("twostep", "iter","cue", "onestep"),
               itertol=1e-7, initW=c("ident", "tsls"), weights="optimal", 
               itermaxit=100, efficientWeights=FALSE, ...) {
+              Call <- try(match.call(call=sys.call(sys.parent())), silent=TRUE)
+              if (class(Call)=="try-error")
+                  Call <- NULL
               cst <- object@cstSpec
               if (cst$k==0)
                   {
@@ -747,16 +713,21 @@ setMethod("modelFit", signature("rlinearGmm"), valueClass="gmmfit",
                           wObj <- weights
                       else
                           wObj <- evalWeights(object, theta=theta, w=weights)
-                      return(evalModel(object, theta, wObj))
+                      obj <- evalModel(object, theta, wObj)
                   } else {
-                      callNextMethod()
+                      obj <- callNextMethod()
                   }
+              obj@call <- Call
+              obj
           })
 
 setMethod("modelFit", signature("rnonlinearGmm"), valueClass="gmmfit", 
           definition = function(object, type=c("twostep", "iter","cue", "onestep"),
               itertol=1e-7, initW=c("ident", "tsls"), weights="optimal", 
-              itermaxit=100, efficientWeights=FALSE, start=NULL, ...) {
+              itermaxit=100, efficientWeights=FALSE, theta0=NULL, ...) {
+              Call <- try(match.call(call=sys.call(sys.parent())), silent=TRUE)
+              if (class(Call)=="try-error")
+                  Call <- NULL
               cst <- object@cstSpec
               if (cst$k==0)
                   {
@@ -766,16 +737,21 @@ setMethod("modelFit", signature("rnonlinearGmm"), valueClass="gmmfit",
                           wObj <- weights
                       else
                           wObj <- evalWeights(object, theta=theta, w=weights)
-                      return(evalModel(object, theta, wObj))
+                      obj <- evalModel(object, theta, wObj, Call=FALSE)
                   } else {
-                      callNextMethod()
+                      obj <- callNextMethod()
                   }
+              obj@call <- Call
+              obj
           })
 
 setMethod("modelFit", signature("rformulaGmm"), valueClass="gmmfit", 
           definition = function(object, type=c("twostep", "iter","cue", "onestep"),
               itertol=1e-7, initW=c("ident", "tsls"), weights="optimal", 
-              itermaxit=100, efficientWeights=FALSE, start=NULL, ...) {
+              itermaxit=100, efficientWeights=FALSE, theta0=NULL, ...) {
+              Call <- try(match.call(call=sys.call(sys.parent())), silent=TRUE)
+              if (class(Call)=="try-error")
+                  Call <- NULL
               cst <- object@cstSpec
               if (cst$k==0)
                   {
@@ -785,10 +761,12 @@ setMethod("modelFit", signature("rformulaGmm"), valueClass="gmmfit",
                           wObj <- weights
                       else
                           wObj <- evalWeights(object, theta=theta, w=weights)
-                      return(evalModel(object, theta, wObj))
+                      obj <- evalModel(object, theta, wObj)
                   } else {
-                      callNextMethod()
+                      obj <- callNextMethod()
                   }
+              obj@call <- Call
+              obj              
           })
 
 
@@ -804,3 +782,16 @@ setMethod("momentStrength", "rlinearGmm",
               list(strength=fstats, mess=mess)
           })
 
+### Convert rgmmModels to rgelModels
+
+setMethod("gmmToGel", signature("rgmmModels"),
+          function(object, gelType, rhoFct=NULL){
+              obj <- gmmToGel(as(object, "gmmModels"), gelType, rhoFct)
+              cls <- strsplit(class(object), "Gmm")[[1]][1]
+              cls <- paste(cls, "Gel", sep="")
+              if (grepl("linear", class(object)))
+                  new("rlinearGel", cstLHS=object@cstLHS, cstRHS=object@cstRHS,
+                      cstSpec=object@cstSpec, obj)
+              else
+                  new(cls, R=object@R, cstSpec=object@cstSpec, obj)
+          })

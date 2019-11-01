@@ -3,6 +3,8 @@
 \alias{getRestrict}
 \alias{getRestrict-methods}
 \alias{getRestrict,gmmModels-method}
+\alias{getRestrict,rgelModels-method}
+\alias{getRestrict,gelModels-method}
 \alias{getRestrict,rlinearGmm-method}
 \alias{getRestrict,rformulaGmm-method}
 \alias{getRestrict,rslinearGmm-method}
@@ -25,9 +27,13 @@ contraints. Those matrices are used to perform hypothesis tests.
 
 \S4method{getRestrict}{gmmModels}(object, theta, R, rhs=NULL)
 
+\S4method{getRestrict}{gelModels}(object, theta, R, rhs=NULL)
+
 \S4method{getRestrict}{sysGmmModels}(object, theta, R, rhs=NULL)
 
 \S4method{getRestrict}{rfunctionGmm}(object, theta)
+
+\S4method{getRestrict}{rgelModels}(object, theta)
 
 }
 \arguments{
@@ -37,9 +43,9 @@ contraints. Those matrices are used to perform hypothesis tests.
     examples).}
   \item{R}{A matrix, character or list of formulas that specifies the
     contraints to impose on the coefficients. See
-    \code{\link{restGmmModel}} for more details.}
+    \code{\link{restModel}} for more details.}
   \item{rhs}{The right hand side for the restriction on the
-    coefficients. See \code{\link{restGmmModel}} for more details. It is
+    coefficients. See \code{\link{restModel}} for more details. It is
     ignored for objects of class \code{"nonlinearGmm"}.}
   }
 \section{Methods}{
@@ -49,6 +55,17 @@ contraints. Those matrices are used to perform hypothesis tests.
     A restricted model is created from the constraints, and the
     restriction matrices are returned. The methods is applied to linear
     and nonlinear models in a regression form.
+  }
+
+   \item{\code{signature(object = "gelModels")}}{
+    A restricted model is created from the constraints, and the
+    restriction matrices are returned. The methods is applied to linear
+    and nonlinear models in a regression form.
+}
+
+\item{\code{signature(object = "rgelModels")}}{
+    The restriction matrices are evaluated at the coefficient vector
+  \code{theta} of the unrestricted representation.
 }
 
 \item{\code{signature(object = "sysGmmModels")}}{

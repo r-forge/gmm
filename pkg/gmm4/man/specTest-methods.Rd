@@ -17,7 +17,8 @@ It computes tests of specification for GMM fit.
 
 \S4method{specTest}{gmmfit,numeric}(object, which)
 
-\S4method{specTest}{gelfit,missing}(object, which)
+\S4method{specTest}{gelfit,missing}(object, which,
+                    type = c("All", "LR", "LM", "J"))
 }
 \arguments{
   \item{object}{GMM or GEL fit object}
@@ -35,6 +36,7 @@ It computes tests of specification for GMM fit.
     \code{\link{hypothesisTest}} if one wants the LR statistics to be
     computed using the same weights for the restricted and unrestricted
     model.}
+  \item{type}{For GEL, three specification tests are available}
 }
 
 \section{Methods}{

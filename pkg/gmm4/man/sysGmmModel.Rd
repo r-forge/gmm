@@ -10,7 +10,7 @@ It builds the object of either class \code{"slinearGmm"} or
 GMM.
 }
 \usage{
-sysGmmModel(g, h=NULL, tet0=NULL,
+sysGmmModel(g, h=NULL, theta0=NULL,
             vcov = c("iid", "HAC", "MDS", "CL"),
             vcovOptions=list(), centeredVcov = TRUE,
             data=parent.frame(),na.action="na.omit",
@@ -23,7 +23,7 @@ sysGmmModel(g, h=NULL, tet0=NULL,
 \item{h}{A list of linear formulas for the instruments in each
   equation in the system.}
 
-\item{tet0}{A list of vectors of starting values. It is required
+\item{theta0}{A list of vectors of starting values. It is required
   only when the equations are nonlinear, in which case, it must be a
   list of named vector, with the names corresponding to the coefficient
   names in the regression formulas.}
@@ -105,10 +105,10 @@ smodel <- sysGmmModel(g, h, data=dat)
 nlg <- list(y1~theta0+theta1*x1+theta2*x4,
             y2~alpha0+alpha1*x1+alpha2*x2+alpha3*x3,
             y3~beta0+beta1*x2+beta2*x3+beta3*x4)
-tet0 <- list(c(theta0=1,theta1=2,theta2=3),
+theta0 <- list(c(theta0=1,theta1=2,theta2=3),
               c(alpha0=1,alpha1=2,alpha2=3, alpha3=4),
               c(beta0=1,beta1=2,beta2=3,beta3=4))
-snmodel <- sysGmmModel(nlg, h, tet0, data=dat)
+snmodel <- sysGmmModel(nlg, h, theta0, data=dat)
 
 
 }

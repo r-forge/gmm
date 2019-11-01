@@ -1,7 +1,6 @@
 \name{gelModel}
 
 \alias{gelModel}
-\alias{gmmToGel}
 	
 \title{Constructor for \code{"gelModels"} classes}
 
@@ -12,16 +11,12 @@ It builds the object of either class \code{"linearGel"},
 estimation algorithm.
 }
 \usage{
-gelModel(g, x=NULL, gelType, rhoFct=NULL, tet0=NULL,grad=NULL,
-        vcov = c("HAC", "MDS", "iid"),vcovOptions=list(),
+gelModel(g, x=NULL, gelType, rhoFct=NULL, theta0=NULL,grad=NULL,
+        vcov = c("MDS", "iid", "HAC"),vcovOptions=list(),
         centeredVcov = TRUE, data=parent.frame())
 
-gmmToGel(object, gelType, rhoFct=NULL)
 }
 \arguments{
-\item{object}{An object of class \code{"gmmModels"}. The function
-  convert the object to a \code{"gelModels"} class}
-  
 \item{g}{A function of the form \eqn{g(\theta,x)} and which returns a
   \eqn{n \times q} matrix with typical element \eqn{g_i(\theta,x_t)} for
   \eqn{i=1,...q} and \eqn{t=1,...,n}. This matrix is then used to build
@@ -44,7 +39,7 @@ gmmToGel(object, gelType, rhoFct=NULL)
   \code{k} a numeric scale factor required for time series and kernel
   smoothed moments.}
 
-\item{tet0}{A \eqn{k \times 1} vector of starting values. It is required
+\item{theta0}{A \eqn{k \times 1} vector of starting values. It is required
   only when "g" is a function because only then a numerical algorithm is
   used to minimize the objective function. If the dimension of
   \eqn{\theta} is one, see the argument "optfct".}
@@ -109,7 +104,7 @@ model1
 ## A nonlinearGmm
 g <- y~beta0+x1^beta1
 h <- ~z1+z2
-model2 <- gelModel(g, h, tet0=c(beta0=1, beta1=2), data=simData, gelType="ET")
+model2 <- gelModel(g, h, theta0=c(beta0=1, beta1=2), data=simData, gelType="ET")
 model2
 
 }

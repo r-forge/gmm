@@ -1,20 +1,21 @@
-\name{rformulaGmm-class}
+\name{rformulaGel-class}
 \docType{class}
-\alias{rformulaGmm-class}
+\alias{rformulaGel-class}
 
-\title{Class \code{"rformulaGmm"}}
+\title{Class \code{"rformulaGel"}}
 \description{
-Class for GMM models in which the moment conditons are defined through a
-formula and the coefficients are restricted.
+Restricted GEL model class for moment conditions defined by formulas. 
 }
 \section{Objects from the Class}{
-Objects can be created by calls of the form \code{new("rformulaGmm", ...)}.
-The constructor is \code{\link{restModel}}.
+Objects can be created by calls of the form \code{new("rformulaGel", ...)}.
+It is however, recommended to use the \code{\link{restModel}} method.
 }
 \section{Slots}{
   \describe{
     \item{\code{R}:}{Object of class \code{"list"} ~~ }
-    \item{\code{cstSpec}:}{Object of class \code{"list"} ~~ }
+    \item{\code{cstSpec}:}{Object of class \code{"list"} ~~ }            
+    \item{\code{wSpec}:}{Object of class \code{"list"} ~~ }
+    \item{\code{gelType}:}{Object of class \code{"list"} ~~ }    	
     \item{\code{modelF}:}{Object of class \code{"data.frame"} ~~ }
     \item{\code{vcov}:}{Object of class \code{"character"} ~~ }
     \item{\code{theta0}:}{Object of class \code{"numeric"} ~~ }
@@ -30,26 +31,22 @@ The constructor is \code{\link{restModel}}.
     \item{\code{varNames}:}{Object of class \code{"character"} ~~ }
     \item{\code{isEndo}:}{Object of class \code{"logical"} ~~ }
     \item{\code{isMDE}:}{Object of class \code{"logical"} ~~ }
+    \item{\code{omit}:}{Object of class \code{"integer"} ~~ }
+    \item{\code{survOptions}:}{Object of class \code{"list"} ~~ }        
   }
 }
+
 \section{Extends}{
-Class \code{"\linkS4class{functionGmm}"}, directly.
-Class \code{"\linkS4class{rgmmModels}"}, directly.
-Class \code{"\linkS4class{allNLGmm}"}, by class "functionGmm", distance 2.
-Class \code{"\linkS4class{gmmModels}"}, by class "functionGmm", distance 2.
-}
-\section{Methods}{
-  \describe{
-    \item{[}{\code{signature(x = "rfunctionGmm", i = "integer", j = "ANY")}: ... }
-    \item{coef}{\code{signature(object = "rfunctionGmm")}: ... }
-    \item{getRestrict}{\code{signature(object = "rfunctionGmm")}: ... }
-    \item{modelDims}{\code{signature(object = "rfunctionGmm")}: ... }
-    \item{print}{\code{signature(x = "rfunctionGmm")}: ... }
-    \item{printRestrict}{\code{signature(object = "rfunctionGmm")}: ... }
-	 }
+Class \code{"\linkS4class{formulaGel}"}, directly.
+Class \code{"\linkS4class{rgelModels}"}, directly.
+Class \code{"formulaGmm"}, by class \code{"formulaGel"}, distance 2.
+Class \code{"gelModels"}, by class \code{"formulaGel"}, distance 2.
+Class \code{"allNLGmm"}, by class \code{"formulaGel"}, distance 3.
+Class \code{"gmmModels"}, by class \code{"formulaGel"}, distance 3.
 }
 
+
 \examples{
-showClass("rfunctionGmm")
+showClass("rformulaGel")
 }
 \keyword{classes}

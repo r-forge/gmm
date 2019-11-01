@@ -1,7 +1,7 @@
 
 ##################  Constructor for the sysGmmModels classes   #####################
 
-sysGmmModel <- function(g, h=NULL, tet0=NULL,
+sysGmmModel <- function(g, h=NULL, theta0=NULL,
                         vcov = c("iid", "HAC", "MDS", "CL"),
                         vcovOptions=list(), centeredVcov = TRUE, data=parent.frame(),
                         na.action="na.omit", survOptions=list())
@@ -21,19 +21,19 @@ sysGmmModel <- function(g, h=NULL, tet0=NULL,
         if (length(g) == 1)
             stop("There is only one equation. Use gmmModel() instead")
         ## Try to see if parameters are in formulas
-        if (!is.null(tet0))
+        if (!is.null(theta0))
             {
-                if (!is.list(tet0))
-                    stop("For system GMM, tet0 must be a list of named vectors")
-                if (length(tet0) != length(g))
-                    stop("The length of tet0 must match the length of g and h")
-                chk <- sapply(1:length(tet0),
-                              function(i) isTRUE(all(names(tet0[[i]]) %in% all.vars(g[[i]]))))
+                if (!is.list(theta0))
+                    stop("For system GMM, theta0 must be a list of named vectors")
+                if (length(theta0) != length(g))
+                    stop("The length of theta0 must match the length of g and h")
+                chk <- sapply(1:length(theta0),
+                              function(i) isTRUE(all(names(theta0[[i]]) %in% all.vars(g[[i]]))))
                 if (all(chk))
                     {
                         nonlin <- TRUE
-                        chk2 <- sapply(tet0[-1],
-                                       function(l) any(names(l) %in% names(tet0[[1]])))
+                        chk2 <- sapply(theta0[-1],
+                                       function(l) any(names(l) %in% names(theta0[[1]])))
                         if (any(chk2))
                             stop("Coefficient names across equations must be different")
                     } else if (all(!chk)){
@@ -44,7 +44,7 @@ sysGmmModel <- function(g, h=NULL, tet0=NULL,
             } else {
                 nonlin <- FALSE
             }
-        varg <- lapply(1:length(g), function(i) .formSpec(g[[i]], tet0[[i]]))
+        varg <- lapply(1:length(g), function(i) .formSpec(g[[i]], theta0[[i]]))
         if (is.null(h))
         {
             SUR <- TRUE
@@ -99,9 +99,9 @@ sysGmmModel <- function(g, h=NULL, tet0=NULL,
                           isEndo=model$isEndo, omit=model$omit,
                           survOptions=model$survOptions)
         } else {
-            model <- .snlGmmData(g, h, tet0, data, survOptions, vcovOptions, na.action)
+            model <- .snlGmmData(g, h, theta0, data, survOptions, vcovOptions, na.action)
             gmodel <- new("snonlinearGmm", data=model$data, instT=model$instT,
-                          theta0=tet0,fRHS=model$fRHS,eqnNames=model$eqnNames,
+                          theta0=theta0,fRHS=model$fRHS,eqnNames=model$eqnNames,
                           fLHS=model$fLHS, vcov=vcov, vcovOptions=model$vcovOptions,
                           centeredVcov = centeredVcov, k=model$k, q=model$q,
                           n=model$n, parNames=model$parNames,

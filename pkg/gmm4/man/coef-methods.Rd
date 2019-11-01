@@ -9,6 +9,8 @@
 \alias{coef,rfunctionGmm-method}
 \alias{coef,rformulaGmm-method}
 \alias{coef,gmmModels-method}
+\alias{coef,gelModels-method}
+\alias{coef,rgelModels-method}
 \alias{coef,rnonlinearGmm-method}
 \title{ ~~ Methods for Function \code{coef} in Package \pkg{stats} ~~}
 \description{
@@ -27,6 +29,12 @@ It extract the coefficient estimates of some GMM objects.
 }
 
 \item{\code{signature(object = "gmmModels")}}{
+}
+
+\item{\code{signature(object = "gelModels")}}{
+}
+
+\item{\code{signature(object = "rgelModels")}}{
 }
 
 \item{\code{signature(object = "rlinearGmm")}}{
@@ -57,7 +65,7 @@ res1 <- modelFit(model1)
 coef(res1)
 
 ### Restricted models
-rmodel1 <- restGmmModel(model1, R=c("x1=1", "x2=2*x3"))
+rmodel1 <- restModel(model1, R=c("x1=1", "x2=2*x3"))
 res2 <- modelFit(rmodel1)
 res2
 coef(rmodel1, coef(res2))

@@ -625,7 +625,9 @@ setMethod("momentVcov", signature("sysGmmModels"),
 setMethod("tsls", "slinearGmm",
           function(object)
           {
-              call <- match.call()
+              Call <- try(match.call(call=sys.call(sys.parent())), silent=TRUE)
+              if (class(Call)=="try-error")
+                  Call <- NULL
               neqn <- length(object@eqnNames)
               res <- lapply(1:neqn, function(i) tsls(object[i]))
               w <- lapply(1:neqn, function(i) quadra(res[[i]]@wObj))
@@ -634,7 +636,7 @@ setMethod("tsls", "slinearGmm",
               theta <- lapply(res, coef)
               names(theta) <- object@eqnNames
               new("stsls", theta=theta, convergence=NULL, convIter=NULL,
-                  call=call, type="tsls", wObj=wObj, niter=1L,
+                  call=Call, type="tsls", wObj=wObj, niter=1L,
                   efficientGmm=FALSE, model=object)
           })
 
@@ -645,7 +647,9 @@ setGeneric("ThreeSLS", function(object, ...) standardGeneric("ThreeSLS"))
 
 setMethod("ThreeSLS", "slinearGmm", 
           function(object, coefOnly=FALSE, qrZ=NULL, Sigma=NULL) {
-              Call <- match.call()
+              Call <- try(match.call(call=sys.call(sys.parent())), silent=TRUE)
+              if (class(Call)=="try-error")
+                  Call <- NULL
               if (!inherits(object, "slinearGmm"))
                   stop("3SLS is for slinearGmm classes")
               if (!object@sameMom)
@@ -708,10 +712,12 @@ setMethod("ThreeSLS", "slinearGmm",
 setMethod("modelFit", signature("sysGmmModels"), valueClass="sgmmfit", 
           function(object, type=c("twostep", "iter","cue", "onestep"),
                    itertol=1e-7, initW=c("ident", "tsls", "EbyE"), weights="optimal", 
-                   itermaxit=100, efficientWeights=FALSE, start=NULL,
+                   itermaxit=100, efficientWeights=FALSE, theta0=NULL,
                    EbyE=FALSE, ...)
           {
-              Call <- match.call()
+              Call <- try(match.call(call=sys.call(sys.parent())), silent=TRUE)
+              if (class(Call)=="try-error")
+                  Call <- NULL
               chk <- validObject(object)                  
               type <- match.arg(type)
               initW <- match.arg(initW)
@@ -723,150 +729,155 @@ setMethod("modelFit", signature("sysGmmModels"), valueClass="sgmmfit",
                   stop("weights is a matrix or one of 'optimal' or 'ident'")
               spec <- modelDims(object)
               if (all(spec$q==spec$k))
-                  {
-                      weights <- "ident"
-                      type <- "onestep"
-                      EbyE <- TRUE
-                  } else if (type == "onestep" && !is.matrix(weights)) {
-                      weights <- "ident"
-                      EbyE <- TRUE
-                  } else if (is.matrix(weights) || class(weights)=="sysGmmWeights") {
-                      type <- "onestep"
-                      EbyE <- FALSE
-                  } else if (weights == "ident") {
-                      type <- "onestep"
-                      EbyE <- TRUE
-                  }
+              {
+                  weights <- "ident"
+                  type <- "onestep"
+                  EbyE <- TRUE
+              } else if (type == "onestep" && !is.matrix(weights)) {
+                  weights <- "ident"
+                  EbyE <- TRUE
+              } else if (is.matrix(weights) || class(weights)=="sysGmmWeights") {
+                  type <- "onestep"
+                  EbyE <- FALSE
+              } else if (weights == "ident") {
+                  type <- "onestep"
+                  EbyE <- TRUE
+              }
               if (EbyE)
+              {
+                  neqn <- length(object@eqnNames)
+                  res <- lapply(1:neqn, function(i)
+                      modelFit(object[i], type=type, weights=weights,itertol=itertol,
+                               initW=initW, itermaxit=itermaxit,
+                               efficientWeights=efficientWeights, theta0=theta0, ...))
+                  theta <- lapply(res, coef)
+                  convergence <- sapply(res, function(r) r@convergence)
+                  if (is.list(convergence))
+                      convergence <- do.call("c", convergence)
+                  convIter <- sapply(res, function(r) r@convIter)
+                  niter <- sapply(res, function(r) r@niter)
+                  if (is.list(convIter))
+                      convIter <- do.call("c", convIter)
+                  type <- paste("EBE", type, sep="")
+                  efficientGmm <- FALSE
+                  if (is.character(weights) && weights=="ident")
                   {
-                      neqn <- length(object@eqnNames)
-                      res <- lapply(1:neqn, function(i)
-                          modelFit(object[i], type=type, weights=weights,itertol=itertol,
-                                 initW=initW, itermaxit=itermaxit,
-                                 efficientWeights=efficientWeights, start=start, ...))
-                      theta <- lapply(res, coef)
-                      convergence <- sapply(res, function(r) r@convergence)
-                      if (is.list(convergence))
-                          convergence <- do.call("c", convergence)
-                      convIter <- sapply(res, function(r) r@convIter)
-                      niter <- sapply(res, function(r) r@niter)
-                      if (is.list(convIter))
-                          convIter <- do.call("c", convIter)
-                      type <- paste("EBE", type, sep="")
-                      efficientGmm <- FALSE
-                      if (is.character(weights) && weights=="ident")
-                          {
-                              wObj <- evalWeights(object, NULL, "ident")
-                          } else {
-                              wObj <- lapply(res, function(r) quadra(r@wObj))
-                              wObj <- .GListToMat(wObj)
-                              wObj <- evalWeights(object, w=wObj)
-                          }
-                      ans <- new("sgmmfit", theta=theta, convergence=convergence,
-                                 convIter=convIter, call=Call, type=type, wObj=wObj,
-                                 niter=niter, efficientGmm=efficientGmm, model=object)
-                      return(ans)
-                  }              
-              if (type == "onestep")
-                  {
-                      if (class(weights)=="sysGmmWeights")
-                          wObj <- weights
-                      else
-                          wObj <- evalWeights(object, w=weights)
-                      res <- solveGmm(object, wObj, start, ...)
-                      convergence <- res$convergence
-                      efficientGmm <- efficientWeights
-                      ans <- new("sgmmfit", theta=res$theta,
-                                 convergence=convergence, convIter=NULL, type=type,
-                                 wObj=wObj, model=object, call=Call, niter=i,
-                                 efficientGmm=efficientGmm)
-                      return(ans)
-                  }
-              if (type == "twostep")
-                  {
-                      itermaxit <- 1
-                      if (inherits(object, "slinearGmm"))
-                          {
-                              if (object@vcov=="iid" && !object@sameMom && !object@SUR)
-                                  type <- "FIVE"                              
-                              if (initW=="tsls" && object@vcov=="iid" && object@sameMom)
-                                  return(ThreeSLS(object))
-                          }
-                  }
-              if (initW=="tsls")
-                  {                          
-                      theta0 <- try(coef(tsls(object)), silent=TRUE)
-                      if (class(theta0)=="try-error")
-                          stop("Cannot get the initial weights using 2SLS")
-                  } else if (initW == "EbyE") {
-                      neqn <- length(object@eqnNames)
-                      res <- lapply(1:neqn, function(i)
-                          modelFit(object[i], type=type, weights=weights,itertol=itertol,
-                                 itermaxit=itermaxit,
-                                 efficientWeights=efficientWeights, start=start, ...))
-                      theta0 <- lapply(res, coef)
-                  } else {
                       wObj <- evalWeights(object, NULL, "ident")
-                      theta0 <- solveGmm(object, wObj, start, ...)$theta
+                  } else {
+                      wObj <- lapply(res, function(r) quadra(r@wObj))
+                      wObj <- .GListToMat(wObj)
+                      wObj <- evalWeights(object, w=wObj)
                   }
+                  ans <- new("sgmmfit", theta=theta, convergence=convergence,
+                             convIter=convIter, call=Call, type=type, wObj=wObj,
+                             niter=niter, efficientGmm=efficientGmm, model=object)
+                  return(ans)
+              }              
+              if (type == "onestep")
+              {
+                  if (class(weights)=="sysGmmWeights")
+                      wObj <- weights
+                  else
+                      wObj <- evalWeights(object, w=weights)
+                  res <- solveGmm(object, wObj, theta0, ...)
+                  convergence <- res$convergence
+                  efficientGmm <- efficientWeights
+                  ans <- new("sgmmfit", theta=res$theta,
+                             convergence=convergence, convIter=NULL, type=type,
+                             wObj=wObj, model=object, call=Call, niter=i,
+                             efficientGmm=efficientGmm)
+                  return(ans)
+              }
+              if (type == "twostep")
+              {
+                  itermaxit <- 1
+                  if (inherits(object, "slinearGmm"))
+                  {
+                      if (object@vcov=="iid" && !object@sameMom && !object@SUR)
+                          type <- "FIVE"                              
+                      if (initW=="tsls" && object@vcov=="iid" && object@sameMom)
+                      {
+                          obj <- ThreeSLS(object)
+                          obj@call <- Call
+                          
+                      }
+                  }
+              }
+              if (initW=="tsls")
+              {                          
+                  theta0 <- try(coef(tsls(object)), silent=TRUE)
+                  if (class(theta0)=="try-error")
+                      stop("Cannot get the initial weights using 2SLS")
+              } else if (initW == "EbyE") {
+                  neqn <- length(object@eqnNames)
+                  res <- lapply(1:neqn, function(i)
+                      modelFit(object[i], type=type, weights=weights,itertol=itertol,
+                               itermaxit=itermaxit,
+                               efficientWeights=efficientWeights, theta0=theta0, ...))
+
+                  theta0 <- lapply(res, coef)
+              } else {
+                  wObj <- evalWeights(object, NULL, "ident")
+                  theta0 <- solveGmm(object, wObj, theta0, ...)$theta
+              }
               bw <- object@vcovOptions$bw
               if (type != "cue")
+              {
+                  while(TRUE)
+              {
+                  if (i>1 && object@vcov=="iid")
+                      wObj0 <- wObj
+                  else
+                      wObj0 <- NULL
+                  wObj <- evalWeights(object, theta0, "optimal", wObj0)
+                  if (object@vcov=="HAC" && is.character(object@bw))
+                      object@vcovOptions$bw <- wObj@wSpec$bw
+                  res <- solveGmm(object, wObj, theta0, ...)
+                  theta1 <- res$theta
+                  convergence <- res$convergence
+                  tet0 <- do.call("c", theta0)
+                  dif1 <- do.call("c", theta1)-tet0
+                  crit <- sqrt(sum(dif1^2))/(1+sqrt(sum(tet0^2)))
+                  if (crit < itertol & type=="iter")
                   {
-                      while(TRUE)
-                          {
-                              if (i>1 && object@vcov=="iid")
-                                  wObj0 <- wObj
-                              else
-                                  wObj0 <- NULL
-                              wObj <- evalWeights(object, theta0, "optimal", wObj0)
-                              if (object@vcov=="HAC" && is.character(object@bw))
-                                  object@vcovOptions$bw <- wObj@wSpec$bw
-                              res <- solveGmm(object, wObj, theta0, ...)
-                              theta1 <- res$theta
-                              convergence <- res$convergence
-                              tet0 <- do.call("c", theta0)
-                              dif1 <- do.call("c", theta1)-tet0
-                              crit <- sqrt(sum(dif1^2))/(1+sqrt(sum(tet0^2)))
-                              if (crit < itertol & type=="iter")
-                                  {
-                                      convIter <- 0
-                                      break
-                                  }
-                              i <- i + 1L
-                              theta0 <- theta1
-                              if (i>itermaxit)
-                                  {
-                                      if (type %in% c("twostep", "FIVE"))
-                                          convIter <- NULL
-                                      else
-                                          convIter <- 1
-                                      break                                      
-                                  }                              
-                          }      
-                  } else {
-                      convIter <- NULL
-                      if (object@vcov=="HAC" && is.character(bw))
-                          {
-                              w <- momentVcov(object, theta0)
-                              object@vcovOptions$bw <- attr(w, "Spec")$bw
-                          }
-                      if (object@vcov == "iid")
-                          wObj0 <- evalWeights(object, theta0)
-                      else
-                          wObj0 <- NULL
-                      obj <- function(theta, object, wObj0, spec)
-                          {
-                              theta <- .tetReshape(theta, object@eqnNames,
-                                                   spec$parNames)
-                              wObj <- evalWeights(object, theta, "optimal", wObj0)
-                              evalObjective(object, theta, wObj)
-                          }
-                      res <- optim(do.call("c",theta0), obj, object=object, wObj0=wObj0,
-                                   spec=spec, ...)
-                      theta1 <- .tetReshape(res$par, object@eqnNames,spec$parNames)
-                      convergence <- res$convergence
-                      wObj <- evalWeights(object, theta1, "optimal", wObj0)
+                      convIter <- 0
+                      break
                   }
+                  i <- i + 1L
+                  theta0 <- theta1
+                  if (i>itermaxit)
+                  {
+                      if (type %in% c("twostep", "FIVE"))
+                          convIter <- NULL
+                      else
+                          convIter <- 1
+                      break                                      
+                  }                              
+              }      
+              } else {
+                  convIter <- NULL
+                  if (object@vcov=="HAC" && is.character(bw))
+                  {
+                      w <- momentVcov(object, theta0)
+                      object@vcovOptions$bw <- attr(w, "Spec")$bw
+                  }
+                  if (object@vcov == "iid")
+                      wObj0 <- evalWeights(object, theta0)
+                  else
+                      wObj0 <- NULL
+                  obj <- function(theta, object, wObj0, spec)
+                  {
+                      theta <- .tetReshape(theta, object@eqnNames,
+                                           spec$parNames)
+                      wObj <- evalWeights(object, theta, "optimal", wObj0)
+                      evalObjective(object, theta, wObj)
+                  }
+                  res <- optim(do.call("c",theta0), obj, object=object, wObj0=wObj0,
+                               spec=spec, ...)
+                  theta1 <- .tetReshape(res$par, object@eqnNames,spec$parNames)
+                  convergence <- res$convergence
+                  wObj <- evalWeights(object, theta1, "optimal", wObj0)
+              }
               object@vcovOptions$bw <- bw
               new("sgmmfit", theta=theta1, convergence=convergence,
                   convIter=convIter, call=Call, type=type, wObj=wObj,

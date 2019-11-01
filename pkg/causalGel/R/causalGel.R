@@ -1,7 +1,7 @@
 ## Model builder
 
 causalModel <- function(g, balm, data,theta0=NULL,
-                      momType=c("ACE","ACT","uncondBal","fixedMom"),
+                      momType=c("ACE","ACT","ACC", "uncondBal","fixedMom"),
                       popMom = NULL, rhoFct=NULL,ACTmom=1L, 
                       gelType = c("EL", "ET", "EEL", "ETEL", "HD", "ETHD","REEL"))
 {
@@ -21,8 +21,12 @@ causalModel <- function(g, balm, data,theta0=NULL,
         stop("You cannot remove the intercept from balm")
     k <- tmp_model$k
     ncoef <- 1+2*(k-1)
-    name_coef <- c("control",paste("treat", 1:(k-1), sep=""),
-                   paste("ptreat", 1:(k-1), sep=""))
+    if (k>2)
+        treatInd <- 1:(k-1)
+    else
+        treatInd <- ""
+    name_coef <- c("control",paste("causalEffect", treatInd, sep=""),
+                   paste("probTreatment", treatInd, sep=""))
     if (!is.null(theta0))
     {
         if (length(theta0) != ncoef)
@@ -43,14 +47,23 @@ causalModel <- function(g, balm, data,theta0=NULL,
                 popMom <- colMeans(X[,-1, drop=FALSE])
             } else if (momType == "ACT") {
                 popMom <- colMeans(X[Z[,1+ACTmom]==1,-1, drop=FALSE])
+            } else if (momType == "ACC") {
+                popMom <- colMeans(X[rowSums(Z)==1,-1, drop=FALSE])
             }
         }    
     modData <- new("causalData", reg=tmp_model$modelF, bal=tmp_model$instF,
-                   momType=momType, popMom=popMom, ACTmom=ACTmom)
+                   momType=momType, balMom=popMom, ACTmom=ACTmom,
+                   balCov=tmp_model$momNames[-1])
     mod <- gelModel(g=causalMomFct, x=modData, gelType=gelType, rhoFct=rhoFct,
-                    tet0=theta0, grad=causalDmomFct,vcov="MDS", vcovOptions=list(),
+                    theta0=theta0, grad=NULL,vcov="MDS", vcovOptions=list(),
                     centeredVcov=TRUE, data=NULL)
-    mod@momNames <- c(names(theta0), paste("Bal", 1:(mod@q-mod@k), sep=""))
+    momNames <- lapply(treatInd, function(i)
+        paste("treat", i, "_", tmp_model$momNames[-1], sep=""))
+    momNames <- do.call("c", momNames)
+    if (momType == "uncondBal")
+        mod@momNames <- c(names(theta0), momNames)
+    else
+        mod@momNames <- c(names(theta0), momNames, tmp_model$momNames[-1])
     new("causalGel", mod)
 }
 

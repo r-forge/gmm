@@ -9,7 +9,7 @@ Description: Methods for causal inference in which covariates are balanced using
 Depends: R (>= 3.0.0), gmm4
 Imports: stats, methods
 Suggests: lmtest, knitr, texreg
-Collate: 'allClasses.R' 'causalMethods.R' 'causalGel.R'
+Collate: 'allClasses.R' 'causalMethods.R' 'causalGel.R' 'causalfitMethods.R'
 License: GPL (>= 2) 
 NeedsCompilation: no
 VignetteBuilder: knitr

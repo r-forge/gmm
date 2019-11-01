@@ -32,8 +32,9 @@ setMethod("print", "gelModels",
 setMethod("evalMoment", "gelModels", function(object, theta)
     {
         if (object@vcov != "HAC")
-            {
-                evalMoment(as(object, "gmmModels"), theta)
+        {
+            theta <- coef(object, theta)
+            evalMoment(as(object, "gmmModels"), theta)
             } else {
                 smoothGel(object, theta)$smoothx
             }
@@ -128,7 +129,7 @@ setMethod("solveGel", signature("gelModels"),
                       {
                           if (!("theta0"%in%slotNames(object)))
                               stop("Theta0 must be provided")
-                          theta0 <- object@theta0
+                          theta0 <- modelDims(object)$theta0
                       }
                   if (is.null(lamSlv))
                       lamSlv <- getLambda
@@ -153,40 +154,46 @@ setMethod("solveGel", signature("gelModels"),
 
 setMethod("modelFit", signature("gelModels"), valueClass="gelfit", 
           definition = function(object, gelType=NULL, rhoFct=NULL,
-              initTheta=c("gmm", "theta0"), start.tet=NULL,
-              start.lam=NULL, vcov=FALSE, ...)
+              initTheta=c("gmm", "modelTheta0"), theta0=NULL,
+              lambda0=NULL, vcov=FALSE, ...)
+          {
+              Call <- try(match.call(call=sys.call(sys.parent())), silent=TRUE)
+              if (class(Call)=="try-error")
+                  Call <- NULL
+              spec <- modelDims(object)
+              initTheta = match.arg(initTheta)
+              if (!is.null(gelType))
+                  object@gelType$name <- gelType
+              if (!is.null(rhoFct))
+                  object@gelType$rhoFct <- rhoFct
+              if (is.null(theta0))
               {
-                  Call <- match.call()
-                  initTheta = match.arg(initTheta)
-                  if (!is.null(gelType))
-                      object <- gmmToGel(as(object, "gmmModels"), gelType, rhoFct)
-                  if (is.null(start.tet))
-                      {
-                          if (initTheta == "gmm")
-                              start.tet <- modelFit(as(object, "gmmModels"))@theta
-                          else if ("theta0" %in% slotNames(object))
-                              start.tet <- object@theta0
-                          else
-                              stop("starting values is missing for the coefficient vector")
-                      }
-                  res <- solveGel(object, theta0=start.tet, lambda0=start.lam,
-                                  ...)
-                  gelfit <- new("gelfit", theta=res$theta, convergence=res$convergence,
-                                lconvergence=res$lconvergence$convergence,
-                                lambda=res$lambda, call=Call, type=object@gelType$name,
-                                vcov=list(), model=object)
-                  if (vcov)
-                      gelfit@vcov <- vcov(gelfit)
-                  gelfit
-                  })
+                  if (initTheta == "gmm")
+                      theta0 <- modelFit(as(object, "gmmModels"))@theta
+                  else if (!is.null(spec$theta0))
+                      theta0 <- spec$theta0
+                  else
+                      stop("starting values is missing for the coefficient vector")
+              }
+              res <- solveGel(object, theta0=theta0, lambda0=lambda0, ...)
+              gelfit <- new("gelfit", theta=res$theta, convergence=res$convergence,
+                            lconvergence=res$lconvergence$convergence,
+                            lambda=res$lambda, call=Call, type=object@gelType$name,
+                            vcov=list(), model=object)
+              if (vcov)
+                  gelfit@vcov <- vcov(gelfit)
+              gelfit
+          })
 
 
 #### evalModel
 
 setMethod("evalModel", signature("gelModels"),
           function(object, theta, lambda=NULL, gelType=NULL, rhoFct=NULL,
-                   lamSlv=NULL, lControl=list()) {
-              Call <- match.call()
+                   lamSlv=NULL, lControl=list(), ...) {
+              Call <- try(match.call(call=sys.call(sys.parent())), silent=TRUE)
+              if (class(Call)=="try-error")
+                  Call <- NULL
               if (!is.null(gelType))
                   object <- gmmToGel(as(object, "gmmModels"), gelType, rhoFct)
               spec <- modelDims(object)
@@ -219,7 +226,46 @@ setMethod("evalModel", signature("gelModels"),
                       type <- paste(type, " with fixed lambda", sep="")
                   }
               names(lambda) <- spec$momNames
-               new("gelfit", theta=theta, convergence=1, lconvergence=lconvergence,
+              new("gelfit", theta=theta, convergence=1, lconvergence=lconvergence,
                    lambda=lambda, call=Call, type=type, vcov=list(), model=object)
           })
+
+### coef
+
+setMethod("coef", "gelModels",
+          function(object, theta) {
+              names(theta) <- object@parNames
+              theta})
+
+## update
+
+setMethod("update", "gelModels",
+          function(object, ...)
+          {
+              arg <- list(...)                          
+              allowed <- c("vcov","vcovOptions", "centeredVcov",
+                           "gelType", "rhoFct")
+              arg <- arg[na.omit(match(allowed, names(arg)))]
+              if (length(arg) == 0)
+                  return(object)
+              gelType <- if (is.null(arg$gelType))
+                             object@gelType$name
+                         else
+                             arg$gelType
+              rhoFct <- if (is.null(arg$rhoFct))
+                            object@gelType$fct
+                        else
+                            arg$rhoFct
+              arg$gelType <- arg$rhoFct <- NULL
+              object <- as(object, "gmmModels")
+              if (length(arg) > 0)
+              {
+                  arg$object <- object
+                  object <- do.call(update, arg)
+              }
+              gmmToGel(object, gelType, rhoFct)
+              })
+
+
+
 

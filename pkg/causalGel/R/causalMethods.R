@@ -15,32 +15,193 @@ setMethod("causalMomFct", signature("numeric", "causalData"),
               m2 <- sapply(1:ncol(X), function(i) e*X[,i])
               if (object@momType == "uncondBal")
                   return(cbind(m1,m2))
-              m3 <- sweep(X[,-1,drop=FALSE], 2, object@popMom, "-")
+              m3 <- sweep(X[,-1,drop=FALSE], 2, object@balMom, "-")
               cbind(m1,m2,m3)
           })
 
-## DMoment functions
+## evalDMoment functions
 
-setGeneric("causalDmomFct", function(theta, object, ...) standardGeneric("causalDmomFct"))
-
-setMethod("causalDmomFct", signature("numeric", "causalData"),
-          function(theta, object, pt=NULL) {
-              Z <- model.matrix(terms(object@reg), object@reg)
-              X <- model.matrix(terms(object@bal), object@bal)
+setMethod("evalDMoment", signature("causalGel"),
+          function(object, theta, impProb=NULL, augmented=FALSE) {
+              dat <- object@X
+              Z <- model.matrix(terms(dat@reg), dat@reg)
+              X <- model.matrix(terms(dat@bal), dat@bal)
               k <- ncol(Z)
               n <- nrow(Z)
               ntet <- length(theta)
-              if (is.null(pt))
-                  pt <- rep(1/n, n)
+              if (is.null(impProb))
+                  impProb <- rep(1/n, n)
               ZT <- c(Z%*%theta[1:k])
               q <- 2*k + (k-1)*(ncol(X)-1) - 1
               G <- matrix(0, q, ntet)
-              G11 <- lapply(1:k, function(i) -colSums(pt*Z[,i]*Z))
+              G11 <- lapply(1:k, function(i) -colSums(impProb*Z[,i]*Z))
               G[1:k, 1:k] <- do.call(rbind, G11)
-              G[(k+1):ntet, (k+1):ntet] <- -sum(pt)*diag(k-1)
-              uK <- colSums(pt*X[,-1,drop=FALSE])
+              G[(k+1):ntet, (k+1):ntet] <- -sum(impProb)*diag(k-1)
+              uK <- colSums(impProb*X[,-1,drop=FALSE])
               G[(2*k):q, (k+1):ntet] <- -kronecker(diag(k-1), uK)
-              if (object@momType != "uncondBal" |  object@momType=="fixedMon")
-                  G <- rbind(G, matrix(0, ncol(X)-1, ntet))
+              if (dat@momType != "uncondBal" |  dat@momType=="fixedMon")
+                  {
+                      G <- rbind(G, matrix(0, ncol(X)-1, ntet))
+                      if (augmented)
+                      {
+                          ncov <- length(object@X@balCov)
+                          q <- nrow(G)- ncov
+                          tmp <- rbind(matrix(0, q, ncov),
+                                       -sum(impProb)*diag(ncov))
+                          G <- cbind(G, tmp)
+                      }
+                  }
               G
           })
+
+
+## Print
+
+setMethod("print", "causalGel",
+          function(x, printBalCov=FALSE, ...) {
+              cat("Causal Model using GEL Methods\n")
+              cat("*******************************\n")
+              cat("GEL Type: ", x@gelType$name, "\n")
+              momType <- switch(x@X@momType,
+                                uncondBal = "Unconditional balancing",
+                                ACT = "Causal effect on the treated",
+                                ACE = "Average causal effect",
+                                ACC = "Causal effect on the control",
+                                fixedMom = "Balancing based on fixed Moments")
+              if (x@X@momType == "ACT" & x@X@ACTmom > 1)
+                  momType <- paste(momType, "(treatment group ",
+                                   x@X@ACTmom, ")")
+              cat("Model type: ", momType, "\n", sep="")
+              d <- modelDims(x)
+              cat("Number of treatments: ", (d$k-1)/2, "\n", sep="")
+              cat("Number of moment conditions: ", d$q, "\n", sep="")
+              cat("Number of balancing covariates: ", length(x@X@balCov), "\n", sep="")
+              cat("Sample size: ", d$n, "\n")
+              if (printBalCov)
+              {
+                  cat("Balancing covariates:\n ")
+                  bal <- x@X@balCov
+                  while (length(bal))
+                  {
+                      cat("\t", paste(head(bal,3), collapse=", "), "\n", sep="")
+                      bal <- bal[-(1:min(3, length(bal)))]
+                  }
+              }
+              invisible()
+          })
+
+## modelFit
+
+setMethod("modelFit", signature("causalGel"), valueClass="causalGelfit", 
+          definition = function(object, gelType=NULL, rhoFct=NULL,
+                                initTheta=c("gmm", "theta0"), start.tet=NULL,
+                                start.lam=NULL, vcov=FALSE, ...)
+          {
+              res <- callNextMethod()
+              new("causalGelfit", res)
+          })
+
+## model.matrix and modelResponse
+
+setMethod("model.matrix", signature("causalGel"),
+          function(object, type=c("regressors","balancingCov"))
+          {
+              type <- match.arg(type)
+              if (type == "regressors")
+              {
+                  ti <- attr(object@X@reg, "terms")
+                  mat <- as.matrix(model.matrix(ti, object@X@reg)[,])
+              } else {
+                  ti <- attr(object@X@bal, "terms")
+                  mat <- as.matrix(model.matrix(ti, object@X@bal)[,-1])
+              }
+              mat
+          })
+
+setMethod("modelResponse", signature("causalGel"),
+          function(object)
+          {
+              model.response(object@X@reg)
+          })
+
+
+## Residuals
+# Not sure we will need it, but the residuals are well defined in this case
+
+setMethod("residuals", signature("causalGel"), function(object, theta){
+    X <- model.matrix(object)
+    Y <- modelResponse(object)
+    e <- Y-c(X%*%theta[1:ncol(X)])
+    e
+})
+
+## Dresiduals 
+# Same comment as for residuals
+
+setMethod("Dresiduals", signature("causalGel"),
+          function(object, theta) {
+              -model.matrix(object)
+          })
+
+## modelDims
+
+setMethod("modelDims", "causalGel",
+          function(object) {
+              res <- callNextMethod()
+              res$balCov <- object@X@balCov
+              res$momType <- object@X@momType
+              res$balMom <- object@X@balMom
+              res$ACTmom <- object@X@ACTmom
+              res
+          })
+
+## subset for observations selection
+
+setMethod("subset", "causalGel",
+          function(x, i) {
+              x@X@reg <- x@X@reg[i,,drop=FALSE]
+              x@X@bal <- x@X@bal[i,,drop=FALSE]
+              x@n <- nrow(x@X@reg)
+              x})
+
+
+## "["
+## balancing moment selection
+
+setMethod("[", c("causalGel", "numeric", "missing"),
+          function(x, i, j){
+              i <- unique(as.integer(i))
+              spec <- modelDims(x)
+              balCov <- spec$balCov
+              nbal <- length(balCov)
+              if (!all(abs(i) %in% (1:nbal))) 
+                  stop(paste("Sub-balancing must be between 1 and ", nbal, sep=""))
+              balCov <- balCov[i]
+              if (length(balCov)<1)
+                  stop("The number of balancing covariates cannot be 0")              
+              momInd <- c(matrix((spec$k+1):spec$q, nrow=nbal)[i,])
+              momNames <- x@momNames[c(1:spec$k, momInd)]
+              q <- length(momNames)
+              f <- reformulate(balCov, NULL, TRUE)
+              x@X@bal <- model.frame(f, x@X@bal)
+              x@q <- q
+              x@momNames <- momNames
+              x@X@balCov <- balCov
+              if (!is.null(x@X@balMom))
+                  x@X@balMom <- x@X@balMom[i]
+              x
+          })
+
+setMethod("[", c("causalGel", "numeric", "numeric"),
+          function(x, i, j){
+              x <- x[j]
+              subset(x, i)
+          })
+
+setMethod("[", c("causalGel", "missing", "numeric"),
+          function(x, i, j){
+              x[j]
+          })
+
+
+

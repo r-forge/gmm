@@ -16,6 +16,7 @@
 \alias{[,functionGmm,numeric,missing-method}
 \alias{[,formulaGmm,numeric,missing-method}
 \alias{[,rfunctionGmm,numeric,missing-method}
+\alias{[,rfunctionGel,numeric,missing-method}
 \alias{[,sysGmmModels,missing,list-method}
 \alias{[,snonlinearGmm,numeric,missing-method}
 \alias{[,slinearGmm,numeric,missing-method}
