@@ -1,0 +1,142 @@
+\documentclass[11pt,letterpaper]{article}
+\usepackage{amsthm}
+
+\usepackage[hmargin=2cm,vmargin=2.5cm]{geometry}
+\newtheorem{theorem}{Theorem}
+\newtheorem{col}{Corollary}
+\newtheorem{lem}{Lemma}
+\usepackage[utf8x]{inputenc}
+\newtheorem{ass}{Assumption}
+\usepackage{amsmath}
+\usepackage{verbatim}
+\usepackage[round]{natbib}
+\usepackage{amsfonts}
+\usepackage{amssymb}
+\usepackage{graphicx}
+\usepackage{hyperref}
+\hypersetup{
+  colorlinks,
+  citecolor=black,
+  filecolor=black,
+  linkcolor=black,
+  urlcolor=black
+}
+
+\bibliographystyle{plainnat}
+
+
+\author{Pierre Chauss\'e}
+\title{\textbf{Generalized Empirical Likelihood with R}}
+\begin{document}
+
+\maketitle
+
+\newcommand{\E}{\mathrm{E}}
+\newcommand{\diag}{\mathrm{diag}}
+\newcommand{\Prob}{\mathrm{Pr}}
+\newcommand{\Var}{\mathrm{Var}}
+\newcommand{\Vect}{\mathrm{Vec}}
+\newcommand{\Cov}{\mathrm{Cov}}
+\newcommand{\conP}{\overset{p}{\to}}
+\newcommand{\conD}{\overset{d}{\to}}
+\newcommand\R{ \mathbb{R} }
+\newcommand\N{ \mathbb{N} }
+\newcommand\C{ \mathbb{C} }
+\newcommand\rv{{\cal R}}
+\newcommand\Q{\mathbb{Q}}
+\newcommand\PR{{\cal R}}
+\newcommand\T{{\cal T}}
+\newcommand\Hi{{\cal H}}
+\newcommand\La{{\cal L}}
+\newcommand\plim{plim}
+\renewcommand{\epsilon}{\varepsilon}
+
+\abstract{This an extention of the gmmS4 vignette, to explain how to
+  use the package for generalized empirical likelihood estimation.}
+%\VignetteIndexEntry{Generalized Empirical Likelihood with R}
+%\VignetteDepends{gmm4}
+%\VignetteKeywords{empirical likelihood, exponential tilting,
+%euclidean empirical likelihood}
+%\VignettePackage{gmm4}
+%\VignetteEngine{knitr::knitr}
+<<echo=FALSE>>=
+library(knitr)
+opts_chunk$set(size='footnotesize')
+@ 
+
+\newpage
+\tableofcontents
+\newpage
+
+\section{A very brief review of the GEL method}
+We present how to use the package to estimate models by the
+Generalized Empirical Likelihood method (GEL) (see
+\cite{newey-smith04} for the iid case and \cite{anatolyev05} for
+weakly dependent processes). We assume that the reader has read the
+gmmS4 vignette in which many classes and methods needed are
+defined. We first describe the method without going into too much
+details. The author can refer to the above papers for a detailed
+description, or \cite{chausse10} who explains GEL estimation using the
+gmm (\cite{gmm})package. 
+
+The estimation is based on the following moment conditions 
+\[
+\E[g_i(\theta)]=0,   
+\]
+For the iid case, the estimator is defined as the solution to either
+
+\[
+ \hat{\theta} = \arg\min_{\theta,p_i} \sum_{i=1}^n h_n(p_i) 
+\]
+subject to,
+\[
+\sum_{i=1}^n p_ig_i(\theta) = 0 
+\]
+and
+\[
+\sum_{i=1}^n p_i=1,
+\]
+where $h_n(p_i)$ belongs to the following Cressie-Read family of discrepancies:
+\[
+ h_n(p_i) = \frac{[\gamma(\gamma+1)]^{-1}[(np_i)^{\gamma+1}-1]}{n}, 
+\]
+or
+\begin{equation}\label{gel_obj}
+ \hat{\theta} = \arg\min_{\theta}\left[\max_{\lambda} \frac{1}{n}\sum_{i=1}^n\rho\left(\lambda'g_i(\theta)\right)\right]
+\end{equation}
+
+The first is the primal and the second is the dual problem, the latter
+being preferred in general to define GEL estimators. The vector
+$\lambda$ is the Lagrange multiplier associated with the first
+constraint in the primal problem. Its estimator plays an important
+role in testing the validity of the moment conditions. $\rho(v)$ is a
+strictly concave function normalized so that
+$\rho'(0)=\rho''(0)=-1$. It can be shown that $\rho(v)=\ln{(1-v)}$
+corresponds to Empirical Likelihood (EL) of \cite{owen01} ,
+$\rho(v)=-\exp{(v)}$ to the Exponential Tilting (ET) of
+\cite{kitamura-stutzer97}, and $\rho(v)=(-v-v^2/2)$ to the Continuous
+  Updated GMM estimator (CUE) of \cite{hansen-heaton-yaron96}. In the
+  context of GEL, the CUE is also known at the Euclidean Empirical
+  Likelihood (EEL), because it corresponds to $h_n(p_i)$ being the
+  Euclidean distance.
+
+If we relax the iid assumption, the problem is identical, but the
+moment function must be smoothed using a kernel method. \cite{smith01}
+proposes to replace $g_i(\theta)$ by:
+\[
+g^w_i(\theta) = \sum_{s=-m}^m w(s)g_{i-s}(\theta)
+\]
+where $w(s)$ are kernel based weights that sum to one (see also
+\cite{kitamura-stutzer97} and \cite{smith01}. 
+
+\section{An S4 class object for GEL models} \label{sec:gelmodels}
+
+
+\bibliography{empir}
+\pagebreak
+\Large{\textbf{Appendix}}
+\appendix
+\section{Some extra codes}
+
+\end{document} 
+
