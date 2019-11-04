@@ -116,7 +116,7 @@ setMethod("solveGel", signature("gelModels"),
                           gt <- evalMoment(model, theta)
                           gelt <- model@gelType
                           k <- model@wSpec$k
-                          args <- c(list(gmat=gt, l0=lambda0, gelType=gelt$name,
+                          args <- c(list(gmat=gt, lambda0=lambda0, gelType=gelt$name,
                                          rhoFct=gelt$fct), lcont, k=k[1]/k[2])
                           res <- do.call(slv, args)
                           if (returnL)
@@ -265,6 +265,14 @@ setMethod("update", "gelModels",
               }
               gmmToGel(object, gelType, rhoFct)
               })
+
+## gmmToGel 
+
+setMethod("gmmToGel", signature("gelModels"),
+          function(object, gelType, rhoFct=NULL){
+              gmmToGel(as(object, "gmmModels"), gelType, rhoFct)
+          })
+
 
 
 

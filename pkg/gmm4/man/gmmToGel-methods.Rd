@@ -3,6 +3,7 @@
 \alias{gmmToGel}
 \alias{gmmToGel-methods}
 \alias{gmmToGel,gmmModels-method}
+\alias{gmmToGel,gelModels-method}
 \alias{gmmToGel,rgmmModels-method}
 \title{ ~~ Methods for Function \code{gmmToGel} in Package \pkg{gmm4} ~~}
 \description{
@@ -28,6 +29,11 @@ simply adding the specification about the type of GEL.
 
 \item{\code{signature(object = "gmmModels")}}{
 The object it converted to \code{"gelModels"}.
+}
+
+\item{\code{signature(object = "gelModels")}}{  
+It applies the transformation to the \code{"gmmModels"} contained in the
+\code{"gelModels"} object.
 }
 
 \item{\code{signature(object = "rgmmModels")}}{

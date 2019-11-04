@@ -70,16 +70,14 @@ Wu_lam <- function(gmat, tol=1e-8, maxiter=50, k=1)
              obj = res$obj)
     }
 
-REEL_lam <- function(gmat, k=1, control=list())
+REEL_lam <- function(gmat, tol=NULL, maxiter=50, k=1)
 {
         gmat <- as.matrix(gmat)
         n <- nrow(gmat)
         q <- ncol(gmat)
-        maxit <- ifelse("maxit" %in% names(control),
-                        control$maxit, 50)        
         res <- try(.Fortran(F_lamcuep, as.double(gmat),
                             as.integer(n), as.integer(q), as.double(k),
-                            as.integer(maxit),conv=integer(1),
+                            as.integer(maxiter),conv=integer(1),
                             lam=double(q),pt=double(n),
                             obj=double(1)
                             ), silent=TRUE)
@@ -94,22 +92,28 @@ EEL_lam <- function(gmat, k=1)
     {
         q <- qr(gmat)
         n <- nrow(gmat)
-        l0 <- -qr.coef(q, rep(1,n))
+        lambda0 <- -qr.coef(q, rep(1,n))
         conv <- list(convergence=0)
-        list(lambda = l0, convergence = conv, obj =
-                 mean(rhoEEL(gmat,l0,0,k)))
+        list(lambda = lambda0, convergence = conv, obj =
+                 mean(rhoEEL(gmat,lambda0,0,k)))
     }
 
-getLambda <- function (gmat, l0=NULL, gelType, rhoFct=NULL, 
+getLambda <- function (gmat, lambda0=NULL, gelType=NULL, rhoFct=NULL, 
                        tol = 1e-07, maxiter = 100, k = 1, method="BFGS", 
                        algo = c("nlminb", "optim", "Wu"), control = list()) 
     {
         algo <- match.arg(algo)
         gmat <- as.matrix(gmat)
-        if (is.null(l0))
-            l0 <- rep(0, ncol(gmat))
+        if (is.null(lambda0))
+            lambda0 <- rep(0, ncol(gmat))
         if (is.null(rhoFct))
-            rhoFct <- get(paste("rho",gelType,sep=""))    
+        {
+            if (is.null(gelType))
+                stop("Without rhoFct, gelType must be given")
+            rhoFct <- get(paste("rho",gelType,sep=""))
+        } else {
+            gelType <- "Other"
+        }
         if (algo == "Wu" & gelType != "EL") 
             stop("Wu (2005) algo to compute Lambda is for EL only")
         if (algo == "Wu") 
@@ -117,7 +121,7 @@ getLambda <- function (gmat, l0=NULL, gelType, rhoFct=NULL,
         if (gelType == "EEL")
             return(EEL_lam(gmat, k))
         if (gelType == "REEL")
-            return(REEL_lam(gmat, k, control))
+            return(REEL_lam(gmat, NULL, maxiter, k))
         
         fct <- function(l, X, rhoFct, k) {
             r0 <- rhoFct(X, l, derive = 0, k = k)
@@ -135,28 +139,29 @@ getLambda <- function (gmat, l0=NULL, gelType, rhoFct=NULL,
             if (gelType == "EL")
                 {
                     ci <- -rep(1, nrow(gmat))
-                    res <- constrOptim(l0, fct, Dfct, -gmat, ci, control = control,
+                    res <- constrOptim(lambda0, fct, Dfct, -gmat, ci, control = control,
                                        X = gmat, rhoFct = rhoFct, k = k)
                 } else if (gelType == "HD") {
                     ci <- -rep(1, nrow(gmat))
-                    res <- constrOptim(l0, fct, Dfct, -gmat, ci, control = control,
+                    res <- constrOptim(lambda0, fct, Dfct, -gmat, ci, control = control,
                                        X = gmat, rhoFct = rhoFct, k = k)
                 } else {
-                    res <- optim(l0, fct, gr = Dfct, X = gmat, rhoFct = rhoFct,
+                    res <- optim(lambda0, fct, gr = Dfct, X = gmat, rhoFct = rhoFct,
                                  k = k, method = method, control = control)
                 }
         } else {
-            res <- nlminb(l0, fct, gradient = Dfct, hessian = DDfct,
+            res <- nlminb(lambda0, fct, gradient = Dfct, hessian = DDfct,
                           X = gmat, rhoFct = rhoFct, k = k, control = control)
         }
-        l0 <- res$par
+        lambda0 <- res$par
         if (algo == "optim") 
             conv <- list(convergence = res$convergence, counts = res$counts, 
                          message = res$message)
         else
             conv <- list(convergence = res$convergence, counts = res$evaluations, 
                          message = res$message)    
-        return(list(lambda = l0, convergence = conv, obj= mean(rhoFct(gmat,l0,0,k))))
+        return(list(lambda = lambda0, convergence = conv,
+                    obj= mean(rhoFct(gmat,lambda0,0,k))))
     }
 
 smoothGel <- function (object, theta=NULL) 

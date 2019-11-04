@@ -12,20 +12,20 @@ The algorithms finds the vector or Lagrange multipliers that maximizes
 the GEL objective function for a given vector of coefficient \eqn{\theta}.
 }
 \usage{
-Wu_lam(gmat, tol = 1e-08, maxiter = 50, k=1)
+Wu_lam(gmat, tol=1e-8, maxiter=50, k=1)
 
 EEL_lam(gmat, k=1) 
 
-REEL_lam(gmat, k=1, control=list())
+REEL_lam(gmat, tol=NULL, maxiter=50, k=1)
 
-getLambda(gmat, l0=NULL, gelType, rhoFct=NULL, 
+getLambda(gmat, lambda0=NULL, gelType=NULL, rhoFct=NULL, 
           tol = 1e-07, maxiter = 100, k = 1, method="BFGS", 
           algo = c("nlminb", "optim", "Wu"), control = list()) 
 }
 \arguments{
 \item{gmat}{The \eqn{n \times q} matrix of moments}
 
-\item{l0}{The \eqn{q \times 1} vector of starting values for the
+\item{lambda0}{The \eqn{q \times 1} vector of starting values for the
   Lagrange multipliers.} 
 
 \item{tol}{A tolerance level for the stopping rule in the Wu algorithm}

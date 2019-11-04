@@ -115,10 +115,18 @@ $\rho'(0)=\rho''(0)=-1$. It can be shown that $\rho(v)=\ln{(1-v)}$
 corresponds to Empirical Likelihood (EL) of \cite{owen01} ,
 $\rho(v)=-\exp{(v)}$ to the Exponential Tilting (ET) of
 \cite{kitamura-stutzer97}, and $\rho(v)=(-v-v^2/2)$ to the Continuous
-  Updated GMM estimator (CUE) of \cite{hansen-heaton-yaron96}. In the
-  context of GEL, the CUE is also known at the Euclidean Empirical
-  Likelihood (EEL), because it corresponds to $h_n(p_i)$ being the
-  Euclidean distance.
+Updated GMM estimator (CUE) of \cite{hansen-heaton-yaron96}. In the
+context of GEL, the CUE is also known at the Euclidean Empirical
+Likelihood (EEL), because it corresponds to $h_n(p_i)$ being the
+Euclidean distance. 
+
+Once the solution is obtained for $\theta$ and $\lambda$, the implied
+probabilities can be computed as follows
+
+\begin{equation}\label{imp_prob}
+\hat{p}_i = \frac{\rho'(\hat{\lambda}'g_i(\hat{\theta}))}{\sum_{j=1}^n
+  \rho'(\hat{\lambda}'g_j(\hat{\theta}))}
+\end{equation}
 
 If we relax the iid assumption, the problem is identical, but the
 moment function must be smoothed using a kernel method. \cite{smith01}
@@ -131,6 +139,180 @@ where $w(s)$ are kernel based weights that sum to one (see also
 
 \section{An S4 class object for GEL models} \label{sec:gelmodels}
 
+All classes for GEL models inherit directly from ``gmmModels''
+classes. It is just a gmmModel class with two additional slots:
+``gelType'' and ``wSpec''. The first is a list with the name of the
+GEL method and a function for $\rho(v)$, if not already available in
+the package. The second slot is used to store information about the
+smoothing of $g_i(\theta)$ in the case of non-iid observations. As for
+gmmModels, ``gelModels'' is a union class for ``linearGel'',
+``nonlinearGel'', ``formulaGel'' and ``functionGel''. They inherit
+directly from the associated GMM model class. For example,
+``linearGel'' is a class that contains a ``linearGmm'' class object
+and the two additional slots. The constructor is the gelModel()
+function. We use the same models presented in the gmmS4
+vignette:
+
+<<>>=
+library(gmm4)
+data(simData)
+@ 
+
+\begin{itemize}
+  \item Linear models:
+
+<<>>=
+lin <- gelModel(y~x1+x2, ~x2+z1+z2, data=simData, vcov="iid", gelType="EL")  
+lin
+@ 
+
+\item Formula-type models:
+
+<<>>=
+theta0=c(mu=1,sig=1)
+x <- simData$x1
+dat <- data.frame(x=x, x2=x^2, x3=x^3, x4=x^4)
+gform <- list(x~mu,
+              x2~mu^2+sig, 
+              x3~mu^3+3*mu*sig,
+              x4~mu^4+6*mu^2*sig+3*sig^2)
+form <- gelModel(gform, NULL, gelType="EEL", theta0=theta0, vcov="MDS", data=dat)
+form
+@ 
+
+\item function:   
+  
+<<>>=  
+fct <- function(theta, x)
+    cbind(x-theta[1], (x-theta[1])^2-theta[2],
+          (x-theta[1])^3, (x-theta[1])^4-3*theta[2]^2)
+dfct <- function(theta, x)
+    {
+        m1 <- mean(x-theta[1])
+        m2 <- mean((x-theta[1])^2)
+        m3 <- mean((x-theta[1])^3)
+        matrix(c(-1, -2*m1, -3*m2, -4*m3, 
+                 0, -1, 0, -6*theta[2]), 4, 2)
+    }
+theta0=c(mu=1,sig2=1)
+func <- gelModel(fct, simData$x3, theta0=theta0, grad=dfct, vcov="iid", gelType="ET")
+func
+@ 
+
+\item Non-linear models:
+
+<<>>= 
+theta0=c(b0=1, b1=1, b2=1)
+gform <- y~exp(b0+b1*x1+b2*x2)
+nlin <- gelModel(gform, ~z1+z2+z3+x2, theta0=theta0, vcov="MDS", data=simData,
+                 gelType="HD")
+nlin
+@
+\end{itemize}
+
+It is also posssible to convert an existing gmmModels to gelModels:
+
+<<>>=
+nlin <- gmmModel(gform, ~z1+z2+z3+x2, theta0=theta0, vcov="MDS", data=simData)
+nlin <- gmmToGel(nlin, gelType="HD")
+@ 
+
+\subsection{The rhoXXX functions}
+
+The package provides $\rho(v)$ for ET, EL, EEL and HD. The function
+names are respectively ``rhoET'', ``rhoEL'', ``rhoEEL'' and ``rhoHD''.
+For any other GEL, users can pass user specific $\rho(v)$ function to
+the rhoFct argument of the gelModel(). The following example shows how
+the function must be built:
+
+<<>>=
+rhoEL
+@ 
+
+Therefore, the function must be in the form $f(X,\lambda,d,k)$, where
+the first argument is an $n\times q$ matrix, the second argument is a
+vector of $q$ elements, the third is an integer that indicates the
+order of derivative to return, and the last is a scalar that depends
+on the kernel used to smooth the moment function. We will discuss that
+in more details below. The function must return the vector $\rho(k
+X\lambda)$, $\rho'(k X\lambda)$ or $\rho''(k X\lambda)$, when derive
+is 0, 1, or 2, where $\rho'(v)$ and $\rho''(v)$ are the first and
+second derivative of $\rho(v)$.
+
+\subsection{The Lagrange multiplier solver}
+
+The function getLambda() function solve the maximization problem 
+\[
+\max_\lambda \frac{1}{n} \sum_{i=1}^n \rho(\lambda'X_i)
+\]
+It is used to solve problem (\ref{gel_obj}). The arguments are:
+
+<<>>=
+args(getLambda)
+@ 
+
+The first argument is the $n\times q$ matrix $X$. The second argument
+is the starting value for $\lambda$. If set to NULL, a vector of
+zeroes is used. The third argument is the GEL type, which is either
+"ET", "EL", "EEL", "REEL" or "HD". If the rhoFct is provided, getType
+is ignored. The argument control is used to pass a list of arguments
+to optim(), nlminb() or constrOptim(). The argument ``k'' is the
+scalar described in the previous subsection. To describe all other
+arguments, we are presenting the options by type of GEL:
+
+\begin{itemize}
+\item EL: There are three possible options for EL. The default is
+  ``nlminb'', in which case, the arguments tol, maxiter and method are
+  ignored. If algo is set to ``optim'', the solution is obtained using
+  constrOptim(), with the restriction $(1-\lambda'X_i)>0$ for all
+  $i$. If algo is set to ``Wu'', the \cite{wu05} algorithm is
+  used. The argument tol and maxit are used to control the stopping
+  rule. 
+
+\item HD: Identical to EL, except that the ``Wu'' algorithm is not
+  available for that type of GEL.
+
+\item EEL: There is an analytical solution, so all other arguments are
+  ignored.
+
+\item REEL: This is EEL with a non-negativity constraint on all
+  implied probabilities. In that case, the maxiter can be used to
+  control the number of iterations.
+
+\item: Others: When rhoFct is provided or the type is ET, the solution
+  is obtained by either ``nlminb'' or ``optim''. In that case, the
+  algorithms are controlled through the control argument.
+\end{itemize}
+
+Here are a few example using the simulated dataset (convergence code
+of 0 means that the algorithm converged with no detected problem):
+
+<<>>=
+X <- simData[c("x3","x4","z5")]
+(res <- getLambda(X, gelType="EL"))$lambda
+res$convergence$convergence
+@ 
+
+<<>>=
+(res <- getLambda(X, gelType="EL", algo="Wu"))$lambda
+res$convergence$convergence
+@ 
+
+<<>>=
+(res <- getLambda(X, gelType="ET",control=list(maxit=2000)))$lambda
+res$convergence$convergence
+@ 
+
+<<>>=
+(res <- getLambda(X, rhoFct=rhoEEL))$lambda
+res$convergence$convergence
+@ 
+
+Although we rarely call the function directly, it is good to
+understand how it works, because it is an important part of the
+estimation procedure.
+
+\section{Methods for gelModels Classes} \label{sec:gelmodels-methods}
 
 \bibliography{empir}
 \pagebreak
