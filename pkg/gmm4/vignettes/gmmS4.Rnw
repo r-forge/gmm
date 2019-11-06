@@ -399,8 +399,8 @@ the sandwich package. For more options, see its help file.
 \subsection{Methods for gmmModels Classes} \label{sec:gmmmodels-methods}
 
 \begin{itemize}
-\item \textit{residuals}: Only for linearGMM and nonlinearGMM, it
-  returns $\epsilon(\theta)$:
+\item \textit{residuals}: Only for ``linearGmm'' and ``nonlinearGmm'',
+  it returns $\epsilon(\theta)$:
 
 <<>>=
 theta0 <- c(theta0=1, theta1=1, theta2=2)
@@ -408,8 +408,9 @@ e1 <- residuals(mod1, c(1,2,3))
 e2 <- residuals(mod2, theta0)
 @ 
 
-\item \textit{Dresiduals}: Only for linearGMM and nonlinearGMM, it
-  returns the $n\times k$ matrix $d\epsilon(\theta)/d\theta$:
+\item \textit{Dresiduals}: Only for ``linearGmm'' and
+  ``nonlinearGmm'', it returns the $n\times k$ matrix
+  $d\epsilon(\theta)/d\theta$:
 
 <<>>=
 theta0 <- c(theta0=1, theta1=1, theta2=2)
@@ -421,21 +422,23 @@ Notice that the coefficient $\theta$ is not required for linear
 models, but no error is returned if it is. It is just not used. For
 nonlinear regressions, the derivatives are obtained analytically using
 D() from the \textit{utils} package.
-\item \textit{model.matrix}: For linearGMM and nonlinearGmm only. For
-  both classes, it ca be used to get the matrix of instruments:
+
+\item \textit{model.matrix}: For ``linearGmm'' and ``nonlinearGmm''
+  only. For both classes, it ca be used to get the matrix of
+  instruments:
 
 <<>>=
 Z <- model.matrix(mod1, type="instruments")
 @ 
 
-For linearGMM only, it can be used to get the matrix of regressors $X$
+For ``linearGmm'' only, it can be used to get the matrix of regressors $X$
 
 <<>>=
 X <- model.matrix(mod1)
 @ 
 
 \item \textit{modelResponse}: For linear model only, it returns the
-  vector of response. It is not defined for nonlinearGMM classes
+  vector of response. It is not defined for ``nonlinearGmm'' classes
   because the left hand side is not always defined.
 
 <<>>=
@@ -451,9 +454,9 @@ mod2[c(1,2,4)]
 mod3[-1]
 @   
 
-\item \textit{as}: linearGmm can be converted into a nonlinearGmm or
-  functionGmm. The former is userful when we impose nonlinear
-  restrictions on the coefficients.
+\item \textit{as}: ``linearGmm'' can be converted into a
+  ``nonlinearGmm'' or ``functionGmm''. The former is userful when we
+  impose nonlinear restrictions on the coefficients.
 
 <<>>=
 mod4 <- as(mod1, "nonlinearGmm")
@@ -501,7 +504,7 @@ momentVcov(mod1, theta=1:3)
 @ 
   
 
-\item \textit{momentStrength}: For linearGmm only (for now), it
+\item \textit{momentStrength}: For ``linearGmm'' only (for now), it
   computes the first stage F-test to measure the strength of the
   instruments:
 
@@ -533,8 +536,8 @@ Other methods will be presented below as they require to define other
 classes.
 
 \subsection{Restricted models} \label{sec:gmmmodels-rest}
-We can create objects of class ``rlinearGmm'', ``rnonlinearGMM'' or
-``rfunctionGMM'' using the method \textit{restModel} and print the
+We can create objects of class ``rlinearGmm'', ``rnonlinearGmm'' or
+``rfunctionGmm'' using the method \textit{restModel} and print the
 restrictions using the \textit{printRestrict} method.
 
 Lets first create a new model with more regressors:
@@ -571,7 +574,7 @@ R3.mod2 <- restModel(UR.mod2, R3)
 printRestrict(R3.mod2)
 @
 
-For nonlinearGmm, only character vectors or lists of formulas are
+For ``nonlinearGmm'', only character vectors or lists of formulas are
 allowed. The restriction must also be written as one coefficient as a
 function of the others.
 
@@ -581,7 +584,7 @@ restModel(mod2, R1)
 printRestrict(restModel(mod2, theta1~theta2))
 @ 
 
-Restrictions can also be imposed on functionGmm:
+Restrictions can also be imposed on ``functionGmm'':
 
 <<>>=
 restModel(mod3, "mu=0.5")
@@ -609,11 +612,11 @@ coef(R2.mod1, c(1.5,.5))
 @ 
 
 Notice that any restricted class object contains its unrestricted
-version. For example, rlinearGmm is a class that contains a linearGMM
-class object plus a few additional slots. We can therefore use the
-\textit{as} method directly to convert a restricted model to its
-unrestricted counterpart. We can therefore compute the residuals from
-the restricted model as follows:
+version. For example, ``rlinearGmm'' is a class that contains a
+``linearGmm'' class object plus a few additional slots. We can
+therefore use the \textit{as} method directly to convert a restricted
+model to its unrestricted counterpart. We can therefore compute the
+residuals from the restricted model as follows:
 
 <<>>=
 e1 <- residuals(as(R2.mod1, "linearGmm"), 

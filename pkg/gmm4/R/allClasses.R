@@ -120,7 +120,6 @@ setClassUnion("rgmmModels", c("rlinearGmm", "rnonlinearGmm", "rfunctionGmm",
 
 ## Restricted gel Models
 
-
 setClass("rlinearGel", representation(cstLHS="matrix", cstRHS="numeric", cstSpec="list"),
          contains="linearGel")
 
@@ -222,6 +221,13 @@ setAs("linearGmm", "nonlinearGmm",
               survOptions=from@survOptions)
       })
 
+setAs("linearGel", "nonlinearGel",
+      function(from) {
+          model <- as(as(from, "linearGmm"), "nonlinearGmm")
+          new("nonlinearGel", wSpec=from@wSpec, gelType=from@gelType, model)
+      })
+
+
 setAs("linearGmm", "functionGmm",
       function(from) {
           spec <- modelDims(from)          
@@ -244,6 +250,13 @@ setAs("linearGmm", "functionGmm",
               centeredVcov=from@centeredVcov,omit=integer(),survOptions=from@survOptions)
       })
 
+setAs("linearGel", "functionGel",
+      function(from) {
+          model <- as(as(from, "linearGmm"), "functionGmm")
+          new("functionGel", wSpec=from@wSpec, gelType=from@gelType, model)
+      })
+
+
 setAs("allNLGmm", "functionGmm",
       function(from) {
           spec <- modelDims(from)          
@@ -263,6 +276,18 @@ setAs("allNLGmm", "functionGmm",
               parNames=names(from@theta0),
               momNames=spec$momNames, vcovOptions=from@vcovOptions,
               centeredVcov=from@centeredVcov,omit=integer(), survOptions=from@survOptions)
+      })
+
+setAs("nonlinearGel", "functionGel",
+      function(from) {
+          model <- as(as(from, "nonlinearGmm"), "functionGmm")
+          new("functionGel", wSpec=from@wSpec, gelType=from@gelType, model)
+      })
+
+setAs("formulaGel", "functionGel",
+      function(from) {
+          model <- as(as(from, "formulaGmm"), "functionGmm")
+          new("functionGel", wSpec=from@wSpec, gelType=from@gelType, model)
       })
 
 setAs("slinearGmm", "linearGmm",

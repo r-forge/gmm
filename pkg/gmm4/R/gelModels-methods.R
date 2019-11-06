@@ -14,8 +14,14 @@ setMethod("print", "gelModels",
                   {
                       cat("Smoothing: ")
                       cat(x@wSpec$kernel, " kernel and ", sep="")
-                      cat(x@vcovOptions$bw, " bandwidth",  sep="")
-                      cat(" (", round(x@wSpec$bw, 3), ")", sep="")
+                      if (is.numeric(x@vcovOptions$bw))
+                          {
+                              cat("Fixed  bandwidth (", round(x@vcovOptions$bw, 3), ")",
+                                  sep = "")
+                          } else {
+                              cat(x@vcovOptions$bw, " bandwidth",  sep="")
+                              cat(" (", round(x@wSpec$bw, 3), ")", sep="")
+                          }
                   } else {
                       cat("No Smoothing required\n")
                   }
@@ -36,7 +42,7 @@ setMethod("evalMoment", "gelModels", function(object, theta)
             theta <- coef(object, theta)
             evalMoment(as(object, "gmmModels"), theta)
             } else {
-                smoothGel(object, theta)$smoothx
+                kernapply(object, theta, TRUE)$smoothx
             }
     })
 
@@ -271,6 +277,61 @@ setMethod("update", "gelModels",
 setMethod("gmmToGel", signature("gelModels"),
           function(object, gelType, rhoFct=NULL){
               gmmToGel(as(object, "gmmModels"), gelType, rhoFct)
+          })
+
+## kernapply
+
+setGeneric("kernapply")
+
+setMethod("kernapply", "gelModels",
+          function(x, theta=NULL, smooth=TRUE, ...)
+          {
+              if (smooth) {
+                  if (is.null(theta))
+                      stop("theta0 is needed to compute the smoothed moments")
+                  gt <- evalMoment(as(x,"gmmModels"), theta)
+                  sx <- stats::kernapply(gt, x@wSpec$w)
+                  ans <- list(smoothx = sx, w = x@wSpec$w,
+                             bw = x@wSpec$bw, k = x@wSpec$k)
+                  return(ans)
+              }
+              if (x@vcov != "HAC")
+                  return(list(w=kernel(1), bw=1, k=c(1,1), kernel="none"))
+              if (is.null(theta))        
+                  theta <- modelFit(as(x, "gmmModels"), weights="ident")@theta    
+              gt <- evalMoment(as(x, "gmmModels"), theta)
+              gt <- scale(gt, scale=FALSE)
+              class(gt) <- "gmmFct"
+              vspec <- x@vcovOptions
+              if (!(vspec$kernel%in%c("Bartlett","Parzen")))
+                  x@vcovOptions$kernel <- "Bartlett"
+              kernel <- switch(x@vcovOptions$kernel,
+                               Bartlett="Truncated",
+                               Parzen="Bartlett")
+              k <- switch(kernel,
+                          Truncated=c(2,2),
+                          Bartlett=c(1,2/3))
+              if (is.character(vspec$bw))
+              {
+                  bw <- get(paste("bw", vspec$bw, sep = ""))
+                  bw <- bw(gt, kernel = vspec$kernel, prewhite = vspec$prewhite,
+                           ar.method = vspec$ar.method, approx = vspec$approx)
+              } else {
+                  bw <- x@vcovOptions$bw
+              } 
+              w <- weightsAndrews(gt, bw = bw, kernel = kernel, prewhite = vspec$prewhite, 
+                                  ar.method = vspec$ar.method, tol = vspec$tol,
+                                  verbose = FALSE, approx = vspec$approx)
+              rt <- length(w)
+              if (rt >= 2)
+              {
+                  w <- c(w[rt:2], w)
+                  w <- w/sum(w)
+                  w <- kernel(w[rt:length(w)])
+              } else {
+                  w <- kernel(1)
+              }
+              return(list(k=k, w=w, bw=bw, kernel=kernel))
           })
 
 

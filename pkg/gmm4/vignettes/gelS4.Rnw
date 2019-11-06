@@ -279,7 +279,7 @@ arguments, we are presenting the options by type of GEL:
   implied probabilities. In that case, the maxiter can be used to
   control the number of iterations.
 
-\item: Others: When rhoFct is provided or the type is ET, the solution
+\item Others: When rhoFct is provided or the type is ET, the solution
   is obtained by either ``nlminb'' or ``optim''. In that case, the
   algorithms are controlled through the control argument.
 \end{itemize}
@@ -303,6 +303,8 @@ res$convergence$convergence
 res$convergence$convergence
 @ 
 
+The following shows that we can provide getLambda() with a rhoFct instead:
+
 <<>>=
 (res <- getLambda(X, rhoFct=rhoEEL))$lambda
 res$convergence$convergence
@@ -313,6 +315,319 @@ understand how it works, because it is an important part of the
 estimation procedure.
 
 \section{Methods for gelModels Classes} \label{sec:gelmodels-methods}
+
+We saw above that any ``gelModels'' is a class that contains one of
+the ``gmmModels'' class object.  Therefore, many ``gmmModels'' methods
+can be applied to ``gelModels'' through this direct inheritance. when
+it is the case, we will specify ``gmmModels inherited method''. 
+
+
+\begin{itemize}
+\item \textit{kernapply}: In the case of weakly dependent moment
+  conditions, we saw above that the moment function must be smoothed
+  using the following expression:
+\[
+g^w_t(\theta) = \sum_{s=-m}^m w(s)g_{t-s}(\theta)
+\]
+
+When a GEL model is defined with vcov="HAC", the specification of the
+kernel is stored in the ``wSpec'' slot of the object. For example, we
+can define the linear model above with the HAC specification:
+
+<<>>=
+linHAC <- gelModel(y~x1+x2, ~x2+z1+z2, data=simData, vcov="HAC", gelType="EL")  
+linHAC
+@ 
+
+The optimal bandwidth is computed when the model is created, and
+remains the same during the estimation process, unless another one is
+specified. The above model shows that the default kernel is the
+``Truncated'' one, and the default bandwidth is based on
+\cite{andrews91}. The bandwidth is not based on the smoothing kernel,
+but on the implied kernel for the HAC estimation. \cite{smith01} shows
+that when $g_t(\theta)$ is replaced by $g^w_t(\theta)$,
+$V=\sum_{i=1}^n g^w_t(\theta)g^w_t(\theta)'/n$ is an HAC estimator of
+the covariance matrix of $\sqrt{n}\bar{g}(\theta)$, with Bartlett
+kernel when the smoothing kernel is the Truncated, and with Parzen
+kernel when the smoothing kernel is the Bartlett. The optimal bandwidth
+above is therefore based on the Bartlett kernel. 
+
+It is possible to modify the specifications of the kernel and
+bandwidth through the argument vcovOptions (See help(vcovHAC) from the
+sandwich package for all possible options). Notice that the kernel
+type that is passed is the kernel used for the HAC estimation, not the
+smoothing of $g_t(\theta)$. See in the following example that the
+Parzen kernel is selected, which implies a Bartlett kernel for the
+smoothing of $g_t(\theta)$.
+
+<<>>=
+linHAC2 <- gelModel(y~x1+x2, ~x2+z1+z2, data=simData, vcov="HAC", 
+                    gelType="EL", 
+                    vcovOptions=list(kernel="Parzen", bw="NeweyWest", prewhite=1))  
+linHAC2
+@ 
+
+It is also possible to set the bandwidth to a fix number:
+
+<<>>=
+linHAC3 <- gelModel(y~x1+x2, ~x2+z1+z2, data=simData, vcov="HAC", 
+                    gelType="EL", 
+                    vcovOptions=list(kernel="Parzen", bw=3, prewhite=1))  
+linHAC3
+@ 
+
+The \textit{kernapply} method, which is defined as an S3 method in the
+stats package, uses the information contained in the ``wSpec'' slot to
+compute the $n\times q$ matrix of moment with the i$^{th}$ row being
+$g_t^w(\theta)'$. A theta is required, because we need to evaluate
+$g_t(\theta)$.
+
+<<>>=
+gw <- kernapply(linHAC, theta=c(1,1,1))$smoothx
+head(gw)
+@ 
+
+The function also returns the weights, bandwidth, kernel name and the
+scalars $k_1$ and $k_2$ that are needed for the asymptotic properties
+of the estimators (see \cite{anatolyev05}). If the argument
+smooth is set to FALSE, the optimal bandwidth is computed and no
+smoothing is done. By default, the first step GMM estimator with the
+identity matrix is used, unless theta is provided.
+
+<<>>=
+kernapply(linHAC, smooth=FALSE)
+@ 
+
+There is also a \textit{kernapply} method for ``gmmModels''
+classes. For now, it only returns the optimal bandwidth, the weights, 
+the kernel names and the $k_i$'s.
+
+<<>>=
+kernapply(as(linHAC, "gmmModels"))
+@ 
+
+\item \textit{residuals (gmmModels inherited method)}: Only defined
+  for linearGel and nonlinearGel. It returns $\epsilon(\theta)$:
+
+\item \textit{Dresiduals (gmmModels inherited method)}: Only for
+  ``linearGel'' and ``nonlinearGel'', it returns the $n\times k$
+  matrix $d\epsilon(\theta)/d\theta$:
+
+\item \textit{model.matrix (gmmModels inherited method)}: For
+  linearGel and nonlinearGel only. For both classes, it ca be used to
+  get the matrix of instruments:
+
+\item \textit{modelResponse (gmmModels inherited method)}: For linear
+  model only, it returns the vector of response. It is not defined for
+  nonlinearGel classes because the left hand side is not always
+  defined.
+
+\item \textit{"[" (gmmModels inherited method)}: It creates a new
+  object of the same class with a subset of moment conditions:
+
+\item \textit{as}: ``linearGel'' can be converted into a
+  ``nonlinearGel'' or ``functionGmm''. Also, ``nonlinearGel'' and
+  ``formulaGel'' can be converted to ``functionGel''
+
+<<>>=
+as(lin, "nonlinearGel")
+as(nlin, "functionGel")
+@   
+
+\item \textit{subset (gmmModels inherited method)}: As for the S3
+  method, it creates the same class of object with a subset of the
+  sample.
+
+\item \textit{evalMoment}: It computes the $n\times q$ matrix of
+  moments, with the $i^{th}$ row being $g_i(\theta)'$, when the
+  ``vcov'' slot is not "HAC", and $g_i^w(\theta)'$ when it is.
+
+<<>>=
+gt <- evalMoment(linHAC, theta=1:3)
+@   
+  
+\item \textit{evalDMoment}: It computes the $p\times k$ matrix of
+  derivatives of the sample mean of $g_i(\theta)$. It calls the next
+  method when the slot ``vcov'' is not "HAC". Otherwise, a numerical
+  derivative is computed using numericDeric().
+
+\item \textit{momentVcov}: It calls the next method when the slot
+  ``vcov'' is not "HAC". Otherwise, it returns 
+  
+\[
+V = \frac{1}{n}\sum_{i=1}^n g_t^w(\theta)g_t^w(\theta)'
+\]
+
+\item \textit{update}: This method is used to modify existing
+  objects. For now, only the covariance structure, the gelType and
+  rhoFct can be modified. 
+  
+<<>>=
+update(lin, vcov="HAC", gelType="ET")
+@   
+
+\end{itemize}
+
+\section{Restricted models} \label{sec:gelmodels-rest}
+
+As for ``gmmModels'', restrictions can be imposed on the
+coefficients. The union class for all restricted GEL models is
+``rgelModels''. The classes are ``rlinearGel'', ``rformulaGel'',
+``rfunctionGel'' and ``rnonlinearGel''. Each one contains its
+unrestricted model plus additional slots that specify the
+constraints. See the gmmS4 vignette for more details. The constructor
+is the \textit{restModel} method.
+
+<<>>=
+lin2 <- gelModel(y~x1+x2+x3+z1, ~x1+x2+z1+z2+z3+z4, data=simData,
+                 gelType="EL", vcov="MDS")
+rlin2 <- restModel(lin2, c("x1=x2", "x3=0"))
+rlin2
+@ 
+
+All methods described in the previous section also apply to the
+restricted models. For example, 
+
+<<>>=
+e <- residuals(rlin2, theta=c(1,1,1)) ## we now have 3 coefficients
+gt <- evalMoment(rlin2, theta=c(1,1,1))
+@ 
+
+To recover the full coefficient vector, we use the \textit{coef}
+method:
+
+<<>>=
+coef(rlin2, theta=1:3)
+@ 
+
+\section{The \textit{solveGel} Method} \label{sec:gelmodels-solve}
+
+The main method to estimate a model by GEL methods is
+\textit{solveGel}. The available signatures are:
+
+<<>>=
+showMethods("solveGel")
+@ 
+
+The arguments are 
+\begin{itemize}
+\item theta0: The initial value for the minimization algorithm. It is
+  required if the model does not have a theta0 slot. If it has a
+  theta0 slot, it is used by default unless a new theta0 is provided.
+\item lambda0: The initial value to pass to the lambda solver. By
+  default, it is set to 0, which is its asymptotic value in case of
+  correctly specified models.
+\item lamSlv: An optional function to solve for lambda. By default,
+  getLambda() is used. The function must have the following form:
+
+<<>>=
+mylSolve <- function(gmat, lambda0, gelType=NULL, rhoFct=NULL, k=1, ...) 
+    {
+        lambda <-  rep(0,ncol(gmat))
+        obj <-  sum(colMeans(gmat)^2)
+        list(lambda=lambda, convergence=0, obj=obj)
+    }
+@ 
+
+Therefore, it must return a list with lambda, convergence and obj. In
+the above example, $\lambda$ is set to a vector of zeros and the
+returned obj is $\bar{g}(\theta)'\bar{g}(\theta)$. The solution will
+therefore be the one step GMM with the weighting matrix equals to the
+identity.
+
+<<>>=
+solveGel(lin,c(0,0,0), lamSlv=mylSolve)
+@ 
+
+To present a more realistic example, suppose we want to estimate the
+model using the exponentially tilted empirical likelihood (ETEL)
+method of \cite{schennach07}, we could write a function that solves
+the lambda using ET, and returns the empirical log-likelihood ratio:
+
+<<>>=
+mylSolve <- function(gmat, lambda0=NULL, gelType=NULL, rhoFct=NULL, k=1, ...) 
+    {
+        gmat <- as.matrix(gmat)
+        res  <-  getLambda(gmat, lambda0, gelType="ET", k=k)
+        gml <- c(gmat%*%res$lambda)
+        w <- exp(gml)
+        w <- w/sum(w)
+        n <- nrow(gmat)
+        res$obj <- mean(-log(w*n))
+        res
+    }
+etelFit <- solveGel(lin,c(1,1,0), lamSlv=mylSolve)
+etelFit$theta
+@
+
+That's equivalent to setting gelType to ``ETEL'':
+
+<<>>=
+solveGel(update(lin, gelType="ETEL"), c(1,1,0))$theta
+@ 
+
+\item coefSlv: A character string that indicates the name of the
+  minimization solver used to obtain $\hat{\theta}$. By default,
+  "optim" is use. The other options are "nlminb" and "constrOptim". 
+  
+\item lControl: A list of options for the lambda solver. It is passed
+  to getLambda() or lamSlv() if provided. For example, we can use the
+  Wu method for EL as follows:
+
+<<>>=
+solveGel(lin, c(1,1,0), lControl=list(algo="Wu"))$theta
+@   
+
+\item tControl: A list of control for the coefSlv function. We could,
+  for example, use the following options:
+
+<<>>=
+solveGel(lin, c(1,1,0), lControl=list(algo="Wu"),
+         tControl=list(method="BFGS", control=list(maxit=2000, reltol=1e-9)))$theta
+@   
+
+In that particular case, the list is directly passed to optim().
+   
+\end{itemize}
+
+The method returns a list with: theta=$\hat{\theta}$,
+lambda=$\hat{\lambda}$, convergence = convergence message and code for
+$\theta$, and lconvergence = convergence message and code for
+$\lambda$.
+
+\section{The \textit{modelFit} Method} \label{sec:gelmodels-modelfit}
+
+This is the main estimation method. It returns an object of class
+``gelfit''. The arguments are:
+
+\begin{itemize}
+\item object: Any object that belongs to the union class ``gelModels''
+\item getType: Optional type of GEL if we want to estimate the model
+  with a type that is different from the one defined in the object.  
+\item rhoFct: Optional $\rho(v)$ function if we want to estimate the
+  model with a function that is different from the one defined in the
+  object.
+\item initTheta: Method to obtain the starting value for $\theta$. By
+  default, the one step GMM is used. The other option is to use the
+  one included in the object.
+\item theta0: The stating value for $\theta$. If provided, the
+  argument initTheta is ignored.
+\item lambda0: Starting value for $\lambda$. By default, a vector of
+  zeros is used.
+\item vcov: Logical argument that specifes if the covariance matrices
+  of $\hat{\theta}$ and $\hat{\lambda}$ should be computed? It is
+  FALSE by default.
+\item ... : Additional argument that is passed to the
+  \textit{gelSolve} method.  
+  \end{itemize}
+
+In general, it works fine with the default arguments:
+
+<<warning=FALSE>>=
+modelFit(lin)
+@ 
+
+
 
 \bibliography{empir}
 \pagebreak

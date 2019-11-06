@@ -31,6 +31,35 @@ rhoET <- function(gmat, lambda, derive = 0, k = 1)
                -exp(gml))               
     }
 
+
+rhoETEL <- function(gmat, lambda, derive = 0, k = 1) 
+{
+    lambda <- c(lambda)*k
+    gmat <- as.matrix(gmat)
+    gml <- c(gmat %*% lambda)
+    w <- -exp(gml)
+    w <- w/sum(w)
+    n <- nrow(gmat)
+    switch(derive+1,
+           -log(w*n),
+           NULL,
+           NULL)               
+}
+
+rhoETHD <- function(gmat, lambda, derive = 0, k = 1) 
+{
+    lambda <- c(lambda)*k
+    gmat <- as.matrix(gmat)
+    gml <- c(gmat %*% lambda)
+    w <- -exp(gml)
+    w <- w/sum(w)
+    n <- nrow(gmat)
+    switch(derive+1,
+    (sqrt(w)-1/sqrt(n))^2,
+    NULL,
+    NULL)               
+}
+
 rhoEEL <- function(gmat, lambda, derive = 0, k = 1) 
     {
         lambda <- c(lambda)*k
@@ -89,14 +118,23 @@ REEL_lam <- function(gmat, tol=NULL, maxiter=50, k=1)
     }
 
 EEL_lam <- function(gmat, k=1)
-    {
-        q <- qr(gmat)
-        n <- nrow(gmat)
-        lambda0 <- -qr.coef(q, rep(1,n))
-        conv <- list(convergence=0)
-        list(lambda = lambda0, convergence = conv, obj =
-                 mean(rhoEEL(gmat,lambda0,0,k)))
-    }
+{
+    q <- qr(gmat)
+    n <- nrow(gmat)
+    lambda0 <- -qr.coef(q, rep(1,n))
+    conv <- list(convergence=0)
+    list(lambda = lambda0, convergence = conv,
+         obj =  mean(rhoEEL(gmat,lambda0,0,k)))
+}
+
+ETXX_lam <- function(gmat, lambda0, k, gelType, algo, method, control)
+{
+    res <- getLambda(gmat, lambda0=lambda0, gelType="ET", algo=algo,
+                     control=control, method=method, k=k)
+    rhoFct <- get(paste("rho",gelType,sep=""))
+    res$obj <- mean(rhoFct(gmat, res$lambda, 0, k))
+    res
+}
 
 getLambda <- function (gmat, lambda0=NULL, gelType=NULL, rhoFct=NULL, 
                        tol = 1e-07, maxiter = 100, k = 1, method="BFGS", 
@@ -122,16 +160,20 @@ getLambda <- function (gmat, lambda0=NULL, gelType=NULL, rhoFct=NULL,
             return(EEL_lam(gmat, k))
         if (gelType == "REEL")
             return(REEL_lam(gmat, NULL, maxiter, k))
+        if (gelType %in% c("ETEL", "ETHD"))
+            return(ETXX_lam(gmat, lambda0, k, gelType, algo, method, control))
         
         fct <- function(l, X, rhoFct, k) {
             r0 <- rhoFct(X, l, derive = 0, k = k)
             -mean(r0)
         }
-        Dfct <- function(l, X, rhoFct, k) {
+        Dfct <-  function(l, X, rhoFct, k)
+        {
             r1 <- rhoFct(X, l, derive = 1, k = k)
             -colMeans(r1 * X)
         }
-        DDfct <- function(l, X, rhoFct, k) {
+        DDfct <-  function(l, X, rhoFct, k)
+        {
             r2 <- rhoFct(X, l, derive = 2, k = k)
             -crossprod(X * r2, X)/nrow(X)
         }
@@ -164,50 +206,3 @@ getLambda <- function (gmat, lambda0=NULL, gelType=NULL, rhoFct=NULL,
                     obj= mean(rhoFct(gmat,lambda0,0,k))))
     }
 
-smoothGel <- function (object, theta=NULL) 
-{
-    if (inherits(object, "gelModels"))
-        {
-            gt <- evalMoment(as(object,"gmmModels"), theta)
-            x <- kernapply(gt, object@wSpec$w)
-            sx <- list(smoothx = x, w = object@wSpec$w,
-                       bw = object@wSpec$bw, k = object@wSpec$k)
-            return(sx)
-        }
-    if (is.null(theta))        
-        theta <- modelFit(as(object, "gmmModels"), weights="ident")@theta
-    
-    gt <- evalMoment(object, theta)
-    gt <- scale(gt, scale=FALSE)
-    class(gt) <- "gmmFct"
-    vspec <- object@vcovOptions
-    if (!(vspec$kernel%in%c("Bartlett","Parzen")))
-        object@vcovOptions$kernel <- "Bartlett"
-    kernel <- switch(object@vcovOptions$kernel,
-                     Bartlett="Truncated",
-                     Parzen="Bartlett")
-    k <- switch(kernel,
-                Truncated=c(2,2),
-                Bartlett=c(1,2/3))
-    if (is.character(vspec$bw))
-        {
-            bw <- get(paste("bw", vspec$bw, sep = ""))
-            bw <- bw(gt, kernel = vspec$kernel, prewhite = vspec$prewhite,
-                     ar.method = vspec$ar.method, approx = vspec$approx)
-        } else {
-            bw <- object@vcovOptions$bw
-        } 
-    w <- weightsAndrews(gt, bw = bw, kernel = kernel, prewhite = vspec$prewhite, 
-                        ar.method = vspec$ar.method, tol = vspec$tol, verbose = FALSE, 
-                        approx = vspec$approx)
-    rt <- length(w)
-    if (rt >= 2)
-        {
-            w <- c(w[rt:2], w)
-            w <- w/sum(w)
-            w <- kernel(w[rt:length(w)])
-        } else {
-            w <- kernel(1)
-        }
-    return(list(k=k, w=w, bw=bw, kernel=kernel))
-}

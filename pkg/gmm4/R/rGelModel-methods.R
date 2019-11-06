@@ -1,26 +1,30 @@
-### restModel
-
-#setMethod("restModel", signature("linearGel"),
-#          function(object, R, rhs=NULL)
-#          {
-#              mod <- getMethod("restModel", "linearGmm")(object, R, rhs)
-#              new("rlinearGel",  cstLHS=mod@cstLHS, cstRHS=mod@cstRHS,
-#                  cstSpec=mod@cstSpec, object)
-#})
-setMethod("restModel", signature("gelModels"),
+setMethod("restModel", signature("linearGel"),
           function(object, R, rhs=NULL)
           {
               mod <- callNextMethod()
-              gmmToGel(mod, object@gelType$name, object@getType$rhoFct)
+              gmmToGel(mod, object@gelType$name, object@gelType$rhoFct)
           })
 
-##setMethod("restModel", signature("nonlinearGel"),
-##         function(object, R, rhs=NULL)
-##          {
-##              mod <- getMethod("restModel", "nonlinearGmm")(object, R, rhs)
-##              new("rnonlinearGel",  R=mod@R, cstSpec=mod@cstSpec, object)
-##          })
+setMethod("restModel", signature("nonlinearGel"),
+          function(object, R, rhs=NULL)
+          {
+              mod <- callNextMethod()
+              gmmToGel(mod, object@gelType$name, object@gelType$rhoFct)
+          })
 
+setMethod("restModel", signature("formulaGel"),
+          function(object, R, rhs=NULL)
+          {
+              mod <- callNextMethod()
+              gmmToGel(mod, object@gelType$name, object@gelType$rhoFct)
+          })
+
+setMethod("restModel", signature("functionGel"),
+          function(object, R, rhs=NULL)
+          {
+              mod <- callNextMethod()
+              gmmToGel(mod, object@gelType$name, object@gelType$rhoFct)
+          })
 
 ## printRestrict
 

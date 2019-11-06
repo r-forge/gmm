@@ -5,6 +5,8 @@
 \alias{rhoEEL}
 \alias{rhoREEL}
 \alias{rhoHD}
+\alias{rhoETHD}
+\alias{rhoETEL}
 	
 \title{GEL objective functions}
 
@@ -15,13 +17,17 @@ and its derivatives.
 \usage{
 rhoET(gmat, lambda, derive = 0, k = 1)
 
+rhoETEL(gmat, lambda, derive = 0, k = 1)
+
 rhoEL(gmat, lambda, derive = 0, k = 1)
 
 rhoEEL(gmat, lambda, derive = 0, k = 1)
 
 rhoREEL(gmat, lambda, derive = 0, k = 1)
 
-rhoHD(gmat, lambda, derive = 0, k = 1) 
+rhoHD(gmat, lambda, derive = 0, k = 1)
+
+rhoETHD(gmat, lambda, derive = 0, k = 1)
 }
 \arguments{
 \item{gmat}{The \eqn{n \times q} matrix of moments}

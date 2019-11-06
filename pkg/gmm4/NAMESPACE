@@ -27,14 +27,15 @@ exportClasses("nonlinearGmm", "linearGmm", "functionGmm", "gmmModels",
               "rlinearGel", "nonlinearGel", "rfunctionGel", "rformulaGel",
               "rgelModels","callORNULL")
 exportMethods(residuals, print, show, vcovHAC, coef, vcov, bread, summary, update,
-              model.matrix, hypothesisTest, "[", merge, subset, confint, gmmToGel)
+              model.matrix, hypothesisTest, "[", merge, subset, confint, gmmToGel,
+              kernapply)
 
 export(gmmModel, evalMoment, Dresiduals, evalDMoment, momentVcov, estfun.gmmFct,
        evalWeights, quadra, evalObjective, solveGmm, momentStrength,evalModel, 
        tsls, modelFit, meatGmm, specTest, gmm4, restModel, modelResponse, DWH,
        modelDims, printRestrict, getRestrict, sysGmmModel, ThreeSLS, gelModel,
        rhoET, rhoEL, rhoEEL, rhoHD, Wu_lam, EEL_lam, REEL_lam, getLambda, 
-       smoothGel, solveGel, getImpProb)
+       solveGel, getImpProb, rhoETEL, rhoETHD)
  
 ###  S3 methods ###
 

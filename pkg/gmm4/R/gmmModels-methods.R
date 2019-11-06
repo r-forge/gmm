@@ -946,10 +946,7 @@ setMethod("gmmToGel", signature("gmmModels"),
           function(object, gelType, rhoFct=NULL){
               cls <- strsplit(class(object), "Gmm")[[1]][1]
               cls <- paste(cls, "Gel", sep="")
-              if (object@vcov == "HAC")
-                  wSpec <- smoothGel(object)
-              else
-                  wSpec <- list(k=c(1,1), w=kernel(1), bw=1, kernel="None")
+              wSpec <- kernapply(object)
               if (!is.null(rhoFct))
               {
                   gelType <- "Other"
@@ -984,7 +981,13 @@ setMethod("update", "gmmModels",
               object
               })
 
+## kernapply
 
+setMethod("kernapply", "gmmModels",
+          function(x, theta=NULL, ...)
+          {
+              getMethod("kernapply", "gelModels")(x, theta, FALSE)
+          })
 
           
 

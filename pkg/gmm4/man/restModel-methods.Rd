@@ -3,11 +3,15 @@
 \alias{restModel}
 \alias{restModel-methods}
 \alias{restModel,linearGmm-method}
-\alias{restModel,gelModels-method}
 \alias{restModel,formulaGmm-method}
 \alias{restModel,slinearGmm-method}
 \alias{restModel,nonlinearGmm-method}
 \alias{restModel,functionGmm-method}
+\alias{restModel,linearGel-method}
+\alias{restModel,formulaGel-method}
+\alias{restModel,nonlinearGel-method}
+\alias{restModel,functionGel-method}
+
 \title{ ~~ Methods for Function \code{restModel} in Package \pkg{gmm4} ~~}
 \description{
   It creates \code{gmmModels} class of objects with linear restrictions on the coefficients.
@@ -15,11 +19,22 @@
 \usage{
 \S4method{restModel}{linearGmm}(object, R, rhs=NULL)
 
+\S4method{restModel}{linearGel}(object, R, rhs=NULL)
+
 \S4method{restModel}{slinearGmm}(object, R, rhs=NULL)
 
 \S4method{restModel}{nonlinearGmm}(object, R, rhs=NULL)
 
-\S4method{restModel}{gelModels}(object, R, rhs=NULL)
+\S4method{restModel}{nonlinearGel}(object, R, rhs=NULL)
+
+\S4method{restModel}{formulaGmm}(object, R, rhs=NULL)
+
+\S4method{restModel}{functionGmm}(object, R, rhs=NULL)
+
+\S4method{restModel}{formulaGel}(object, R, rhs=NULL)
+
+\S4method{restModel}{functionGel}(object, R, rhs=NULL)
+
 }
 \arguments{
   \item{object}{An object of class \code{"gmmModels"} or \code{"gelModels"}.}
@@ -35,24 +50,36 @@
 Method for object of class \code{linearGmm}.
 }
 
-\item{\code{signature(object = "gelModels")}}{
-  Method for all classes related to \code{gelModels}.
+\item{\code{signature(object = "linearGel")}}{
+  Method for all classes related to \code{linearGel}.
 }
 
-\item{\code{signature(object = "linearGmm")}}{
+\item{\code{signature(object = "slinearGmm")}}{
 Method for object of class \code{slinearGmm}.
 }
 
 \item{\code{signature(object = "nonlinearGmm")}}{
-Method for object of class \code{linearGmm}.
+Method for object of class \code{nonlinearGmm}.
+}
+
+\item{\code{signature(object = "nonlinearGel")}}{
+Method for object of class \code{nonlinearGel}.
 }
 
 \item{\code{signature(object = "functionGmm")}}{
-Method for object of class \code{linearGmm}.
+Method for object of class \code{functionGmm}.
+}
+
+\item{\code{signature(object = "functionGel")}}{
+Method for object of class \code{functionGel}.
 }
 
 \item{\code{signature(object = "formulaGmm")}}{
 Method for object of class \code{formulaGmm}.
+}
+
+\item{\code{signature(object = "formulaGel")}}{
+Method for object of class \code{formulaGel}.
 }
 }}
 \examples{

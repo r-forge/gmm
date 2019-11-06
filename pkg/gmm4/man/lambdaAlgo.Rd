@@ -3,6 +3,7 @@
 \alias{Wu_lam}
 \alias{EEL_lam}
 \alias{REEL_lam}
+\alias{ETXX_lam}
 \alias{getLambda}
 	
 \title{Algorithms to solve for the Lagrange multiplier}
@@ -17,6 +18,8 @@ Wu_lam(gmat, tol=1e-8, maxiter=50, k=1)
 EEL_lam(gmat, k=1) 
 
 REEL_lam(gmat, tol=NULL, maxiter=50, k=1)
+
+ETXX_lam(gmat, lambda0, k, gelType, algo, method, control)
 
 getLambda(gmat, lambda0=NULL, gelType=NULL, rhoFct=NULL, 
           tol = 1e-07, maxiter = 100, k = 1, method="BFGS", 
@@ -60,6 +63,10 @@ created.}
   or \code{\link{nlminb}}.}
   
 }
+
+\details{The \code{ETXX_lam} is used for ETEL and ETHD. In general, it
+ computes lambda using ET, and returns the value of the objective
+ function determined by the \code{gelType}.  }
 
 \references{
 Anatolyev, S. (2005), GMM, GEL, Serial Correlation, and Asymptotic Bias. \emph{Econometrica}, \bold{73}, 983-1002.
