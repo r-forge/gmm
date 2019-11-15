@@ -357,7 +357,7 @@ setMethod("confint", "data.frame",
                     fact = 3, vcov="iid", n=10, cores=4, ...) 
               {
                   type <- match.arg(type)
-                  if (Sys.info()["sysname"] == "Windows")
+                  if(.Platform$OS.type == "windows")
                       cores <- 1L
                   n <- floor(n/2)
                   if (missing(parm))
@@ -395,9 +395,9 @@ setMethod("confint", "data.frame",
                       (p[2]-mu[2])/(p[1]-mu[1])})                      
                   slope <- c(slU, slD)
                   resU <- mclapply(slU, function(s) .lineInterval(fit, s, ...),
-                                  mc.cores=8)
+                                   mc.cores=cores)
                   resD <- mclapply(slD, function(s) .lineInterval(fit, s, ...),
-                                   mc.cores=8)
+                                   mc.cores=cores)
                   Q1 <- cbind(p3, sapply(resU, function(l) l[1,]))
                   Q2 <- cbind(p4, sapply(resD, function(l) l[1,]))
                   Q3 <- cbind(p1, sapply(resU, function(l) l[2,]))
