@@ -115,48 +115,111 @@ setMethod("solveGel", signature("gelModels"),
           function(object, theta0=NULL, lambda0=NULL, lamSlv=NULL,
                    coefSlv=c("optim","nlminb","constrOptim"),
                    lControl=list(), tControl=list())
+          {
+              coefSlv <- match.arg(coefSlv)
+              f <- function(theta, model, lambda0, slv, lcont,returnL=FALSE)
               {
-                  coefSlv <- match.arg(coefSlv)
-                  f <- function(theta, model, lambda0, slv, lcont,returnL=FALSE)
-                      {
-                          gt <- evalMoment(model, theta)
-                          gelt <- model@gelType
-                          k <- model@wSpec$k
-                          args <- c(list(gmat=gt, lambda0=lambda0, gelType=gelt$name,
-                                         rhoFct=gelt$fct), lcont, k=k[1]/k[2])
-                          res <- do.call(slv, args)
-                          if (returnL)
-                              return(res)
-                          res$obj
-                      }
-                  if (is.null(lambda0))
-                      lambda0 <- rep(0, modelDims(object)$q)
-                  if (is.null(theta0))
-                      {
-                          if (!("theta0"%in%slotNames(object)))
-                              stop("Theta0 must be provided")
-                          theta0 <- modelDims(object)$theta0
-                      }
-                  if (is.null(lamSlv))
-                      lamSlv <- getLambda
-                  if (coefSlv == "nlminb")
-                      args <- c(list(start=theta0, objective=f,
-                                     model=object, lambda0=lambda0,
-                                     slv=lamSlv, lcont=lControl), tControl)
-                  else
-                      args <- c(list(par=theta0, fn=f, model=object, lambda0=lambda0,
-                                     slv=lamSlv, lcont=lControl), tControl)
-                  res <- do.call(get(coefSlv), args)
-                  resl <- f(res$par,  object, lambda0, lamSlv, lControl, TRUE)
-                  names(resl$lambda) <- modelDims(object)$momNames
-                  theta <- res$par
-                  names(theta) <- modelDims(object)$parNames                  
-                  list(theta=theta, convergence=res$convergence,
-                       lambda=resl$lambda, lconvergence=resl$convergence)
+                  names(theta) <- modelDims(model)$parNames
+                  gt <- evalMoment(model, theta)
+                  gelt <- model@gelType
+                  k <- model@wSpec$k
+                  args <- c(list(gmat=gt, lambda0=lambda0, gelType=gelt$name,
+                                 rhoFct=gelt$fct), lcont, k=k[1]/k[2])
+                  res <- do.call(slv, args)
+                  if (returnL)
+                      return(res)
+                  res$obj
+              }
+              if (is.null(lambda0))
+                  lambda0 <- rep(0, modelDims(object)$q)
+              if (is.null(theta0))
+              {
+                  if (!("theta0"%in%slotNames(object)))
+                      stop("Theta0 must be provided")
+                  theta0 <- modelDims(object)$theta0
+              }
+              if (is.null(lamSlv))
+                  lamSlv <- getLambda
+              if (coefSlv == "nlminb")
+                  args <- c(list(start=theta0, objective=f,
+                                 model=object, lambda0=lambda0,
+                                 slv=lamSlv, lcont=lControl), tControl)
+              else
+                  args <- c(list(par=theta0, fn=f, model=object, lambda0=lambda0,
+                                 slv=lamSlv, lcont=lControl), tControl)
+              
+              res <- do.call(get(coefSlv), args)
+              resl <- f(res$par,  object, lambda0, lamSlv, lControl, TRUE)
+              names(resl$lambda) <- modelDims(object)$momNames
+              theta <- res$par
+              names(theta) <- modelDims(object)$parNames                  
+              list(theta=theta, convergence=res$convergence,
+                   lambda=resl$lambda, lconvergence=resl$convergence)
           })
 
 
 #########################  modelFit  #########################
+setMethod("modelFit", signature("linearGel"), valueClass="gelfit", 
+          definition = function(object, gelType=NULL, rhoFct=NULL,
+              initTheta=c("gmm", "modelTheta0"), theta0=NULL,
+              lambda0=NULL, vcov=FALSE, ...)
+          {
+              Call <- try(match.call(call=sys.call(sys.parent())), silent=TRUE)
+              if (class(Call)=="try-error")
+                  Call <- NULL
+              met <- getMethod("modelFit","gelModels")
+              obj <- met(object, gelType, rhoFct, initTheta, theta0,
+                         lambda0, vcov, ...)
+              obj@call <- Call
+              obj
+          })
+
+setMethod("modelFit", signature("nonlinearGel"), valueClass="gelfit", 
+          definition = function(object, gelType=NULL, rhoFct=NULL,
+              initTheta=c("gmm", "modelTheta0"), theta0=NULL,
+              lambda0=NULL, vcov=FALSE, ...)
+          {
+              Call <- try(match.call(call=sys.call(sys.parent())), silent=TRUE)
+              if (class(Call)=="try-error")
+                  Call <- NULL
+              met <- getMethod("modelFit","gelModels")
+              obj <- met(object, gelType, rhoFct, initTheta, theta0,
+                         lambda0, vcov, ...)
+              obj@call <- Call
+              obj
+          })
+
+setMethod("modelFit", signature("formulaGel"), valueClass="gelfit", 
+          definition = function(object, gelType=NULL, rhoFct=NULL,
+              initTheta=c("gmm", "modelTheta0"), theta0=NULL,
+              lambda0=NULL, vcov=FALSE, ...)
+          {
+              Call <- try(match.call(call=sys.call(sys.parent())), silent=TRUE)
+              if (class(Call)=="try-error")
+                  Call <- NULL
+              met <- getMethod("modelFit","gelModels")
+              obj <- met(object, gelType, rhoFct, initTheta, theta0,
+                         lambda0, vcov, ...)
+              obj@call <- Call
+              obj
+          })
+
+setMethod("modelFit", signature("functionGel"), valueClass="gelfit", 
+          definition = function(object, gelType=NULL, rhoFct=NULL,
+              initTheta=c("gmm", "modelTheta0"), theta0=NULL,
+              lambda0=NULL, vcov=FALSE, ...)
+          {
+              Call <- try(match.call(call=sys.call(sys.parent())), silent=TRUE)
+              if (class(Call)=="try-error")
+                  Call <- NULL
+              met <- getMethod("modelFit","gelModels")
+              obj <- met(object, gelType, rhoFct, initTheta, theta0,
+                         lambda0, vcov, ...)
+              obj@call <- Call
+              obj
+          })
+
+
 
 setMethod("modelFit", signature("gelModels"), valueClass="gelfit", 
           definition = function(object, gelType=NULL, rhoFct=NULL,

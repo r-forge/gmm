@@ -88,6 +88,10 @@ setClass("specTest", representation(test = "matrix", testname="character"))
 setClass("confint", representation(interval = "matrix", type="character",
                                    level="numeric"))
 
+
+setClass("mconfint", 
+         representation(areaPoints="matrix", type="character", level="numeric"))
+
 ## summaryGmm
 
 setClass("summaryGmm", representation(coef="matrix", specTest = "specTest",

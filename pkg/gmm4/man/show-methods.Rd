@@ -3,6 +3,7 @@
 \alias{show-methods}
 \alias{show,ANY-method}
 \alias{show,confint-method}
+\alias{show,mconfint-method}
 \alias{show,gmmModels-method}
 \alias{show,sysGmmModels-method}
 \alias{show,gmmfit-method}
@@ -26,6 +27,9 @@ Display method for all objects.
 }
 
 \item{\code{signature(object = "confint")}}{
+}
+
+\item{\code{signature(object = "mconfint")}}{ 
 }
 
 \item{\code{signature(object = "gmmModels")}}{

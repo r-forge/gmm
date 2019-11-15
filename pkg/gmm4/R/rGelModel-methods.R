@@ -96,7 +96,6 @@ setMethod("getRestrict", "gelModels",
 
 ## coef
 
-
 setMethod("coef", "rgelModels",
           function(object, theta)
           {
@@ -115,6 +114,62 @@ setMethod("[", c("rfunctionGel", "numeric", "missing"),
 
 
 ## modelFit
+
+setMethod("modelFit", signature("rlinearGel"), valueClass="gelfit", 
+          definition = function(object, gelType=NULL, rhoFct=NULL,
+                                initTheta=c("gmm", "modelTheta0"), theta0=NULL,
+                                lambda0=NULL, vcov=FALSE, ...)
+          {
+              Call <- try(match.call(call=sys.call(sys.parent())), silent=TRUE)
+              if (class(Call)=="try-error")
+                  Call <- NULL
+              met <- getMethod("modelFit", "rgelModels")
+              obj <- met(object, gelType, rhoFct, initTheta, theta0, lambda0, vcov, ...)
+              obj@call <- Call
+              obj
+          })
+
+setMethod("modelFit", signature("rnonlinearGel"), valueClass="gelfit", 
+          definition = function(object, gelType=NULL, rhoFct=NULL,
+                                initTheta=c("gmm", "modelTheta0"), theta0=NULL,
+                                lambda0=NULL, vcov=FALSE, ...)
+          {
+              Call <- try(match.call(call=sys.call(sys.parent())), silent=TRUE)
+              if (class(Call)=="try-error")
+                  Call <- NULL
+              met <- getMethod("modelFit", "rgelModels")
+              obj <- met(object, gelType, rhoFct, initTheta, theta0, lambda0, vcov, ...)
+              obj@call <- Call
+              obj
+          })
+
+setMethod("modelFit", signature("rformulaGel"), valueClass="gelfit", 
+          definition = function(object, gelType=NULL, rhoFct=NULL,
+                                initTheta=c("gmm", "modelTheta0"), theta0=NULL,
+                                lambda0=NULL, vcov=FALSE, ...)
+          {
+              Call <- try(match.call(call=sys.call(sys.parent())), silent=TRUE)
+              if (class(Call)=="try-error")
+                  Call <- NULL
+              met <- getMethod("modelFit", "rgelModels")
+              obj <- met(object, gelType, rhoFct, initTheta, theta0, lambda0, vcov, ...)
+              obj@call <- Call
+              obj
+          })
+
+setMethod("modelFit", signature("rfunctionGel"), valueClass="gelfit", 
+          definition = function(object, gelType=NULL, rhoFct=NULL,
+                                initTheta=c("gmm", "modelTheta0"), theta0=NULL,
+                                lambda0=NULL, vcov=FALSE, ...)
+          {
+              Call <- try(match.call(call=sys.call(sys.parent())), silent=TRUE)
+              if (class(Call)=="try-error")
+                  Call <- NULL
+              met <- getMethod("modelFit", "rgelModels")
+              obj <- met(object, gelType, rhoFct, initTheta, theta0, lambda0, vcov, ...)
+              obj@call <- Call
+              obj
+          })
 
  
 setMethod("modelFit", signature("rgelModels"), valueClass="gelfit", 

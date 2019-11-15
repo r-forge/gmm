@@ -3,6 +3,10 @@ importFrom("methods", is, new, show, "slot<-", "slotNames", "validObject",
            "getClassDef", "selectMethod", "callNextMethod", "as", "setAs",
            "getMethod")
 
+importFrom("parallel", mclapply)
+
+importFrom("graphics", plot, polygon, grid)
+
 importFrom("utils", capture.output)
 
 importFrom("stats", "ar", "as.formula", "model.matrix","vcov",
@@ -25,17 +29,17 @@ exportClasses("nonlinearGmm", "linearGmm", "functionGmm", "gmmModels",
               "sgmmfit","stsls", "rslinearGmm", "rsnonlinearGmm", "rsysGmmModels",
               "formulaGmm","rfunctionGmm", "gelfit", "summaryGel", "confint",
               "rlinearGel", "nonlinearGel", "rfunctionGel", "rformulaGel",
-              "rgelModels","callORNULL")
+              "rgelModels","callORNULL", "mconfint")
 exportMethods(residuals, print, show, vcovHAC, coef, vcov, bread, summary, update,
               model.matrix, hypothesisTest, "[", merge, subset, confint, gmmToGel,
-              kernapply)
+              kernapply, plot)
 
 export(gmmModel, evalMoment, Dresiduals, evalDMoment, momentVcov, estfun.gmmFct,
        evalWeights, quadra, evalObjective, solveGmm, momentStrength,evalModel, 
        tsls, modelFit, meatGmm, specTest, gmm4, restModel, modelResponse, DWH,
        modelDims, printRestrict, getRestrict, sysGmmModel, ThreeSLS, gelModel,
        rhoET, rhoEL, rhoEEL, rhoHD, Wu_lam, EEL_lam, REEL_lam, getLambda, 
-       solveGel, getImpProb, rhoETEL, rhoETHD)
+       solveGel, getImpProb, rhoETEL, rhoETHD, gel4)
  
 ###  S3 methods ###
 

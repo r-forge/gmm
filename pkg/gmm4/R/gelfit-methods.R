@@ -41,10 +41,10 @@
         {
             tControl <- list(method="Brent", lower=rang[1], upper=rang[2])
             fit2 <- suppressWarnings(update(fit, newModel=model, tControl=tControl,
-                                            start.tet=coef(fit)[-which]))
+                                            theta0=coef(fit)[-which]))
         } else {
             fit2 <- suppressWarnings(update(fit, newModel=model,
-                                            start.tet=coef(fit)[-which]))
+                                            theta0=coef(fit)[-which]))
         }
         test <- specTest(fit2, type=type, ...)@test[1] - test0
         if (is.null(corr))
@@ -115,11 +115,15 @@ setGeneric("getImpProb", function(object, ...) standardGeneric("getImpProb"))
 
 setMethod("getImpProb", "gelfit",
           function(object, posProb=FALSE, normalize=TRUE) {
-              rhoFct <- object@model@gelType
+              rhoFct <- object@model@gelType              
               if (is.null(rhoFct$fct))
+              {
+                  if (rhoFct$name %in% c("ETEL","ETHD"))
+                      rhoFct$name <- "ET"
                   rhoFct <- get(paste("rho", rhoFct$name, sep=""))
-              else
+              } else {
                   rhoFct <- rhoFct$fct
+              }
               gt <- evalMoment(object@model, object@theta)
               k <- object@model@wSpec$k
               pt <- -rhoFct(gt, object@lambda, 1, k[1]/k[2])/nrow(gt)
@@ -269,7 +273,7 @@ setMethod("confint", "gelfit",
                   }
                   dimnames(ans) <- list(nlam,
                                         c((1 - level)/2, 0.5 + level/2))
-                  return(new("confint", interval=matrix,
+                  return(new("confint", interval=ans,
                              type=ntest, level=level))                  
               }
               if (type == "Wald")
@@ -296,6 +300,168 @@ setMethod("confint", "gelfit",
               }
               new("confint", interval=ans, type=ntest, level=level)
           })
+
+setMethod("confint", "numeric",
+          function (object, parm, level = 0.95, gelType="EL", 
+                    type = c("Wald", "invLR", "invLM", "invJ"),
+                    fact = 3, vcov="iid", ...) 
+              {
+                  Call <- try(match.call(call=sys.call(sys.parent())), silent=TRUE)
+                  if (class(Call)=="try-error")
+                      Call <- NULL                  
+                  type <- match.arg(type)
+                  object <- as.data.frame(object)
+                  if (!is.null(Call))
+                      names(object) <- as.character(Call)[2]
+                  g <- as.formula(paste(names(object),"~1",sep=""))
+                  n <- nrow(object)
+                  s <- sd(object[[1]], na.rm=TRUE)/sqrt(n)
+                  m <- mean(object[[1]], na.rm=TRUE)
+                  mod <- gelModel(g, ~1, gelType=gelType, vcov=vcov, data=object)
+                  fit <- modelFit(mod, tControl=list(method="Brent",lower=m-s,upper=m+s), 
+                                  ...)
+                  ans <- confint(fit, 1, level=level, type=type, fact=fact)
+                  rownames(ans@interval) <- names(object)
+                  ans
+              })
+
+
+.lineInterval <- function(obj, slope, which=1:2, ...)
+    {
+        if (length(which)!=2)
+            stop("You must select 2 coefficients")        
+        if (length(coef(obj))<2)
+            stop("You need at least two coefficients")
+        mu <- coef(obj)[which]
+        b <- mu[2]-slope*mu[1]
+        cst <- paste(names(mu)[2],"=",slope,"*",names(mu)[1],"+",b)
+        mod <- restModel(obj@model, cst)
+        
+        if (length(coef(obj)==2))
+            cont <- list(method="Brent", lower=mu[1]-1, upper=mu[1]+1)
+        else 
+            cont <- list()
+        fit <- modelFit(mod, tControl=cont)
+        ci <- confint(fit, names(mu)[1], ...)
+        low <- coef(mod, ci@interval[1,1])
+        up <- coef(mod, ci@interval[1,2])
+        ans <- rbind(low, up)
+        colnames(ans) <- names(mu)
+        rownames(ans) <- c("low","up")
+        ans
+    }
+
+setMethod("confint", "data.frame",
+          function (object, parm, level = 0.95, gelType="EL", 
+                    type = c("Wald", "invLR", "invLM", "invJ"),
+                    fact = 3, vcov="iid", n=10, cores=4, ...) 
+              {
+                  type <- match.arg(type)
+                  if (Sys.info()["sysname"] == "Windows")
+                      cores <- 1L
+                  n <- floor(n/2)
+                  if (missing(parm))
+                      parm <- 1
+                  if (length(parm) == 1)
+                  {   
+                      ans <- confint(object[[parm]], level=level, gelType=gelType,
+                                     type=type, fact=fact, vcov=vcov, ...)
+                      rownames(ans@interval) <- names(object[parm])
+                      return(ans)
+                  }
+                  if (length(parm) != 2)
+                      stop("You can only select 2 variable from your data.frame")
+                  object <- object[parm]
+                  parNames <- paste("mu_", names(object), sep="")
+                  g <- list(as.formula(paste(names(object)[1], "~", parNames[1], sep="")),
+                            as.formula(paste(names(object)[2], "~", parNames[2], sep="")))
+                  theta0 <- colMeans(object)
+                  names(theta0) <- parNames
+                  mod <- gelModel(g, gelType=gelType, vcov=vcov, data=object,
+                                  theta0=theta0)
+                  fit <- modelFit(mod, ...)   
+                  mu <- coef(fit)
+                  c1 <- confint(fit,1:2,level, type=type, fact=fact)@interval
+                  delta <- seq(1,0,length.out=n+2)[-c(1,n+2)]
+                  p1 <- c(mu[1],c1[2,2])
+                  p2 <- c(c1[1,2], mu[2])
+                  p3 <- c(mu[1],c1[2,1])
+                  p4 <- c(c1[1,1],mu[2])
+                  slU <- sapply(delta, function(d) {
+                      p <- (p1*d + p2*(1-d))
+                      (p[2]-mu[2])/(p[1]-mu[1])})
+                  slD <- sapply(delta, function(d) {
+                      p <- (p2*d + p3*(1-d))
+                      (p[2]-mu[2])/(p[1]-mu[1])})                      
+                  slope <- c(slU, slD)
+                  resU <- mclapply(slU, function(s) .lineInterval(fit, s, ...),
+                                  mc.cores=8)
+                  resD <- mclapply(slD, function(s) .lineInterval(fit, s, ...),
+                                   mc.cores=8)
+                  Q1 <- cbind(p3, sapply(resU, function(l) l[1,]))
+                  Q2 <- cbind(p4, sapply(resD, function(l) l[1,]))
+                  Q3 <- cbind(p1, sapply(resU, function(l) l[2,]))
+                  Q4 <- cbind(p2, sapply(resD, function(l) l[2,]))
+                  ans <- rbind(t(Q1),t(Q2), t(Q3), t(Q4))
+                  colnames(ans) <- names(mu)
+                  rownames(ans) <- NULL
+                  type <- paste("2D ", type, " confidence region", sep="")
+                  new("mconfint", areaPoints=ans, type=type, level=level)
+              })
+                                                                    
+setMethod("confint", "ANY",
+          function (object, parm, level = 0.95, ...) 
+          {
+              stats::confint(object, parm, level, ...)
+          })
+
+
+### print, show and plot for mconfint
+
+setMethod("print", "mconfint", 
+          function(x, digits=4, ...) 
+          { 
+              cat(x@type, "\n")
+              cat(paste(rep("*", nchar(x@type)), collapse="", sep=""), "\n", sep="")
+              cat("Level: ", x@level, "\n", sep="")
+              cat("Number of points: ", nrow(x@areaPoints), "\n", sep="")
+              cat("Variables:\n")
+              v <- colnames(x@areaPoints)
+              r <- formatC(apply(x@areaPoints, 2, range), digits=digits, ...)
+              cat("\tRange for ", v[1], ": [", r[1,1], ", ", r[2,1], "]\n", sep="")
+              cat("\tRange for ", v[2], ": [", r[1,2], ", ", r[2,2], "]\n", sep="")
+              })
+
+setMethod("show", "mconfint", function(object) print(object))
+
+setGeneric("plot")
+
+setMethod("plot", "mconfint", function(x, y, main=NULL, xlab=NULL, ylab=NULL, 
+                                       pch=21, bg=1, ...)
+{
+    v <- colnames(x@areaPoints)
+    if (is.null(main))
+        main <- paste(100*x@level, "% confidence region for ", v[1], " and ", v[2],
+                      sep="")
+    if (is.null(xlab))
+        xlab <- v[1]
+    if (is.null(ylab))
+        ylab <- v[2]
+    plot(x@areaPoints, xlab=xlab, ylab=ylab, main=main, pch=pch, bg=bg)
+    grid()
+    polygon(x@areaPoints[,1], x@areaPoints[,2], ...)
+    invisible()
+})
+
+setMethod("plot", "ANY", function(x, y, ...) 
+    if(!missing(y))
+        graphics::plot(x, y, ...)
+    else
+        graphics::plot(x, ...)
+    )
+
+
+
 
 ## specTest
 

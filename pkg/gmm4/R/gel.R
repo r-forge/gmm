@@ -139,70 +139,75 @@ ETXX_lam <- function(gmat, lambda0, k, gelType, algo, method, control)
 getLambda <- function (gmat, lambda0=NULL, gelType=NULL, rhoFct=NULL, 
                        tol = 1e-07, maxiter = 100, k = 1, method="BFGS", 
                        algo = c("nlminb", "optim", "Wu"), control = list()) 
+{
+    if (!is.null(gelType))
     {
-        algo <- match.arg(algo)
-        gmat <- as.matrix(gmat)
-        if (is.null(lambda0))
-            lambda0 <- rep(0, ncol(gmat))
-        if (is.null(rhoFct))
-        {
-            if (is.null(gelType))
-                stop("Without rhoFct, gelType must be given")
-            rhoFct <- get(paste("rho",gelType,sep=""))
-        } else {
-            gelType <- "Other"
-        }
-        if (algo == "Wu" & gelType != "EL") 
-            stop("Wu (2005) algo to compute Lambda is for EL only")
-        if (algo == "Wu") 
-            return(Wu_lam(gmat, tol, maxiter, k))
-        if (gelType == "EEL")
-            return(EEL_lam(gmat, k))
-        if (gelType == "REEL")
-            return(REEL_lam(gmat, NULL, maxiter, k))
-        if (gelType %in% c("ETEL", "ETHD"))
-            return(ETXX_lam(gmat, lambda0, k, gelType, algo, method, control))
-        
-        fct <- function(l, X, rhoFct, k) {
-            r0 <- rhoFct(X, l, derive = 0, k = k)
-            -mean(r0)
-        }
-        Dfct <-  function(l, X, rhoFct, k)
-        {
-            r1 <- rhoFct(X, l, derive = 1, k = k)
-            -colMeans(r1 * X)
-        }
-        DDfct <-  function(l, X, rhoFct, k)
-        {
-            r2 <- rhoFct(X, l, derive = 2, k = k)
-            -crossprod(X * r2, X)/nrow(X)
-        }
-        if (algo == "optim") {
-            if (gelType == "EL")
-                {
-                    ci <- -rep(1, nrow(gmat))
-                    res <- constrOptim(lambda0, fct, Dfct, -gmat, ci, control = control,
-                                       X = gmat, rhoFct = rhoFct, k = k)
-                } else if (gelType == "HD") {
-                    ci <- -rep(1, nrow(gmat))
-                    res <- constrOptim(lambda0, fct, Dfct, -gmat, ci, control = control,
-                                       X = gmat, rhoFct = rhoFct, k = k)
-                } else {
-                    res <- optim(lambda0, fct, gr = Dfct, X = gmat, rhoFct = rhoFct,
-                                 k = k, method = method, control = control)
-                }
-        } else {
-            res <- nlminb(lambda0, fct, gradient = Dfct, hessian = DDfct,
-                          X = gmat, rhoFct = rhoFct, k = k, control = control)
-        }
-        lambda0 <- res$par
-        if (algo == "optim") 
-            conv <- list(convergence = res$convergence, counts = res$counts, 
-                         message = res$message)
-        else
-            conv <- list(convergence = res$convergence, counts = res$evaluations, 
-                         message = res$message)    
-        return(list(lambda = lambda0, convergence = conv,
-                    obj= mean(rhoFct(gmat,lambda0,0,k))))
+        if (length(algo) == 3 & gelType == "EL")
+            algo <- "Wu"
     }
+    algo <- match.arg(algo)
+    gmat <- as.matrix(gmat)
+    if (is.null(lambda0))
+        lambda0 <- rep(0, ncol(gmat))
+    if (is.null(rhoFct))
+    {
+        if (is.null(gelType))
+            stop("Without rhoFct, gelType must be given")
+        rhoFct <- get(paste("rho",gelType,sep=""))
+    } else {
+        gelType <- "Other"
+    }
+    if (algo == "Wu" & gelType != "EL") 
+        stop("Wu (2005) algo to compute Lambda is for EL only")
+    if (algo == "Wu") 
+        return(Wu_lam(gmat, tol, maxiter, k))
+    if (gelType == "EEL")
+        return(EEL_lam(gmat, k))
+    if (gelType == "REEL")
+        return(REEL_lam(gmat, NULL, maxiter, k))
+    if (gelType %in% c("ETEL", "ETHD"))
+        return(ETXX_lam(gmat, lambda0, k, gelType, algo, method, control))
+    
+    fct <- function(l, X, rhoFct, k) {
+        r0 <- rhoFct(X, l, derive = 0, k = k)
+        -mean(r0)
+    }
+    Dfct <-  function(l, X, rhoFct, k)
+    {
+        r1 <- rhoFct(X, l, derive = 1, k = k)
+        -colMeans(r1 * X)
+    }
+    DDfct <-  function(l, X, rhoFct, k)
+    {
+        r2 <- rhoFct(X, l, derive = 2, k = k)
+        -crossprod(X * r2, X)/nrow(X)
+    }
+    if (algo == "optim") {
+        if (gelType == "EL")
+        {
+            ci <- -rep(1, nrow(gmat))
+            res <- constrOptim(lambda0, fct, Dfct, -gmat, ci, control = control,
+                               X = gmat, rhoFct = rhoFct, k = k)
+        } else if (gelType == "HD") {
+            ci <- -rep(1, nrow(gmat))
+            res <- constrOptim(lambda0, fct, Dfct, -gmat, ci, control = control,
+                               X = gmat, rhoFct = rhoFct, k = k)
+        } else {
+            res <- optim(lambda0, fct, gr = Dfct, X = gmat, rhoFct = rhoFct,
+                         k = k, method = method, control = control)
+        }
+    } else {
+        res <- nlminb(lambda0, fct, gradient = Dfct, hessian = DDfct,
+                      X = gmat, rhoFct = rhoFct, k = k, control = control)
+    }
+    lambda0 <- res$par
+    if (algo == "optim") 
+        conv <- list(convergence = res$convergence, counts = res$counts, 
+                     message = res$message)
+    else
+        conv <- list(convergence = res$convergence, counts = res$evaluations, 
+                     message = res$message)    
+    return(list(lambda = lambda0, convergence = conv,
+                obj= mean(rhoFct(gmat,lambda0,0,k))))
+}
 

@@ -4,6 +4,14 @@
 \alias{modelFit-methods}
 \alias{modelFit,gmmModels-method}
 \alias{modelFit,gelModels-method}
+\alias{modelFit,linearGel-method}
+\alias{modelFit,nonlinearGel-method}
+\alias{modelFit,formulaGel-method}
+\alias{modelFit,functionGel-method}
+\alias{modelFit,rlinearGel-method}
+\alias{modelFit,rnonlinearGel-method}
+\alias{modelFit,rformulaGel-method}
+\alias{modelFit,rfunctionGel-method}
 \alias{modelFit,rgelModels-method}
 \alias{modelFit,formulaGmm-method}
 \alias{modelFit,sysGmmModels-method}

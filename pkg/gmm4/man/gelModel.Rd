@@ -40,9 +40,7 @@ gelModel(g, x=NULL, gelType, rhoFct=NULL, theta0=NULL,grad=NULL,
   smoothed moments.}
 
 \item{theta0}{A \eqn{k \times 1} vector of starting values. It is required
-  only when "g" is a function because only then a numerical algorithm is
-  used to minimize the objective function. If the dimension of
-  \eqn{\theta} is one, see the argument "optfct".}
+  only when "g" is a function, a formula or a list of formulas}
 
 \item{grad}{A function of the form \eqn{G(\theta,x)} which returns a
   \eqn{q\times k} matrix of derivatives of \eqn{\bar{g}(\theta)} with
