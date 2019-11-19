@@ -203,27 +203,43 @@ setMethod("summary", "gmmfit",
 ## confint
 
 setGeneric("confint")
-setMethod("confint", "gmmfit",
-          function(object, parm, level = 0.95, vcov=NULL, ...)
-          {
-              ntest <- "Wald type confidence interval"
-              if (is.null(vcov))
-                  vcov <- vcov(object, ...)
-              se <- sqrt(diag(vcov))
-              theta <- coef(object)
-              if (missing(parm))
-                  parm <- 1:length(theta)
-              if (is.character(parm))
-                  parm <- sort(unique(match(parm, names(theta))))
-              theta <- theta[parm]
-              se <- se[parm]
-              zs <- qnorm((1 - level)/2, lower.tail = FALSE)              
-              ch <- zs * se
-              ans <- cbind(theta - ch, theta + ch)              
-              dimnames(ans) <- list(names(theta), c((1 - level)/2, 0.5 + level/2))
-              new("confint", interval=ans, type=ntest, level=level)
-              })
 
+setMethod("confint","gmmfit", 
+          function (object, parm, level = 0.95, vcov=NULL, area=FALSE,
+                    npoints=50, ...) 
+          {
+              if (is.null(vcov)) 
+                  vcov <- vcov(object, ...)
+              theta <- coef(object)
+              if (missing(parm)) 
+                  parm <- 1:length(theta)
+              if (is.character(parm)) 
+                  parm <- sort(unique(match(parm, names(theta))))
+              if (area)
+              {
+                  if (length(parm) != 2)
+                      stop("For confidence region, length(parm) must be 2")
+                  ntest <- "Wald type confidence region"
+                  r <- sqrt(qchisq(level, 2))
+                  v <- chol(vcov[parm,parm])
+                  ang <- seq(0, 2*pi, length.out=npoints)
+                  c1  <- rbind(r*cos(ang), r*sin(ang))
+                  p2 <- t(crossprod(v,c1) + theta[parm])
+                  colnames(p2) <- names(theta)[parm]
+                  rownames(p2) <- NULL
+                  obj <- new("mconfint", areaPoints=p2, type=ntest, level=level)
+                  return(obj)
+              }                  
+              se <- sqrt(diag(vcov)[parm])
+              ntest <- "Wald type confidence interval"
+              theta <- theta[parm]
+              zs <- qnorm((1 - level)/2, lower.tail = FALSE)
+              ch <- zs * se
+              ans <- cbind(theta - ch, theta + ch)
+              dimnames(ans) <- list(names(theta), c((1 - level)/2, 
+                                                    0.5 + level/2))
+              new("confint", interval = ans, type = ntest, level = level)
+          })
 
 ## Its print method
 

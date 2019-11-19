@@ -1096,7 +1096,7 @@ confint(x2, gelType="EL")
 Which can also be done using the method for ``data.frame'':
 
 <<>>=
-confint(simData, "x2", gelType="EL")
+confint(simData, "x2", gelType="EL", npoints=20)
 @ 
 
 The arguments ``level'', ``fact'' and ``type'' are as for the method
@@ -1107,31 +1107,37 @@ stored in the object. The options are ``iid'', the default, or ``HAC''
 for weakly dependent processes.  
 
 For ``data.frame'' and two variables, an object of class ``mconfint''
-is created. The argument ``n'' is the number of lines to use to
-construct the region. The number of equally spaced points around the
-region is $2(n+2)$ because a vertical and horizontal lines are
-added. The arguments ``cores'' is for the number of cores to use with
-mclapply(). For Windows operating systems, it is set to 1. The
-following shows how to use the \textit{print} and \textit{plot}
-methods for that class. In the following, the Wald region is computed
-instead, to avoid having a vignette that takes to much time to compile.
+is created. The argument ``npoints'' is the number of points to use to
+construct the region. The arguments ``cores'' is for the number of
+cores to use with mclapply(). For Windows operating systems, it is set
+to 1. The following shows how to use the \textit{print} and
+\textit{plot} methods for that class. Here is an example which
+compares Wald and LR confidence regions.
 
 <<>>=
-res <- confint(simData, c("x2","y"))
+res <- confint(simData, c("x2","y"), npoints=20)
 res
 @ 
 
 \begin{center}
 \begin{minipage}{.7\textwidth}
 <<fig.height=5>>=
-plot(res, pch=20, bg=2, col=rainbow(7, alpha=.3)[3])
+res2 <- confint(simData, c("x2","y"), type="invLR", npoints=20)
+c1 <- col2rgb("darkorange2")/255
+c1 <- rgb(c1[1],c1[2],c1[3],.5)
+c2 <- col2rgb("lightblue2")/255
+c2 <- rgb(c2[1],c2[2],c2[3],.5)
+plot(res, pch=20, bg=c1, Pcol=c1, col=c1, ylim=c(3.5,6.5),
+     xlim=c(4.8,7.5))
+plot(res2, pch=20, bg=c2, Pcol=c2, col=c2, add=TRUE)
+legend("topright", c("Wald","LR"), col=c(c1,c2), pch=20 , bty="n")
 @ 
 \end{minipage}
 \end{center}
 
-The arguments ``main'', ``xlab'' ``ylab'', ``pch'' and ``bg'' are
-passed to plot.default(), and all other arguments are passed to
-polygon().
+The arguments ``main'', ``xlab'' ``ylab'', ``pch'', ``ylim'',
+``xlim'', ``Pcol'' (the color of the points) and ``bg'' are passed to
+plot.default(), and all other arguments are passed to polygon().
 
 \bibliography{empir}
 \pagebreak

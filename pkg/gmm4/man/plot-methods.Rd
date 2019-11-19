@@ -12,7 +12,8 @@ It plots the confidence region.
 \S4method{plot}{ANY}(x, y, ...) 
 
 \S4method{plot}{mconfint}(x, y, main=NULL, xlab=NULL, ylab=NULL, 
-                          pch=21, bg=1, \dots)
+                          pch=21, bg=1, Pcol=1, ylim=NULL, xlim=NULL,
+                          add=FALSE, \dots)
 }
 
 \arguments{
@@ -29,6 +30,15 @@ It plots the confidence region.
   \item{pch}{Type of points (see \code{\link{points}}).}
 
   \item{bg}{Background color for points.}
+
+  \item{Pcol}{The color for the points. If col is used, it is passed to
+    \code{\link{polygon}}}
+
+  \item{xlim}{Optional range for the x-axis.}
+ 
+  \item{ylim}{Optional range for the y-axis.}
+
+  \item{add}{If TRUE, the region is added to an existing plot.}
 
   \item{\dots}{Arguments to pass to \code{\link{polygon}}}
   }

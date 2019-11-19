@@ -314,7 +314,7 @@ setMethod("update", "gelModels",
               arg <- list(...)                          
               allowed <- c("vcov","vcovOptions", "centeredVcov",
                            "gelType", "rhoFct")
-              arg <- arg[na.omit(match(allowed, names(arg)))]
+              arg <- arg[na.omit(match(allowed, names(arg)))]           
               if (length(arg) == 0)
                   return(object)
               gelType <- if (is.null(arg$gelType))

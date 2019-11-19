@@ -6,6 +6,7 @@
 \alias{confint,gmmfit-method}
 \alias{confint,numeric-method}
 \alias{confint,data.frame-method}
+\alias{confint,matrix-method}
 \alias{confint,ANY-method}
 \title{ ~~ Methods for Function \code{confint} in Package \pkg{stats} ~~}
 \description{
@@ -14,16 +15,24 @@ Method to contruct confidence intervals for objects of class
 }
 
 \usage{
-\S4method{confint}{gmmfit}(object, parm, level = 0.95, vcov=NULL, \dots)
+\S4method{confint}{gmmfit}(object, parm, level = 0.95, vcov=NULL,
+                    area=FALSE, npoints=50, \dots)
 
 \S4method{confint}{gelfit}(object, parm, level = 0.95, lambda = FALSE,
                     type = c("Wald", "invLR", "invLM", "invJ"),
-                    fact = 3, corr = NULL, vcov=NULL, \dots)
+                    fact = 3, corr = NULL, vcov=NULL,
+                    area = FALSE, npoints = 20, cores=4, \dots)
+
+\S4method{confint}{numeric}(object, parm, level = 0.95, gelType="EL", 
+                    type = c("Wald", "invLR", "invLM", "invJ"),
+                    fact = 3, vcov="iid", ...) 
 
 \S4method{confint}{data.frame}(object, parm, level = 0.95, gelType="EL", 
                     type = c("Wald", "invLR", "invLM", "invJ"),
-                    fact = 3, vcov="iid", n=10, 
+                    fact = 3, vcov="iid", npoints=10, 
                     cores=4, \dots) 
+
+\S4method{confint}{matrix}(object, parm, level = 0.95, \dots) 
 
 \S4method{confint}{ANY}(object, parm, level = 0.95, \dots)
 }
@@ -52,14 +61,19 @@ Method to contruct confidence intervals for objects of class
   \item{corr}{Correction to apply to the specification tests}
   
   \item{vcov}{For Wald intervals, an optional covariance matrix can be
-    provided}
+    provided. For \code{"numeric"} or \code{"data.frame"}, it specifies
+    the type of observations.}
 
   \item{cores}{The number of cores for \code{\link{mclapply}}. It is set
     to 1 for Windows OS.}
 
   \item{gelType}{Type of GEL confidence interval.}
 
-  \item{n}{Number of lines to construct the confidence region.}
+  \item{npoints}{Number of equally spaced points for the confidence
+    region}
+
+  \item{area}{If TRUE, a cnnfidence region is computed. The length of
+  \code{"parm"} must be 2 in that case.}
 
   \item{\dots}{Other arguments to pass to \code{\link{modelFit}}}
 }
@@ -86,10 +100,11 @@ It computes the GEL confidence interval for the mean.
 \item{\code{signature(object = "data.frame")}}{
   It computes the 2D GEL confidence region for the means of two
   variables.
-  
 }
 
-
+\item{\code{signature(object = "matrix")}}{
+  It converts the object into a data.frame and call its method.
+}
 
 }}
 \keyword{methods}

@@ -5,7 +5,7 @@ importFrom("methods", is, new, show, "slot<-", "slotNames", "validObject",
 
 importFrom("parallel", mclapply)
 
-importFrom("graphics", plot, polygon, grid)
+importFrom("graphics", plot, polygon, grid, points)
 
 importFrom("utils", capture.output)
 
@@ -14,7 +14,7 @@ importFrom("stats", "ar", "as.formula", "model.matrix","vcov",
            "D", "numericDeriv", "sd", "optim", "lm", "pf", "coef", "update",
            "fitted", "lm.fit", "pchisq", "pnorm", "printCoefmat", "anova",
            "model.frame", "reformulate", "formula", "nlminb", "kernapply",
-           "constrOptim", "kernel", "confint", "qnorm", "uniroot", "getCall")
+           "constrOptim", "kernel", "confint", "qnorm", "uniroot", "getCall", "qchisq")
 importFrom("sandwich", "vcovHAC", "estfun","kernHAC","vcovCL", "meatCL",
            "bread","bwAndrews","bwNeweyWest","weightsAndrews",
            "weightsLumley", "vcovHC")
