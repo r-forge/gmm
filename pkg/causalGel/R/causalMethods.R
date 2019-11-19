@@ -97,8 +97,12 @@ setMethod("modelFit", signature("causalGel"), valueClass="causalGelfit",
                                 initTheta=c("gmm", "theta0"), start.tet=NULL,
                                 start.lam=NULL, vcov=FALSE, ...)
           {
+              Call <- try(match.call(call=sys.call(sys.parent())), silent=TRUE)
+              if (class(Call)=="try-error")
+                  Call <- NULL              
               res <- callNextMethod()
-              new("causalGelfit", res)
+              res@call <- Call
+              obj <- new("causalGelfit", res)
           })
 
 ## model.matrix and modelResponse

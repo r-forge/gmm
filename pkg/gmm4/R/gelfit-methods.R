@@ -559,6 +559,8 @@ setMethod("update", "gelfit",
                   stop("No call argument")
               arg <- list(...)
               ev <- new.env(parent.frame())
+              theta0 <- arg$theta0
+              
               if (object@call[[1]] != "gel4")
               {
                   model <- if(is.null(newModel))
@@ -570,6 +572,16 @@ setMethod("update", "gelfit",
                   call[["object"]] <- quote(model)
                   arg <- arg[which(is.na(match(names(arg),
                                                c("rhoFct", slotNames(model)))))]
+              }
+              spec <- modelDims(model)
+              if (!is.null(call[["theta0"]]))
+              {
+                  call[["theta0"]] <- if (is.null(theta0))
+                                          spec$theta0
+                                      else
+                                          theta0
+              } else if (!is.null(theta0)) {
+                  call[["theta0"]] <- theta0
               }
               if (length(arg) > 0) 
                   for (n in names(arg)) call[[n]] <- arg[[n]]
