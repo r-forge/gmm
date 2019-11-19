@@ -68,54 +68,6 @@ opts_chunk$set(size='footnotesize')
 \tableofcontents
 \newpage
 
-<<extract, echo=FALSE, message=FALSE, warning=FALSE>>=
-library(texreg)
-setMethod("extract", "gelfit", 
-          function(model, includeSpecTest=TRUE, 
-                   specTest=c("LR","LM","J"), include.nobs=TRUE, 
-                   include.obj.fcn=TRUE, ...)
-              {
-                  specTest <- match.arg(specTest)
-                  s <- summary(model, ...)
-                  wspecTest <- grep(specTest, rownames(s@specTest@test))
-                  spec <- modelDims(model@model)
-                  coefs <- s@coef
-                  names <- rownames(coefs)
-                  coef <- coefs[, 1]
-                  se <- coefs[, 2]
-                  pval <- coefs[, 4]
-                  n <- model@model@n
-                  gof <- numeric()
-                  gof.names <- character()
-                  gof.decimal <- logical()
-                  if (includeSpecTest) {
-                      if (spec$k == spec$q)
-                          {
-                              obj.fcn <- NA
-                              obj.pv <- NA
-                          } else {
-                              obj.fcn <- s@specTest@test[wspecTest,1]
-                              obj.pv <- s@specTest@test[wspecTest,3]
-                          }
-                      gof <- c(gof, obj.fcn, obj.pv)                      
-                      gof.names <- c(gof.names, 
-                                     paste(specTest,"-test Statistics", sep=""),
-                                     paste(specTest,"-test p-value", sep=""))
-                      gof.decimal <- c(gof.decimal, TRUE, TRUE)
-                  }
-                  if (include.nobs == TRUE) {
-                      gof <- c(gof, n)
-                      gof.names <- c(gof.names, "Num.\\ obs.")
-                      gof.decimal <- c(gof.decimal, FALSE)
-                  }
-                  tr <- createTexreg(coef.names = names, coef = coef, se = se, 
-                                     pvalues = pval, gof.names = gof.names, gof = gof, 
-                                     gof.decimal = gof.decimal)
-                  return(tr)
-              })
-@ 
-
-
 \section{A very brief review of the GEL method}
 We present how to use the package to estimate models by the
 Generalized Empirical Likelihood method (GEL) (see
@@ -1147,7 +1099,51 @@ plot.default(), and all other arguments are passed to polygon().
 The following \textit{extract} is used with the ``texreg'' package of
 \cite{leifeld13} to produce nice latex tables.
 
-<<extract, eval=FALSE>>=
+<<extract, message=FALSE, warning=FALSE>>=
+library(texreg)
+setMethod("extract", "gelfit", 
+          function(model, includeSpecTest=TRUE, 
+                   specTest=c("LR","LM","J"), include.nobs=TRUE, 
+                   include.obj.fcn=TRUE, ...)
+              {
+                  specTest <- match.arg(specTest)
+                  s <- summary(model, ...)
+                  wspecTest <- grep(specTest, rownames(s@specTest@test))
+                  spec <- modelDims(model@model)
+                  coefs <- s@coef
+                  names <- rownames(coefs)
+                  coef <- coefs[, 1]
+                  se <- coefs[, 2]
+                  pval <- coefs[, 4]
+                  n <- model@model@n
+                  gof <- numeric()
+                  gof.names <- character()
+                  gof.decimal <- logical()
+                  if (includeSpecTest) {
+                      if (spec$k == spec$q)
+                          {
+                              obj.fcn <- NA
+                              obj.pv <- NA
+                          } else {
+                              obj.fcn <- s@specTest@test[wspecTest,1]
+                              obj.pv <- s@specTest@test[wspecTest,3]
+                          }
+                      gof <- c(gof, obj.fcn, obj.pv)                      
+                      gof.names <- c(gof.names, 
+                                     paste(specTest,"-test Statistics", sep=""),
+                                     paste(specTest,"-test p-value", sep=""))
+                      gof.decimal <- c(gof.decimal, TRUE, TRUE)
+                  }
+                  if (include.nobs == TRUE) {
+                      gof <- c(gof, n)
+                      gof.names <- c(gof.names, "Num.\\ obs.")
+                      gof.decimal <- c(gof.decimal, FALSE)
+                  }
+                  tr <- createTexreg(coef.names = names, coef = coef, se = se, 
+                                     pvalues = pval, gof.names = gof.names, gof = gof, 
+                                     gof.decimal = gof.decimal)
+                  return(tr)
+              })
 @ 
 
 Here is an example
