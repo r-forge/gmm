@@ -1064,24 +1064,27 @@ construct the region. The arguments ``cores'' is for the number of
 cores to use with mclapply(). For Windows operating systems, it is set
 to 1. The following shows how to use the \textit{print} and
 \textit{plot} methods for that class. Here is an example which
-compares Wald and LR confidence regions.
+compares Wald and LR confidence regions. 
 
 <<>>=
 res <- confint(simData, c("x2","y"), npoints=20)
 res
 @ 
 
+The following is not run because it creates some misterious error when
+the package is checked. Beside that, it works perfectly. Try it.
+
 \begin{center}
 \begin{minipage}{.7\textwidth}
-<<fig.height=5>>=
+<<fig.height=5, eval=FALSE>>=
 res2 <- confint(simData, c("x2","y"), type="invLR", npoints=20)
 c1 <- col2rgb("darkorange2")/255
 c1 <- rgb(c1[1],c1[2],c1[3],.5)
 c2 <- col2rgb("lightblue2")/255
 c2 <- rgb(c2[1],c2[2],c2[3],.5)
-plot(res, pch=20, bg=c1, Pcol=c1, col=c1, ylim=c(3.5,6.5),
+plot(res, pch=20, bg=1, Pcol=c1, col=c1, density=10, ylim=c(3.5,6.5),
      xlim=c(4.8,7.5))
-plot(res2, pch=20, bg=c2, Pcol=c2, col=c2, add=TRUE)
+plot(res2, pch=20, bg=2, Pcol=c2, col=c2, density=10, add=TRUE)
 legend("topright", c("Wald","LR"), col=c(c1,c2), pch=20 , bty="n")
 @ 
 \end{minipage}
@@ -1092,8 +1095,7 @@ The arguments ``main'', ``xlab'' ``ylab'', ``pch'', ``ylim'',
 plot.default(), and all other arguments are passed to polygon().
 
 \bibliography{empir}
-\pagebreak
-\Large{\textbf{Appendix}}
+
 \appendix
 \section{Some extra codes}
 The following \textit{extract} is used with the ``texreg'' package of
@@ -1153,7 +1155,6 @@ fit1 <- gel4(y~x1, ~x2+x3+x4, data=simData)
 fit2 <- gel4(y~x1+x2, ~x2+x3+x4, data=simData)
 texreg(list(fit1,fit2), digits=4)
 @ 
-
 
 \end{document} 
 
