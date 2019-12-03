@@ -12,9 +12,9 @@ exportClasses()
 
 exportClasses("causalData", "causalGel", "causalGelfit")
 
-exportMethods("causalMomFct")
+exportMethods("causalMomFct", "checkConv")
 
-export("causalModel")
+export("causalModel", "causalGEL")
 
 
 

@@ -39,7 +39,7 @@ setMethod("evalDMoment", signature("causalGel"),
               G[(k+1):ntet, (k+1):ntet] <- -sum(impProb)*diag(k-1)
               uK <- colSums(impProb*X[,-1,drop=FALSE])
               G[(2*k):q, (k+1):ntet] <- -kronecker(diag(k-1), uK)
-              if (dat@momType != "uncondBal" |  dat@momType=="fixedMon")
+              if (dat@momType != "uncondBal" |  dat@momType=="fixedMom")
                   {
                       G <- rbind(G, matrix(0, ncol(X)-1, ntet))
                       if (augmented)
@@ -94,8 +94,8 @@ setMethod("print", "causalGel",
 
 setMethod("modelFit", signature("causalGel"), valueClass="causalGelfit", 
           definition = function(object, gelType=NULL, rhoFct=NULL,
-                                initTheta=c("gmm", "theta0"), start.tet=NULL,
-                                start.lam=NULL, vcov=FALSE, ...)
+                                initTheta=c("gmm", "modelTheta0"), theta0=NULL,
+                                lambda0=NULL, vcov=FALSE, ...)
           {
               Call <- try(match.call(call=sys.call(sys.parent())), silent=TRUE)
               if (class(Call)=="try-error")
@@ -103,6 +103,7 @@ setMethod("modelFit", signature("causalGel"), valueClass="causalGelfit",
               res <- callNextMethod()
               res@call <- Call
               obj <- new("causalGelfit", res)
+              obj
           })
 
 ## model.matrix and modelResponse
@@ -196,16 +197,32 @@ setMethod("[", c("causalGel", "numeric", "missing"),
               x
           })
 
-setMethod("[", c("causalGel", "numeric", "numeric"),
+setMethod("[", c("causalGel", "numeric", "numericORlogical"),
           function(x, i, j){
-              x <- x[j]
-              subset(x, i)
+              x <- x[i]
+              subset(x, j)
           })
 
-setMethod("[", c("causalGel", "missing", "numeric"),
+setMethod("[", c("causalGel", "missing", "numericORlogical"),
           function(x, i, j){
-              x[j]
+              subset(x, j)
           })
 
+setMethod("[", c("causalGelfit", "numeric", "missing"),
+          function(x, i, j){
+              mod <- x@model[i]
+              update(x, newModel=mod)
+          })
 
+setMethod("[", c("causalGelfit", "numeric", "numericORlogical"),
+          function(x, i, j){
+              mod <- x@model[i,j]
+              update(x, newModel=mod)
+          })
+
+setMethod("[", c("causalGelfit", "missing", "numericORlogical"),
+          function(x, i, j){
+              mod <- x@model[,j]
+              update(x, newModel=mod)
+          })
 

@@ -126,6 +126,58 @@ setMethod("vcov", "causalGelfit",
                   allV$vcov_Allpar <-  V[1:(k+addPar), 1:(k+addPar)]
                   allV$vcov_Alllambda <- V[-(1:(k+addPar)), -(1:(k+addPar))]
               }
-              allV$gtR <- qr.R(res$qrGt)
               allV              
           })
+
+
+## checkConv
+
+setGeneric("checkConv", function(object, ...) standardGeneric("checkConv"))
+
+setMethod("checkConv", "causalGelfit",
+          function(object, tolConv=1e-4, verbose=TRUE, ...)
+          {
+              spec <- modelDims(object@model)
+              momType <- spec$momType
+              m <-  spec$balMom
+              ACTmom <- spec$ACTmom
+              conv <- c(Lambda=object@lconvergence==0, Coef= object@convergence == 0)
+              x <- model.matrix(object@model, "balancingCov")
+              z <- model.matrix(object@model)[,-1, drop=FALSE]
+              nZ <- ncol(z)
+              pt <- getImpProb(object, ...)$pt
+              pt1 <- lapply(1:nZ, function(i) pt[z[,i]==1]/sum(pt[z[,i]==1]))
+              pt0 <- pt[rowSums(z)==0]/sum(pt[rowSums(z)==0])
+              m0 <- colSums(x[rowSums(z)==0,,drop=FALSE]*pt0)
+              m1 <- sapply(1:nZ, function(i) colSums(x[z[,i]==1,,drop=FALSE]*pt1[[i]]))
+              mAll <- cbind(m0, m1)
+              n0 <- paste(paste(colnames(z),collapse="=", sep=""),"=0",sep="")
+              colnames(mAll) <- c(n0, paste(colnames(z),"=1",sep=""))
+              chk <- all(abs(mAll-m)<tolConv)
+              conv <- c(conv, Balance=all(chk))
+              momType <- switch(momType,
+                                uncondBal = "Unconditional balancing",
+                                ACT = "Causal effect on the treated",
+                                ACE = "Average causal effect",
+                                ACC = "Causal effect on the control",
+                                fixedMom = "Balancing based on fixed Moments")
+              if (momType == "ACT" & ACTmom > 1)
+                  momType <- paste(momType, "(treatment group ",
+                                   ACTmom, ")")
+              
+              if (verbose)
+              {
+                  cat("Convergence details of the Causal estimation\n")
+                  cat("********************************************\n")
+                  cat(momType,"\n\n")
+                  cat("Convergence of the Lambdas: ", conv["Lambda"], "\n",sep="")
+                  cat("Convergence of the Coefficients: ", conv["Coef"], "\n",sep="")
+                  cat("Achieved moment balancing: ", conv["Balance"], "\n\n",sep="")
+                  cat("Moments for each group:\n")
+                  print.default(mAll, quote=FALSE, right=TRUE)
+                  invisible()
+              } else {
+                  return(list(conv=conv, moments=mAll))
+              }
+          })
+

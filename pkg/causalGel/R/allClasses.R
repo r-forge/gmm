@@ -5,7 +5,7 @@
 ## Causal Model Classes
 
 setClass("causalGel", contains="functionGel")
- 
+
 setClass("causalData", representation(momType="character",
                                       balCov="character",
                                       balMom="numericORNULL",
@@ -14,4 +14,7 @@ setClass("causalData", representation(momType="character",
                                       bal="data.frame"))
 
 setClass("causalGelfit", contains="gelfit")
+
+
+## converters
 

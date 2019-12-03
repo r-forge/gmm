@@ -1,24 +1,23 @@
-\documentclass[11pt,letterpaper]{article}
+\documentclass[12pt]{article}
 
+\usepackage{graphicx}
 \usepackage{amsthm}
-\usepackage[hmargin=2cm,vmargin=2.5cm]{geometry}
+\usepackage[hmargin=1in,vmargin=1in]{geometry}
 \usepackage[utf8x]{inputenc}
+\usepackage[active]{srcltx}
 \usepackage{amsmath}
+\usepackage{amssymb}
 \usepackage{verbatim}
 \usepackage[round]{natbib}
 \usepackage{amsfonts}
 \usepackage{amssymb}
 \usepackage{graphicx}
+\usepackage{multirow}
+\usepackage{rotating}
+\usepackage{footmisc}
+\usepackage{xspace}
+\usepackage{soul}
 \usepackage{mathtools}
-\usepackage{hyperref}
-\hypersetup{
-  colorlinks,
-  citecolor=black,
-  filecolor=black,
-  linkcolor=black,
-  urlcolor=black
-}
-
 
 \newtheorem{theorem}{Theorem}
 \newtheorem{col}{Corollary}
@@ -26,11 +25,15 @@
 \newtheorem{ass}{Assumption}
 
 \DeclareMathOperator{\Ex}{E}
+\DeclareMathOperator{\Diag}{Diag}
 \newcommand{\ellhat}{\hat \ell}
+
 \newcommand\independent{\protect\mathpalette{\protect\independenT}{\perp}}
 \def\independenT#1#2{\mathrel{\rlap{$#1#2$}\mkern2mu{#1#2}}}
 
 % additional commands
+\newcommand{\gtilde}{\tilde g}
+\newcommand{\ghat}{\hat g}
 \newcommand{\GEL}{GEL\xspace}
 \newcommand{\as}{\ \text{a.s.}\xspace}
 \newcommand{\HD}{HD\xspace}
@@ -38,7 +41,7 @@
 \newcommand{\GMM}{GMM\xspace}
 \newcommand{\LRT}{LRT\xspace}
 \newcommand{\EL}{EL\xspace}
-\newcommand{\EUL}{EUL\xspace}
+\newcommand{\EEL}{EEL\xspace}
 \newcommand{\ELB}{ELB\xspace}
 \newcommand{\MCAR}{MCAR\xspace}
 \newcommand{\ET}{ET\xspace}
@@ -49,6 +52,8 @@
 \newcommand{\ACT}{ACT\xspace}
 \newcommand{\ACN}{ACN\xspace}
 \newcommand{\PFC}{PFC\xspace}
+\newcommand{\CH}{CH\xspace}
+
 \newcommand{\ate}{\tau_{\text{\ATE}}}
 \newcommand{\atehat}{\hat\tau_{\text{\ATE}}}
 \newcommand{\ace}{\tau_{\text{\ACE}}}
@@ -79,17 +84,26 @@
 \newcommand{\Ztilde}{\tilde Z}
 \newcommand{\Ytilde}{\tilde Y}
 \newcommand{\epsilontilde}{\tilde\epsilon}
+\newcommand{\tautrue}{\tau^0}
+\newcommand{\pitrue}{\pi^0}
+\newcommand{\pithat}{\hat \pi}
+\newcommand{\uhat}{\hat u}
+
+
 \DeclareMathOperator{\argmin}{argmin}
 \DeclareMathOperator{\argmax}{argmax}
 \DeclarePairedDelimiter{\abs}{\lvert}{\rvert}
 \DeclarePairedDelimiter{\norm}{\lVert}{\rVert}         % Norm
+
 \newcommand{\thetahat}{\hat \theta}
+\newcommand{\etahat}{\hat \eta}
+\newcommand{\etatrue}{\eta^0}
 \newcommand{\lambdahat}{\hat \lambda}
 \newcommand{\betahat}{\hat \beta}
 \newcommand{\vp}{p}
 \newcommand{\spv}{\mathbb{P}}
 \newcommand{\pdiv}{D}
-\newcommand{\vone}{e}
+\newcommand{\vone}{1_n}
 \newcommand{\tp}[1]{#1^T}
 \newcommand{\phat}{\hat p}
 \newcommand{\cvgindist}{\xrightarrow{\text{d}}}
@@ -111,6 +125,60 @@
 \title{\textbf{Causal Inference using Generalized Empirical Likelihood
     Methods with R}}
 \date{\today}
+
+<<extract, message=FALSE, warning=FALSE, echo=FALSE>>=
+library(texreg)
+setMethod("extract", "causalGelfit", 
+          function(model, includeSpecTest=FALSE, 
+                   specTest=c("LR","LM","J"), include.nobs=TRUE, 
+                   include.obj.fcn=TRUE, ...)
+              {
+                  specTest <- match.arg(specTest)
+                  s <- summary(model, ...)
+                  wspecTest <- grep(specTest, rownames(s@specTest@test))
+                  spec <- modelDims(model@model)
+                  coefs <- s@coef
+                  names <- rownames(coefs)
+                  coef <- coefs[, 1]
+                  se <- coefs[, 2]
+                  pval <- coefs[, 4]
+                  n <- model@model@n
+                  gof <- numeric()
+                  gof.names <- character()
+                  gof.decimal <- logical()
+                  if (includeSpecTest) {
+                      if (spec$k == spec$q)
+                          {
+                              obj.fcn <- NA
+                              obj.pv <- NA
+                          } else {
+                              obj.fcn <- s@specTest@test[wspecTest,1]
+                              obj.pv <- s@specTest@test[wspecTest,3]
+                          }
+                      gof <- c(gof, obj.fcn, obj.pv)                      
+                      gof.names <- c(gof.names, 
+                                     paste(specTest,"-test Statistics", sep=""),
+                                     paste(specTest,"-test p-value", sep=""))
+                      gof.decimal <- c(gof.decimal, TRUE, TRUE)
+                  }
+                  if (include.nobs == TRUE) {
+                      gof <- c(gof, n)
+                      gof.names <- c(gof.names, "Num.\\ obs.")
+                      gof.decimal <- c(gof.decimal, FALSE)
+                  }
+                  nbal <- length(model@model@X@balCov)
+                  gof.names <- c(gof.names, "Num. Bal. Cov.")
+                  gof <- c(gof, nbal)
+                  gof.decimal <- c(gof.decimal, FALSE)
+                  tr <- createTexreg(coef.names = names, coef = coef, 
+                                     se = se, pvalues = pval, 
+                                     gof.names = gof.names, gof = gof, 
+                                     gof.decimal = gof.decimal)
+                  return(tr)
+              })
+@ 
+
+
 
 \begin{document}
 
@@ -144,9 +212,10 @@
 %\VignettePackage{causalGel}
 %\VignetteEngine{knitr::knitr}
 
-<<echo=FALSE>>=
+<<echo=FALSE, message=FALSE, warning=FALSE>>=
 library(knitr)
 opts_chunk$set(size='footnotesize')
+library(causalGel)
 @ 
 
 \newpage
@@ -155,9 +224,467 @@ opts_chunk$set(size='footnotesize')
 
 \section{Introduction}\label{sec:intro}
 
-We want to do causal inference using the GEL of \cite{newey-smith04}
+In the following, let $X \in \reals^q$ be a random $q$-vector of
+covariates, $Y(j)$ be the random (potential) outcome when the subject
+is exposed to the treatment $j$, where $0 \leq j \leq p$ and $j = 0$
+corresponds to the control treatment.  We consider $Z_0$ as an
+indicator for the control treatment, and in the case when the
+observational study does not have a well defined control treatment,
+then we treat $Z_0$ as the baseline treatment, i.e., the treatment
+with which we are interested to compare all other treatments. Let
+further $Z = (Z_j) \in \reals^{p}$ be a random $p$-vector of treatment
+indicators (other than the control treatment), with $Z_j = 1$ and $Z_k
+= 0$ for all $k \neq j$ if the subject receives the treatment $j$,
+where $j = 1 , \ldots, p$.  Since all individuals receive only one
+treatment, then $\sum_{j=0}^p Z_j = 1$, and we only observe $Y =
+\sum_{j = 0}^p Y(j) Z_j$. Note that we do not consider here the case
+of clinical trials with non-compliance where the subjects are assigned
+to treatments but they may receive other treatments, and thus, the
+available data consist of only the treatment received and the outcome
+under the treatment received in addition to the covariates for all
+subjects.
+
+\subsection{Randomized experiments}
+\label{sec:rand}
+
+Let $\theta_1 \in \reals$, $\theta_2 = (\theta_{2,1}, \ldots,
+\theta_{2,p}) \in \reals^{p}$, and $\theta_3 = (\theta_{3,1}, \ldots,
+\theta_{3,p}) \in \reals^{p}$ be defined as $\theta_1 = \Ex(Y(0))$,
+$\theta_{2,j} = [\Ex(Y(j))-\Ex(Y(0))]$, $\theta_{3,j} = \Ex(Z_j)$, $1 \leq j \leq
+p$, and let $\theta = (\theta_1, \theta_2, \theta_3) \in \reals^{2p +
+  1}$.  By the definition of conditional expectation,
+\begin{equation}
+    \label{eq:1}
+      \Ex(Y \given Z_j = 1) = \Ex(Y(j)) = \Ex(Y Z_j) / \Ex(Z_j) \,,
+      \quad 1 \leq j \leq p \,.
+  \end{equation}
+  Hence, $\Ex[(Y - \theta_1 - \tp{\theta_2} Z) Z_j] = 0$ for all $1 \leq j \leq
+  p$, and thus,
+  \begin{equation}
+    \label{eq:2}
+    \Ex\bigl((Y - \theta_1- \tp{\theta_2} Z) Z \bigr) = 0  \,.
+  \end{equation}
+  By the law of total expectation formula,
+  \begin{equation}
+    \label{eq:3}
+    \Ex(Y) = \sum_{j=0}^p \Ex(Y(j)) \Pr(Z_j = 1) \,. 
+  \end{equation}
+  Hence, 
+  \begin{equation}
+    \label{eq:4}
+    \Ex(Y - \theta_1 - \tp{\theta_2} Z) = 0 \,. 
+  \end{equation}
+  By the definition of $\theta_3$, $\theta_{3,j} = \Ex(Z_j)$ for $1
+  \leq j \leq p$; hence
+  \begin{equation}
+    \label{eq:5}
+    \Ex(Z - \theta_{3}) = 0 \,. 
+  \end{equation}
+  Note that $\Ex(Z_0) = 1 - \sum_{j=1}^p \theta_{3,j}$.
+
+  In randomized trials, $(Z_0,Z)\independent X$, which implies that
+  $\Ex[(Z_j-\theta_{3,j})u(X)]=0$ for $1\leq j\leq p$, where
+  $u(X)\in\reals^k$ is a $k$-vector of functions of $X$. Hence,
+  \begin{equation}
+    \label{eq:6}
+    \Ex[(Z - \theta_{3})\otimes u(X)]  = 0 \,. 
+  \end{equation}
+To illustrate what $u(x)$ can be, suppose $x = (x_1, x_2) \in
+\reals^2$, then we can define $u(x) = x \in \reals^2$, or $u(x) =
+(x_1, x_2, x_1 x_2) \in \reals^3$, or $u(x) = (x_1, x_2, x_1^2, x_2^2,
+x_1 x_2) \in \reals^5$. 
+
+Let $T = (X, Z, Y) \in \reals^{p+q+1}$ denote a generic random
+variable distributed according to a distribution on
+$\reals^{p+q+1}$\footnote{Notice that we omit $Z_0$ from $T$ because
+  its value is implied by $Z$ through $Z_0=1-\sum_{j=1}^p
+  Z_j$.}. Therefore, Equations \eqref{eq:2} and \eqref{eq:4} to
+\eqref{eq:6} imply that the parameter of interest $\thetatrue$
+satisfies the following moment conditions:
+\begin{equation}
+  \label{eq:7}
+  \Ex(g(T, \thetatrue)) = 0 \,, 
+\end{equation}
+where $\thetatrue = (\thetatrue_1, \thetatrue_2, \thetatrue_3) \in
+\reals^{2p + 1}$ and $g(t, \theta)$ is defined as
+\begin{equation}
+  \label{eq:8}
+  g(t; \theta) = 
+  \begin{pmatrix}
+    y - \theta_1 - \tp{\theta_2} z \\
+    (y - \theta_1 - \tp{\theta_2} z) z \\
+    z - \theta_{3} \\
+    (z - \theta_3) \otimes u(x) \\
+  \end{pmatrix} \,, \quad 
+  t = (x, z, y) \in \reals^{p + q + 1} \,.
+\end{equation}
+The \ACE of the treatment $j$ is given by $\tautrue_j
+= \thetatrue_{2, j}$, for $1 \leq j \leq p$.
+
+The package offers a way to estimate $\thetatrue$ using the
+generalized method of moments (\GEL). Using the primal form of \GEL,
+the estimator of $\thetatrue$ is defined as:
+\begin{equation}
+  \label{eq:9}
+  \thetahat = \argmin_{\theta \in \reals^{2p+1}} \min_{p \in \spv^n}
+  \Bigl\{  \pdiv_\gamma(\vp, n^{-1} \vone)
+  : \sum_{i=1}^n p_i g(T_i; \theta) = 0 \Bigr\}  \,,
+\end{equation}
+where 
+\begin{equation*}
+  \spv^n = \Bigl\{ \vp = (p_i) \in \reals^n :  
+  \sum_{i=1}^{n} p_{i}=1 \,,  p_{i} \geq 0 \Bigr\} \,,
+\end{equation*}
+ and $\pdiv_\gamma(\vp, n^{-1} \vone)$ is the power divergence discrepancy
+function \citep{newey-smith04}:
+\begin{equation*}
+  \pdiv_\gamma(\vp, n^{-1}\vone) = \sum_{i=1}^n 
+  \frac{(np_i)^{\gamma + 1} - 1}{n \gamma(\gamma + 1)} \,.
+\end{equation*}
+In particular, $\gamma = -1$ corresponds to the empirical likelihood
+(\EL), $\gamma = 0$ corresponds to the exponential tilting (\ET),
+$\gamma = 1$ corresponds to the Euclidean empirical likelihood (\EEL)
+estimator also known as the continuously updated GMM estimator
+  (\CUE), and $\gamma = -1/2$ corresponds to the Hellinger distance
+(\HD) used by \citet{kitamura-otsu-evdokimov13}. \citet{newey-smith04}
+present the \GEL method in its dual form, which is the following saddle
+point problem:
+\begin{equation}
+  \label{eq:10}
+  \thetahat = \argmin_{\theta \in \reals^{2p+1}}
+  \max_{\lambda \in \reals^{1+p(2+k)}} \sum_{i=1}^n 
+  \rho_{\gamma}\bigl(\tp{\lambda} g(T_i;\theta)\bigr) \,,
+\end{equation}
+where
+\begin{equation*}
+  \rho_\gamma(v) = - \frac{(1+\gamma v)^{(\gamma+1)/\gamma}}{\gamma + 1} \,.
+\end{equation*}
+In particular $\rho_{-1}(v) = \log(1-v)$ for \EL, $\rho_{0}(v) =
+-\exp(v)$ for \ET, $\rho_1(v) = -1/2 - v -v^2/2$ for \EEL, and
+$\rho_{-1/2}(v) = -2/(1-v/2)$ for \HD. Using the dual form, the
+estimated probability weights from the primal problem are defined as:
+\begin{equation}
+  \label{eq:11}
+  \phat_i(\theta,\lambda) = \frac{
+    \rho_{\gamma}'(\tp{\lambda} g(T_i; \theta))}
+  {\sum_{j=1}^n \rho_{\gamma}'(\tp{\lambda}g(T_i;\theta))} \,, 
+\end{equation}
+where $\rho_{\gamma}'(v)$ is the first order derivative of
+$\rho_{\gamma}(v)$. 
+
+\subsection{Observational studies}
+\label{sec:obs}
+When the treatment (group) assignment is not random, we can still use
+the \GEL as a weighting method.  \GEL is used as a way to re-weight
+the probability of each observation so that our sample is as if it had
+been generated by a randomized experiment. The parameter of interest
+$\thetatrue$ satisfies the following moment conditions:
+\begin{equation}
+  \label{eq:12}
+  \Ex_0(g(T, \thetatrue)) = 0 \,, 
+\end{equation}
+where $\thetatrue$ is as in Section \ref{sec:rand}, and $g(t,
+\theta)$ is defined as
+\begin{equation}
+  \label{eq:13}
+  g(t; \theta) = 
+  \begin{pmatrix}
+    y - \theta_1 - \tp{\theta_2} z \\
+    (y - \theta_1 - \tp{\theta_2} z) z \\
+    z - \theta_{3} \\
+    (z - \theta_3) \otimes u(x) \\
+    u(x) - u_0
+  \end{pmatrix} \,, \quad 
+  t = (x, z, y) \in \reals^{p + q + 1} \,,
+\end{equation}
+where $u_0$ is the expected value of $u(X)$ for a target
+population. Note that while the first three moment conditions (under
+$\Ex_0$) identify the parameters, the fourth moment condition makes
+$Z$ ``almost independent'' of $X$ as $k \to \infty$.  The last
+condition is what differentiates randomized experiments from
+observational studies. It imposes moments of $X$ to match the ones
+from a given target population. The choice of $u_0$ is driven by the
+type of causal effect we are interested in. We will present the
+different options in the next section.
+
+\section{Estimating the causal effect}\label{sec:estim}
+
+The package is based on the ``gmm4'' package \citep{gmm4}. As for the
+methods included in the package, there are two ways to proceed. We can
+create a model object and use the \textit{modelFit} method to estimate
+it, or we can directly estimate a model using a general function. We
+first present the first approach because it helps better understand
+the structure of the package. 
+
+\subsection{An S4 class object for causal inference}\label{sec:causalobj}
+
+To illustrate the methods, we consider the experiment analyzed first
+by \cite{lalonde86} and used later by \cite{dehejia-wahba99,
+  dehejia-wahba02}. The objective of the original paper was to measure
+the effect of a training program on the real income. The dependent
+variable is the real income in 1978 and the covariates used for
+matching the treated group to the control are age, education, 1975
+real income and dummy variables for race, marital status, and academic
+achievement.
+
+First, we load the package and the dataset:
+
+<<>>=
+library(causalGel)
+data(nsw)
+## We express income in thousands for better stability
+nsw$re78 <- nsw$re78/1000
+nsw$re75 <- nsw$re75/1000
+@ 
+
+The model class, is ``causalGel'' which inherits directly from
+``functionGel'' class. The constructor is the causalModel()
+function. The arguments are:
+
+\begin{itemize}
+\item \textit{g}: A formula that defines the regression of the outome
+  on the treatment indicator. For our dataset, the variable ``treat''
+  is the indicator, and ``re78'' is the outcome. The formula is therefore:
+  
+<<>>=
+g <- re78~treat
+@   
+
+\item \textit{balm}: A formula or a data.frame representing
+  $u(X)$. For example, if we want to balance 1975 income, age,
+  education and race, we would use the following:
+  
+<<>>=
+balm <- ~age+ed+black+hisp+re75
+@   
+
+\item \textit{theta0}: An optional starting value to be passed to the
+  numerical algorithm.
+  
+\item \textit{momType}: This is the main argument to determine which
+  type of causal effect we want to estimate. The options are:
+  \begin{itemize}
+    \item ``ACE'': This one is for estimating the average causal
+      effect. The moment function $g(t;\theta)$ is defined by
+      Equation \eqref{eq:13}, and $\mu_0$ is defined as:
+      \[
+      \mu_0 = \frac{1}{n}\sum_{i=1}^n u(X_i)
+      \]
+    \item ``ACT'': This is for the causal effect on the treated. In
+      that case, the argument ``ACTmom'' determines which of the
+      treatment groups we are refering to. The moment function
+      $g(t;\theta)$ is defined by Equation \eqref{eq:13}, and $\mu_0$
+      is defined as:
+      \[
+      \mu_0 = \frac{1}{n_j}\sum_{i=1}^n Z_{ji}u(X_i)\,,
+      \]
+      where $n_j=\sum_{i=1}^n Z_{ji}$, and $j$ is the value of
+      ``ACTmom''.
+    \item ``ACC'': This is for the causal effect on the control. The moment function
+      $g(t;\theta)$ is defined by Equation \eqref{eq:13}, and $\mu_0$
+      is defined as:
+      \[
+      \mu_0 = \frac{1}{n_0}\sum_{i=1}^n Z_{0i}u(X_i)\,,
+      \]
+      where $n_0=\sum_{i=1}^n Z_{0i}$.
+    \item ``uncondBal'': This is used to estimate the average causal
+      effect in randomized trials. The moment function $g(t;\theta)$
+      is defined by Equation \eqref{eq:8}. In the case of
+      observational data, it is not recommended because the moments
+      are balanced, but represent estimates of the moments of an
+      undefined population.
+    \item ``fixedMom'': The causal effect of a target population for
+      which $\Ex(\mu(X)$ is known is estimated. The moment function
+      $g(t;\theta)$ is defined by Equation \eqref{eq:13}, and $\mu_0$
+      is set to ``popMom'', which is another argument of
+      causalModel() (see below).
+    \end{itemize}
+  \item \textit{popMom}: A $k\times 1$ vector, representing
+    $\Ex(\mu(X))$. If provided, \textit{momType} is automatically set
+    to ``popMom''.
+  \item \textit{gelType}: The type of GEL method. The options are
+    ``EL'' (the default), ``ET'', ``EEL'' and ``HD'', as defined
+    above. The exponentially tilted empirical likelihood (ETEL) and
+    exponentially tilted Hellinger distance (ETHD) are also
+    available. The last available method is ``REEL'' which is the
+    restricted \EEL. The solution is obtained by restricting the \EEL
+    implied probability, defined in Equation \eqref{eq:11}, to be
+    non-negative.
+ \item \textit{rhoFct}: An optional $\rho(v)$ function if the desired
+   GEL method is not available in the package (see the vignette of
+   gmm4 for more details).
+ \item \textit{data}: A data.frame with all the variables needed to
+   evaluate the formulas \textit{g} and \textit{balm}.
+  \end{itemize}
+
+The following are three different models:
+
+<<>>=
+ace <- causalModel(g, balm, nsw, momType="ACE", gelType="EL")
+act <- causalModel(g, balm, nsw, momType="ACT", gelType="EL")
+aceRT <- causalModel(g, balm, nsw, momType="uncondBal", gelType="EL")
+@ 
+
+The third one is the \ACE assuming randomized assignments. A print
+method for that class summarizes the model:
+
+<<>>=
+ace
+@ 
+
+The option ``printBalCov'' allows us to see the balancing covariates:
+
+<<>>=
+print(act, printBalCov=TRUE)
+@ 
+
+To add powers and interactions, we can follow the usual rules for
+formula. Here is an example:
+
+<<>>=
+balm2 <- ~age*ed+black+hisp+re75+I(re75^2)
+ace2 <- causalModel(g, balm2, nsw, momType="ACE", gelType="EL")
+print(ace2, printBalCov=TRUE)
+@ 
+
+\subsection{The \textit{modelFit} method and the ``causalGelfit'' object}\label{sec:causalfit}
+
+It simply calls the method for ``functionGel'', and creates a
+``causalGelfit'' class object. The simpliest way to use it is to only
+provide the model object. The \textit{print} allows to show the
+$\lambdahat$ and model. 
+
+<<>>=
+fit1 <- modelFit(ace)
+print(fit1, model=FALSE, lambda=TRUE)
+@ 
+
+The coefficients are labeled as ``control'' for $\theta_1$,
+``causalEffect'' for $\theta_2$, and ``probTreatment'' for
+$\theta_3$. The following are the existing methods for
+``causalGelfit'' objects. Since ``causalGelfit'' contains a ``gelfit''
+object, most methods are for \GEL fit objects. 
+
+\begin{itemize}
+  \item \textit{vcov}: It computes the covariance matrix of
+    $\thetahat$ and $\lambdahat$ in a list. The list contains other
+    information used by other methods. We don't often need to run the
+    method, but if needed, the covariance matrix of $\thetahat$ is
+
+<<>>=
+vcov(fit1)$vcov_par
+@     
+
+By default, the covariance matrix is robust to misspecification, which
+is what we should used in observational studies. For randomized
+trials, we can set the argument ``robToMiss'' to FALSE, because it is
+not needed.
+
+\item \textit{confint} The method computes a confidence interval. By
+  default, it is a Wald type of confidence:
+
+<<>>=
+confint(fit1)
+@   
+  
+It is also possible to get an interval based on the inversion of the
+likelihoo ratio. The empirical likelihood confidence is:
+
+<<>>=
+confint(fit1, 2, type="invLR")
+@ 
+
+Confidence regions are also possible using a pair of coefficients:
+
+<<>>=
+cr <- confint(fit1, 1:2, area=TRUE)
+cr
+@ 
+
+This is an object of class ``mconfint'' for which a \textit{plot}
+method exists:
+
+<<fig.height=4.5>>=
+plot(cr, col="lightblue", density=20)
+@ 
+
+\item \textit{summary}: The method creates a ``summaryGel'' with its
+  own \textit{print} method. It returns an output similar to the
+  summary method of ``lm'' objects.
+
+<<>>=
+summary(fit1)
+@   
+
+\end{itemize}
+
+\subsection{Other useful methods}\label{sec:other}
+
+Instead of creating a new model with different balancing moments
+$\mu(X)$, it is possible to use the method ``[`` to subset the
+  existing $\mu(X)$. We can think of a model object as being a two
+  dimensional array, the first dimension being the balancing moments,
+  and the second being the observations. Consider the following 
+  
+<<>>=
+ace <- causalModel(re78~treat, ~(age+black+ed)*(age+black+ed) + I(age^2) + I(ed^2),
+                   data=nsw)
+print(ace, TRUE)
+@   
+
+Suppose we want to removed the squared components:
+
+<<>>=
+print(ace[-c(3,4)], TRUE)
+@ 
+
+Or remove interactions
+
+<<>>=
+print(ace[1:5], TRUE)
+@ 
+
+We can use a subset by add a second argument:
+
+<<>>=
+print(ace[,1:100], TRUE)
+print(ace[1:3,nsw$re75>0], TRUE)
+@ 
+
+An easy way to re-estimate a new model specified by ``[``, is to use
+  the method for ``causalGelfit'' objects:
+  
+<<>>=
+fit <- modelFit(ace)
+fit2 <- fit[,nsw$age<48]
+fit3 <- fit[1:3,1:500]
+@   
+
+<<echo=FALSE, results='asis'>>=
+texreg(list(fit,fit2,fit3), digits=4, label="t1")
+@ 
+
+The results are shown in Table \ref{t1}, which is constructed using
+the ``texreg'' package of \cite{leifeld13}. The code for the
+\textit{extract} method is in the appendix.
+
+Details about the convergence are obtained using the
+\textit{checkConv} method:
+
+<<>>=
+checkConv(fit)
+@ 
 
 \bibliography{causal}
+
+\appendix
+\section{Some extra codes}
+The following \textit{extract} is used with the ``texreg'' package of
+\cite{leifeld13} to produce nice latex tables.
+
+<<extract, echo=TRUE, eval=FALSE>>=
+@ 
+
 
 \end{document} 
 

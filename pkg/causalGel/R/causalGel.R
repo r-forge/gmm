@@ -67,4 +67,41 @@ causalModel <- function(g, balm, data,theta0=NULL,
     new("causalGel", mod)
 }
 
+causalGEL <- function(g, balm, data, theta0=NULL,
+                   momType=c("ACE","ACT","ACC", "uncondBal","fixedMom"),
+                   popMom = NULL, rhoFct=NULL,ACTmom=1L, 
+                   gelType = c("EL", "ET", "EEL", "ETEL", "HD", "ETHD","REEL"),
+                   initTheta = c("gmm","theta0"), getVcov=FALSE,
+                   lambda0=NULL, 
+                   lamSlv=NULL, coefSlv= c("optim","nlminb","constrOptim"),
+                   lControl=list(), tControl=list())
+{
+    Call <- try(match.call(call=sys.call(sys.parent())), silent=TRUE)
+    if (class(Call)=="try-error")
+        Call <- NULL              
+    momType <- match.arg(momType)
+    initTheta <- match.arg(initTheta)
+    coefSlv <- match.arg(coefSlv)
+    gelType <- match.arg(gelType)
+    if (initTheta=="theta0" & is.null(theta0))
+        stop("theta0 is required when initTheta='theta0'")
+
+    model <- causalModel(g, balm, data, theta0, momType, popMom, rhoFct, ACTmom,
+                       gelType)
+    
+    if (initTheta == "theta0")
+    {
+        initTheta <- "modelTheta0"
+        names(theta0) = model@parNames
+    } else {
+        theta0 <- NULL
+    }
+    fit <- modelFit(object=model, initTheta=initTheta, theta0=theta0,
+                    lambda0=lambda0, vcov=getVcov, coefSlv=coefSlv,
+                    lamSlv=lamSlv, tControl=tControl, lControl=lControl)
+    fit@call <- Call
+    fit    
+}
+
+
 

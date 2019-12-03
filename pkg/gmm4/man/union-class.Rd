@@ -1,6 +1,7 @@
 \name{union-class}
 \docType{class}
 \alias{numericORNULL-class}
+\alias{numericORlogical-class}
 \alias{callORNULL-class}
 \alias{functionORNULL-class}
 \alias{numericORcharacter-class}
