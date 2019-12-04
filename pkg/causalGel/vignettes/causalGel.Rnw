@@ -127,6 +127,7 @@
 \date{\today}
 
 <<extract, message=FALSE, warning=FALSE, echo=FALSE>>=
+library(causalGel)    
 library(texreg)
 setMethod("extract", "causalGelfit", 
           function(model, includeSpecTest=FALSE, 
@@ -674,6 +675,19 @@ Details about the convergence are obtained using the
 <<>>=
 checkConv(fit)
 @ 
+
+It compares sample moments of $\mu(X)$ for each group, using the
+estimated implied probabilities. We can then see if the balancing was
+achieved. As an example, the first column is $[\sum_{i=1}^n
+  \phat_i(1-Z_i)\mu(X_i)]/[\sum_{i=1}^n \phat_i(1-Z_i)]$, and the
+second column is $[\sum_{i=1}^n \phat_iZ_i\mu(X_i)]/[\sum_{i=1}^n
+  \phat_iZ_i]$, which are respectively estimates of $\Ex(\mu(X)|Z=0)$
+and $\Ex(\mu(X)|Z=1)$. We can see that the moments are well balanced,
+at least up to six decimals.
+
+\section{The aceGEL function}
+
+
 
 \bibliography{causal}
 
