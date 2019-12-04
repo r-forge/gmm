@@ -1,6 +1,6 @@
 Package: gmm
-Version: 1.6-3
-Date: 2019-05-15
+Version: 1.6-4
+Date: 2019-12-04
 Title: Generalized Method of Moments and Generalized Empirical
         Likelihood
 Author: Pierre Chausse <pchausse@uwaterloo.ca>
@@ -14,6 +14,7 @@ Description: It is a complete suite to estimate models based on moment
         Kitamura 1997; <doi:10.1214/aos/1069362388>, Newey and Smith 2004; <doi:10.1111/j.1468-0262.2004.00482.x>,
 	and Anatolyev 2005 <doi:10.1111/j.1468-0262.2005.00601.x>).
 Depends: R (>= 2.10.0), sandwich
+NeedsCompilation: yes
 Suggests: mvtnorm, car, stabledist, MASS, timeDate, timeSeries
 Imports: stats, methods, grDevices, graphics
 License: GPL (>= 2) 

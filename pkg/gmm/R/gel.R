@@ -198,7 +198,7 @@
                 if (i > maxit)
                     return(list(lambda=rep(0,ncol(gt)), obj=0, pt=rep(1/n,n),
                                 convergence=list(convergence=1)))
-                if (class(res) == "try-error")                    
+                if (any(class(res) == "try-error"))
                     return(list(lambda=rep(0,ncol(gt)), obj=0, pt=rep(1/n,n),
                                 convergence=list(convergence=2)))
                 pt[!w] <- getpt(gt2, res$lambda)
@@ -226,7 +226,7 @@
                         lam=double(q),pt=double(n),
                         obj=double(1)
                             ), silent=TRUE)
-        if (class(res) == "try-error")
+        if (any(class(res) == "try-error"))
             return(list(lambda=rep(0,q), obj=0, pt=rep(1/n,n),
                         convergence=list(convergence=3)))
         list(lambda=res$lam, obj=res$obj, pt=res$pt,
@@ -351,7 +351,7 @@ smoothG <- function (x, bw = bwAndrews, prewhite = 1, ar.method = "ols",
                         w <- kernel(1)
                     }
             } else {
-                if (class(w) != "tskernel")                   
+                if (class(w)[1] != "tskernel")                   
                     stop("Provided weights must be a numeric vector or an object of class 'tskernel'")
             }
         if (length(w$coef)>1)
@@ -456,7 +456,7 @@ evalGel <- function(g, x, tet0, gradv = NULL, smooth = FALSE,
                                             tol_obj = P$tol_obj, k = P$k1/P$k2,
                                             control = P$Lambdacontrol, 
                                             method = P$optlam), silent = TRUE)
-                        if(class(lamb) == "try-error")
+                        if(any(class(lamb) == "try-error"))
                             lamb <- getLamb(gt, l0, type = P$type, tol_lam = P$tol_lam,
                                             maxiterlam = P$maxiterlam, 
                                             tol_obj = P$tol_obj, k = P$k1/P$k2,
@@ -471,7 +471,7 @@ evalGel <- function(g, x, tet0, gradv = NULL, smooth = FALSE,
                 lamb <- try(.getCgelLam(gt, l0, type = P$type, method = "nlminb",
                                         control=P$Lambdacontrol, k = P$k1/P$k2,
                                         alpha = P$CGEL),silent=TRUE)
-                if (class(lamb) == "try-error")
+                if (any(class(lamb) == "try-error"))
                     lamb <- try(.getCgelLam(gt, l0, type = P$type,
                                             method = "constrOptim",
                                             control=P$Lambdacontrol, 
