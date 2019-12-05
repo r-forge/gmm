@@ -32,9 +32,9 @@ gel4 <- function (g, x=NULL, theta0=NULL,lambda0=NULL, getVcov=FALSE,
         model <- restModel(model, cstLHS, cstRHS)
         spec <- modelDims(model)
         if (!is.null(theta0))
-            theta0 <- theta0[(names(theta0) %in% spec@parNames)]
+            theta0 <- theta0[(names(theta0) %in% spec$parNames)]
     }
-    fit <- modelFit(object=model, initTheta=initTheta, theta0=theta0,
+    fit <- modelFit(model=model, initTheta=initTheta, theta0=theta0,
                     lambda0=lambda0, vcov=getVcov, coefSlv=coefSlv,
                     lamSlv=lamSlv, tControl=tControl, lControl=lControl)
     fit@call <- Call

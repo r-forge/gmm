@@ -495,11 +495,11 @@ setMethod("restModel", signature("nonlinearGmm"),
                   } else {
                       if (!is.list(R))
                           {
-                              if(class(R) != "formula")
+                              if(!inherits(R,"formula"))
                                   stop("R must be a formula or a list of formulas")
                               R <- list(R)
                           } else {
-                              chk <- sapply(R, function(r) class(r)=="formula")
+                              chk <- sapply(R, function(r) inherits(r,"formula"))
                               if (!all(chk))
                                   stop("R must be a formula, a list of formulas or a vector of characters")
                           }
@@ -525,11 +525,11 @@ setMethod("restModel", signature("functionGmm"),
                   } else {
                       if (!is.list(R))
                           {
-                              if(class(R) != "formula")
+                              if(!inherits(R,"formula"))
                                   stop("R must be a formula or a list of formulas")
                               R <- list(R)
                           } else {
-                              chk <- sapply(R, function(r) class(r)=="formula")
+                              chk <- sapply(R, function(r) inherits(r,"formula"))
                               if (!all(chk))
                                   stop("R must be a formula, a list of formulas or a vector of characters")
                           }
@@ -555,11 +555,11 @@ setMethod("restModel", signature("formulaGmm"),
                   } else {
                       if (!is.list(R))
                           {
-                              if(class(R) != "formula")
+                              if(!inherits(R,"formula"))
                                   stop("R must be a formula or a list of formulas")
                               R <- list(R)
                           } else {
-                              chk <- sapply(R, function(r) class(r)=="formula")
+                              chk <- sapply(R, function(r) inherits(r,"formula"))
                               if (!all(chk))
                                   stop("R must be a formula, a list of formulas or a vector of characters")
                           }
@@ -698,22 +698,22 @@ setMethod("[", c("rfunctionGmm", "numeric", "missing"),
 ## gmmfit
 
 setMethod("modelFit", signature("rlinearGmm"), valueClass="gmmfit", 
-          definition = function(object, type=c("twostep", "iter","cue", "onestep"),
+          definition = function(model, type=c("twostep", "iter","cue", "onestep"),
               itertol=1e-7, initW=c("ident", "tsls"), weights="optimal", 
               itermaxit=100, efficientWeights=FALSE, ...) {
               Call <- try(match.call(call=sys.call(sys.parent())), silent=TRUE)
-              if (class(Call)=="try-error")
+              if (inherits(Call,"try-error"))              
                   Call <- NULL
-              cst <- object@cstSpec
+              cst <- model@cstSpec
               if (cst$k==0)
                   {
-                      theta <- coef(object, numeric())
-                      object <- as(object, "linearGmm")                      
-                      if (class(weights)=="gmmWeights")
+                      theta <- coef(model, numeric())
+                      model <- as(model, "linearGmm")                      
+                      if (inherits(weights,"gmmWeights"))
                           wObj <- weights
                       else
-                          wObj <- evalWeights(object, theta=theta, w=weights)
-                      obj <- evalModel(object, theta, wObj)
+                          wObj <- evalWeights(model, theta=theta, w=weights)
+                      obj <- evalModel(model, theta, wObj)
                   } else {
                       obj <- callNextMethod()
                   }
@@ -722,22 +722,22 @@ setMethod("modelFit", signature("rlinearGmm"), valueClass="gmmfit",
           })
 
 setMethod("modelFit", signature("rnonlinearGmm"), valueClass="gmmfit", 
-          definition = function(object, type=c("twostep", "iter","cue", "onestep"),
+          definition = function(model, type=c("twostep", "iter","cue", "onestep"),
               itertol=1e-7, initW=c("ident", "tsls"), weights="optimal", 
               itermaxit=100, efficientWeights=FALSE, theta0=NULL, ...) {
               Call <- try(match.call(call=sys.call(sys.parent())), silent=TRUE)
-              if (class(Call)=="try-error")
+              if (inherits(Call,"try-error"))
                   Call <- NULL
-              cst <- object@cstSpec
+              cst <- model@cstSpec
               if (cst$k==0)
                   {
-                      theta <- coef(object, numeric())
-                      object <- as(object, "nonlinearGmm")                      
-                      if (class(weights)=="gmmWeights")
+                      theta <- coef(model, numeric())
+                      model <- as(model, "nonlinearGmm")                      
+                      if (inherits(weights,"gmmWeights"))
                           wObj <- weights
                       else
-                          wObj <- evalWeights(object, theta=theta, w=weights)
-                      obj <- evalModel(object, theta, wObj, Call=FALSE)
+                          wObj <- evalWeights(model, theta=theta, w=weights)
+                      obj <- evalModel(model, theta, wObj, Call=FALSE)
                   } else {
                       obj <- callNextMethod()
                   }
@@ -746,22 +746,22 @@ setMethod("modelFit", signature("rnonlinearGmm"), valueClass="gmmfit",
           })
 
 setMethod("modelFit", signature("rformulaGmm"), valueClass="gmmfit", 
-          definition = function(object, type=c("twostep", "iter","cue", "onestep"),
+          definition = function(model, type=c("twostep", "iter","cue", "onestep"),
               itertol=1e-7, initW=c("ident", "tsls"), weights="optimal", 
               itermaxit=100, efficientWeights=FALSE, theta0=NULL, ...) {
               Call <- try(match.call(call=sys.call(sys.parent())), silent=TRUE)
-              if (class(Call)=="try-error")
+              if (inherits(Call,"try-error"))              
                   Call <- NULL
-              cst <- object@cstSpec
+              cst <- model@cstSpec
               if (cst$k==0)
                   {
-                      theta <- coef(object, numeric())
-                      object <- as(object, "formulaGmm")                      
-                      if (class(weights)=="gmmWeights")
+                      theta <- coef(model, numeric())
+                      model <- as(model, "formulaGmm")                      
+                      if (inherits(weights,"gmmWeights"))
                           wObj <- weights
                       else
-                          wObj <- evalWeights(object, theta=theta, w=weights)
-                      obj <- evalModel(object, theta, wObj)
+                          wObj <- evalWeights(model, theta=theta, w=weights)
+                      obj <- evalModel(model, theta, wObj)
                   } else {
                       obj <- callNextMethod()
                   }
@@ -789,7 +789,7 @@ setMethod("gmmToGel", signature("rgmmModels"),
               obj <- gmmToGel(as(object, "gmmModels"), gelType, rhoFct)
               cls <- strsplit(class(object), "Gmm")[[1]][1]
               cls <- paste(cls, "Gel", sep="")
-              if (grepl("linear", class(object)))
+              if (grepl("rlinear", class(object)))
                   new("rlinearGel", cstLHS=object@cstLHS, cstRHS=object@cstRHS,
                       cstSpec=object@cstSpec, obj)
               else

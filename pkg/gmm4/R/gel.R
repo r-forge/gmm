@@ -110,7 +110,7 @@ REEL_lam <- function(gmat, tol=NULL, maxiter=50, k=1)
                             lam=double(q),pt=double(n),
                             obj=double(1)
                             ), silent=TRUE)
-        if (class(res) == "try-error")
+        if (inherits(res,"try-error"))
             return(list(lambda=rep(0,q), obj=0, pt=rep(1/n,n),
                         convergence=list(convergence=3)))
         list(lambda=res$lam, obj=res$obj, pt=res$pt,

@@ -13,7 +13,7 @@ It plots the confidence region.
 
 \S4method{plot}{mconfint}(x, y, main=NULL, xlab=NULL, ylab=NULL, 
                           pch=21, bg=1, Pcol=1, ylim=NULL, xlim=NULL,
-                          add=FALSE, \dots)
+                          add=FALSE, addEstimates=TRUE, \dots)
 }
 
 \arguments{
@@ -39,6 +39,9 @@ It plots the confidence region.
   \item{ylim}{Optional range for the y-axis.}
 
   \item{add}{If TRUE, the region is added to an existing plot.}
+
+  \item{addEstimates}{Should we add the point estimate to the confidence
+  region? This option is only used when add is FALSE.}
 
   \item{\dots}{Arguments to pass to \code{\link{polygon}}}
   }

@@ -16,8 +16,10 @@ but it is recommended to use the \code{"confit"} method.
     \item{\code{interval}:}{Object of class \code{"matrix"} ~~ }
     \item{\code{type}:}{Object of class \code{"character"} ~~ }
     \item{\code{level}:}{Object of class \code{"numeric"} ~~ }
+    \item{\code{theta}:}{Object of class \code{"numeric"} ~~ }
   }
 }
+
 \section{Methods}{
   \describe{
     \item{print}{\code{signature(x = "confint")}: ... }

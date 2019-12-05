@@ -10,15 +10,15 @@ Method to simply evaluate a model at a fixed coefficient vector. It
 creates a \code{"gmmfit"} or \code{"gelfit"} object using that fixed vector. 
 }
 \usage{
-\S4method{evalModel}{gmmModels}(object, theta, wObj=NULL, \dots)
-\S4method{evalModel}{gelModels}(object, theta, lambda=NULL,
+\S4method{evalModel}{gmmModels}(model, theta, wObj=NULL, \dots)
+\S4method{evalModel}{gelModels}(model, theta, lambda=NULL,
           gelType=NULL, rhoFct=NULL, lamSlv=NULL, lControl=list(),
           \dots)
 
 
 }
 \arguments{
-  \item{object}{An object of class \code{"gmmModels"}.}
+  \item{model}{An object of class \code{"gmmModels"}.}
   \item{theta}{A vector of coefficients at which the model is estimated}
   \item{wObj}{An object of class \code{"gmmWeights"}. If not provided,
     the optimal weights based on the specification of the model
@@ -41,7 +41,7 @@ creates a \code{"gmmfit"} or \code{"gelfit"} object using that fixed vector.
 \section{Methods}{
 \describe{
 
-\item{\code{signature(object = "gmmModels")}}{
+\item{\code{signature(model = "gmmModels")}}{
 %%  ~~describe this method here~~
 }
 }}

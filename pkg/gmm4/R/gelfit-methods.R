@@ -42,7 +42,7 @@
         r <- try(uniroot(f, c(0,fact), pti=p[i,], obj=object, which=which, type=type,
                          test0=test0, level=level), silent=TRUE)
         b <- coef(object)[which]
-        if (class(r) == "try-error")
+        if (inherits(r, "try-error"))
             c(NA,NA)
         else
             b*(1-r$root) + p[i,]*r$root        
@@ -70,22 +70,21 @@
     coef <- coef(object)[which]
     int1 <- c(coef, coef + fact*sdcoef)
     int2 <- c(coef - fact*sdcoef, coef)
-    fct <- function(coef, which, type, fit, level, test0, corr=NULL, rang)
+    fct <- function(coef, which, type, fit, level, test0, corr=NULL)
     {
         spec <- modelDims(fit@model)
         ncoef <- spec$parNames[which]
         R <- paste(ncoef, "=", coef)
-        if (fit@call[[1]] == "gel4")           
+        if (fit@call[[1]] != "modelFit")           
         {
-            fit2 <- suppressWarnings(update(fit, cstLHS=R,
-                                            theta0=coef(fit)[-which]))
+            fit2 <- suppressWarnings(update(fit, cstLHS=R))
         } else {
             model <- restModel(fit@model, R)
             fit2 <- suppressWarnings(update(fit, newModel=model,
                                             theta0=coef(fit)[-which]))
         }
         test <- specTest(fit2, type=type, ...)@test[1] - test0
-        if (is.null(corr))
+         if (is.null(corr))
             level - pchisq(test, 1)
         else
             level - pchisq(test/corr, 1)
@@ -100,9 +99,9 @@
     {
         test <- c(NA,NA)
         mess <- "Could not compute the confidence interval because: \n"
-        if (class(res1) == "try-error")
+        if (inherits(res1,"try-error"))
             mess <- paste(mess, "(1) ", res1[1], "\n", sep="")
-        if (class(res2) == "try-error")
+        if (inherits(res2,"try-error"))
             mess <- paste(mess, "(2) ", res2[1], "\n", sep="")
         warning(mess)        
     } else {
@@ -315,7 +314,7 @@ setMethod("confint", "gelfit",
                   dimnames(ans) <- list(nlam,
                                         c((1 - level)/2, 0.5 + level/2))
                   return(new("confint", interval=ans,
-                             type=ntest, level=level))                  
+                             type=ntest, level=level, theta=lam[parm]))
               }
               if (type == "Wald")
               {
@@ -346,9 +345,9 @@ setMethod("confint", "gelfit",
                   }
               }
               if (!area)
-                  new("confint", interval=ans, type=ntest, level=level)
+                  new("confint", interval=ans, type=ntest, level=level, theta=theta[parm])
               else
-                  new("mconfint", areaPoints=ans, type=ntest, level=level)
+                  new("mconfint", areaPoints=ans, type=ntest, level=level, theta=theta[parm])
           })
 
 setMethod("confint", "numeric",
@@ -357,7 +356,7 @@ setMethod("confint", "numeric",
                     fact = 3, vcov="iid", ...) 
               {
                   Call <- try(match.call(call=sys.call(sys.parent())), silent=TRUE)
-                  if (class(Call)=="try-error")
+                  if (inherits(Call,"try-error"))
                       Call <- NULL                  
                   type <- match.arg(type)
                   object <- as.data.frame(object)
@@ -445,7 +444,7 @@ setGeneric("plot")
 
 setMethod("plot", "mconfint", function(x, y, main=NULL, xlab=NULL, ylab=NULL, 
                                        pch=21, bg=1, Pcol=1, ylim=NULL, xlim=NULL,
-                                       add=FALSE, ...)
+                                       add=FALSE, addEstimates=TRUE, ...)
 {
     v <- colnames(x@areaPoints)
     if (!add)
@@ -464,6 +463,11 @@ setMethod("plot", "mconfint", function(x, y, main=NULL, xlab=NULL, ylab=NULL,
             plot(x@areaPoints, xlab=xlab, ylab=ylab, main=main, pch=pch, bg=bg,
                  ylim=ylim, xlim=xlim, col=Pcol)
             grid()
+            if (addEstimates)
+                {
+                    points(x@theta[1], x@theta[2], pch=20)
+                    text(x@theta[1], x@theta[2], expression(hat(theta)), pos=3)
+                }
         } else {
             points(x@areaPoints[,1],x@areaPoints[,2],pch=pch, bg=bg, col=Pcol)
         }
@@ -551,7 +555,6 @@ setMethod("show", "summaryGel", function(object) print(object))
 
 ## update    
 
-
 setMethod("update", "gelfit",
           function(object, newModel=NULL, ..., evaluate=TRUE)
           {
@@ -561,7 +564,7 @@ setMethod("update", "gelfit",
               ev <- new.env(parent.frame())
               theta0 <- arg$theta0
               
-              if (object@call[[1]] != "gel4")
+              if (object@call[[1]] == "modelFit")
               {
                   model <- if(is.null(newModel))
                                object@model
@@ -569,9 +572,11 @@ setMethod("update", "gelfit",
                                newModel
                   model <- update(model, ...)
                   ev[["model"]] <- model
-                  call[["object"]] <- quote(model)
+                  call[["model"]] <- quote(model)
                   arg <- arg[which(is.na(match(names(arg),
                                                c("rhoFct", slotNames(model)))))]
+              } else {
+                  return(stats::update(object, ..., evaluate=evaluate))
               }
               spec <- modelDims(model)
               if (!is.null(call[["theta0"]]))
@@ -590,7 +595,45 @@ setMethod("update", "gelfit",
               else
                   call
           })
-              
 
+
+setMethod("update", "gelfit",
+          function(object, newModel=NULL, ..., evaluate=TRUE)
+          {
+              if (is.null(call <- getCall(object)))
+                  stop("No call argument")
+              if (call[[1]] != "modelFit")
+                  return(stats::update(object, ..., evaluate=evaluate))
+              if (!is.null(newModel))
+                  return(stats::update(object, model=newModel, ..., evaluate=evaluate))
+              arg <- list(...)
+              ev <- new.env(parent.frame())
+              theta0 <- arg$theta0
+              model <- if(is.null(newModel))
+                           object@model
+                       else
+                           newModel
+              model <- update(model, ...)
+              ev[["model"]] <- model
+              call[["model"]] <- quote(model)
+              arg <- arg[which(is.na(match(names(arg),
+                                           c("rhoFct", slotNames(model)))))]
+              spec <- modelDims(model)
+              if (!is.null(call[["theta0"]]))
+              {
+                  call[["theta0"]] <- if (is.null(theta0))
+                                          spec$theta0
+                                      else
+                                          theta0
+              } else if (!is.null(theta0)) {
+                  call[["theta0"]] <- theta0
+              }
+              if (length(arg) > 0) 
+                  for (n in names(arg)) call[[n]] <- arg[[n]]
+              if (evaluate)
+                  eval(call, ev)
+              else
+                  call
+          })
 
    

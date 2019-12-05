@@ -10,13 +10,13 @@ Method to estimate system of equations by Three-Stage least squares
 (3SLS) or, as a special case, by Seemingly Unrelatd Regressions (SUR).
 }
 \usage{
-\S4method{ThreeSLS}{slinearGmm}(object, coefOnly=FALSE, qrZ=NULL,
+\S4method{ThreeSLS}{slinearGmm}(model, coefOnly=FALSE, qrZ=NULL,
 Sigma=NULL)
-\S4method{ThreeSLS}{rslinearGmm}(object, coefOnly=FALSE, qrZ=NULL,
+\S4method{ThreeSLS}{rslinearGmm}(model, coefOnly=FALSE, qrZ=NULL,
 Sigma=NULL)
 }
 \arguments{
-  \item{object}{An object of class \code{"slinearGmm"} in which
+  \item{model}{An object of class \code{"slinearGmm"} in which
     instruments are the same in each equation and the error terms are
     homoscedastic.}
   \item{coefOnly}{Should the method return the only the coefficients or
@@ -33,12 +33,12 @@ Sigma=NULL)
 \section{Methods}{
 \describe{
 
-\item{\code{signature(object = "slinearGmm")}}{
+\item{\code{signature(model = "slinearGmm")}}{
 The method is specifically for system of linear models with the same
 instruments and homoscedastic errors. It becomes SUR as a special case
 when the instruments are the union of all regressors.
 }
-\item{\code{signature(object = "rslinearGmm")}}{
+\item{\code{signature(model = "rslinearGmm")}}{
 This method is for restricted models that does not impose cross-equation
 restrictions. With such restrictions 3SLS is not possible as we can
 no longer write the model as a system of equations.

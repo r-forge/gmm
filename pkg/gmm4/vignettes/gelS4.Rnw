@@ -858,6 +858,9 @@ We can then compute the EL confidence interval:
 confint(muFit, type="invLR")
 @ 
 
+We will see below that we can construct GEL intervals in one step,
+using the \textit{confint} method for ``numeric'' vectors.
+
 \item \textit{update}: The method is used to re-estimate a model with
   different specifications, keeping all the others equal. Suppose we
   start with the estimation using the \cite{wu05} algorithm:
@@ -1037,18 +1040,19 @@ print(fit, model=FALSE)
 \section{GEL confidence intervals for the mean}
 
 The method \textit{confint} can also be used to construct confidence
-intervals for the mean, ot confidence region for two means. The first
+intervals for the mean, or confidence region for two means. The first
 method is for ``numeric'' objects:
 
 <<>>=
 x2 <- simData$x2
 confint(x2, gelType="EL")
+confint(x2, gelType="EL", type="invLR")
 @
 
 Which can also be done using the method for ``data.frame'':
 
-<<>>=
-confint(simData, "x2", gelType="EL", npoints=20)
+<<eval=FALSE>>=
+confint(simData, "x2", gelType="EL")
 @ 
 
 The arguments ``level'', ``fact'' and ``type'' are as for the method

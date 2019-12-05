@@ -530,6 +530,10 @@ to the default ones.
 update(mod1, vcov="HAC")
 @ 
 
+For more flexibility, \textit{update} offers more options when the
+fitted model comes from the gmm4() function. See Section
+\ref{sec:gmmmodels-gmm4} below for more details.
+
 \end{itemize}
 
 Other methods will be presented below as they require to define other
@@ -955,7 +959,11 @@ For the iterative GMM we proceed as follows:
   \item Get $\hat{\theta}_1\equiv \hat{\theta}(W_0)$ 
   \item Compute $W_1=[\hat{V}(\hat{\theta}_1)]^{-1}$.
   \item Get $\hat{\theta}_2 \equiv \hat{\theta}(W_1)$.
-  \item If $\|\hat{\theta}_1-\hat{\theta}_2\|/(1+\|\hat{\theta}_1\|)<itertol$, where $itertol$ is a user defined tolerance level, stop. Otherwise, set $\hat{\theta}_1=\hat{\theta}_2$ and go back to 3. By default, $itertol=10^{-7}$. 
+  \item If
+    $\|\hat{\theta}_1-\hat{\theta}_2\|/(1+\|\hat{\theta}_1\|)<itertol$,
+    where $itertol$ is a user defined tolerance level,
+    stop. Otherwise, set $\hat{\theta}_1=\hat{\theta}_2$ and go back
+    to 3. By default, $itertol=10^{-7}$.
 \end{enumerate}
 CUE is a one step efficient GMM method in which
 $W=\hat{V}(\theta)$. The solution is obtained by minimizing
@@ -1101,7 +1109,10 @@ print(modelFit(mod4[1:2]), model=FALSE)
     \item Efficient and over-identified GMM: $(G'\hat{V}^{-1}G)^{-1}/n$
     \item Just-identified GMM: $G^{-1}\hat{V}G^{-1'}/n$  
     \item Any other sandwich estimator: $(G'WG)^{-1}G'W\hat{V}WG(G'WG)^{-1}/n$.  
-    \item The argument ``breadonly'' is set to TRUE: $(G'WG)^{-1}/n$. For efficient GMM, it is asymptotically equivalent to $(G'\hat{V}^{-1}G)^{-1}/n$. It is particularly useful for efficient and fixed weighting matrices.        
+    \item The argument ``breadonly'' is set to TRUE:
+      $(G'WG)^{-1}/n$. For efficient GMM, it is asymptotically
+      equivalent to $(G'\hat{V}^{-1}G)^{-1}/n$. It is particularly
+      useful for efficient and fixed weighting matrices.
     \end{itemize}
   The method is flexible enough that you may hand up with a non-valid
   covariance matrix if not careful. For example, setting ``sandwich''
@@ -1306,6 +1317,26 @@ would be used.
 confint(res1, level=0.99)
 @   
   
+For confidence region, we have to select two coefficients and add the
+option ``area=TRUE''
+
+<<>>=
+mod <- gmmModel(y~x1+x2+z1, ~x1+z1+z2+z3, data=simData, vcov="iid")
+res2 <- modelFit(mod)
+ci <- confint(res2, 2:3, area=TRUE)
+ci
+@ 
+
+It creates an object of class ``mconfint'', and its \textit{plot}
+produces the confidence region:
+
+\begin{center}
+\begin{minipage}{.75\textwidth}
+<<fig.height=5>>=
+plot(ci, col="lightblue", density=20, Pcol=2, bg=2)
+@   
+  \end{minipage}
+\end{center}
 
 \item \textit{update} The method is used to re-fit a model with
   different specifications. It is also possible to modify the
@@ -1412,6 +1443,21 @@ res3 <- gmm4(y~theta0+exp(theta1*x1+theta2*x2), ~x2+z1+z2+z3+z4, vcov="iid",
 res3
 @ 
 
+The \textit{update} method, when the model is fitted using gmm4() or
+\textit{tsls}, allows any of the arguments to be modified. In fact, it
+simply calls the \textit{update} method of the ``stats'' package. For
+example, we can change the dataset:
+
+<<>>=
+update(res3, data=simData[1:45,])
+@ 
+
+To change the instruments, or impose a retriction on the coefficient,
+it is as simple as:
+
+<<>>=
+update(res3, x = ~x2+z1+z2+z3, cstLHS="theta1=theta2")
+@ 
 
 \subsection{Textbooks Applications} \label{sec:gmmmodels-app}
 

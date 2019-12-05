@@ -42,7 +42,7 @@
                             {
                                 fn <- all.vars(option$cluster[[length(option$cluster)]])
                                 option$cluster <- try(data[fn], silent=TRUE)
-                                if (class(option$cluster) == "try-error")
+                                if (inherits(option$cluster,"try-error"))
                                     stop("variables in the cluster formula are not in data")
                             }
                         option$cluster <- as.data.frame(option$cluster)
@@ -74,7 +74,7 @@
                 if (length(fn)>1)
                     stop("weights must be a single variable")
                 opt$weights <- try(c(data[[fn]]), silent=TRUE)
-                if (class(opt$weights) == "try-error")
+                if (inherits(opt$weights,"try-error"))
                     stop("variable in the weights formula is not in data")
             }
         opt

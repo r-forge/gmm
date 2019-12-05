@@ -1,6 +1,6 @@
 Package: gmm4
-Version: 0.1-0
-Date: 2019-11-15
+Version: 0.2-0
+Date: 2019-12-05
 Title: S4 Generalized Method of Moments
 Author: Pierre Chausse <pchausse@uwaterloo.ca>
 Maintainer: Pierre Chausse <pchausse@uwaterloo.ca>

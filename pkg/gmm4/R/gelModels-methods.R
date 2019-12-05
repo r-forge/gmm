@@ -160,60 +160,60 @@ setMethod("solveGel", signature("gelModels"),
 
 #########################  modelFit  #########################
 setMethod("modelFit", signature("linearGel"), valueClass="gelfit", 
-          definition = function(object, gelType=NULL, rhoFct=NULL,
+          definition = function(model, gelType=NULL, rhoFct=NULL,
               initTheta=c("gmm", "modelTheta0"), theta0=NULL,
               lambda0=NULL, vcov=FALSE, ...)
           {
               Call <- try(match.call(call=sys.call(sys.parent())), silent=TRUE)
-              if (class(Call)=="try-error")
+              if (inherits(Call,"try-error"))
                   Call <- NULL
               met <- getMethod("modelFit","gelModels")
-              obj <- met(object, gelType, rhoFct, initTheta, theta0,
+              obj <- met(model, gelType, rhoFct, initTheta, theta0,
                          lambda0, vcov, ...)
               obj@call <- Call
               obj
           })
 
 setMethod("modelFit", signature("nonlinearGel"), valueClass="gelfit", 
-          definition = function(object, gelType=NULL, rhoFct=NULL,
+          definition = function(model, gelType=NULL, rhoFct=NULL,
               initTheta=c("gmm", "modelTheta0"), theta0=NULL,
               lambda0=NULL, vcov=FALSE, ...)
           {
               Call <- try(match.call(call=sys.call(sys.parent())), silent=TRUE)
-              if (class(Call)=="try-error")
+              if (inherits(Call,"try-error"))
                   Call <- NULL
               met <- getMethod("modelFit","gelModels")
-              obj <- met(object, gelType, rhoFct, initTheta, theta0,
+              obj <- met(model, gelType, rhoFct, initTheta, theta0,
                          lambda0, vcov, ...)
               obj@call <- Call
               obj
           })
 
 setMethod("modelFit", signature("formulaGel"), valueClass="gelfit", 
-          definition = function(object, gelType=NULL, rhoFct=NULL,
+          definition = function(model, gelType=NULL, rhoFct=NULL,
               initTheta=c("gmm", "modelTheta0"), theta0=NULL,
               lambda0=NULL, vcov=FALSE, ...)
           {
               Call <- try(match.call(call=sys.call(sys.parent())), silent=TRUE)
-              if (class(Call)=="try-error")
+              if (inherits(Call,"try-error"))
                   Call <- NULL
               met <- getMethod("modelFit","gelModels")
-              obj <- met(object, gelType, rhoFct, initTheta, theta0,
+              obj <- met(model, gelType, rhoFct, initTheta, theta0,
                          lambda0, vcov, ...)
               obj@call <- Call
               obj
           })
 
 setMethod("modelFit", signature("functionGel"), valueClass="gelfit", 
-          definition = function(object, gelType=NULL, rhoFct=NULL,
+          definition = function(model, gelType=NULL, rhoFct=NULL,
               initTheta=c("gmm", "modelTheta0"), theta0=NULL,
               lambda0=NULL, vcov=FALSE, ...)
           {
               Call <- try(match.call(call=sys.call(sys.parent())), silent=TRUE)
-              if (class(Call)=="try-error")
+              if (inherits(Call,"try-error"))
                   Call <- NULL
               met <- getMethod("modelFit","gelModels")
-              obj <- met(object, gelType, rhoFct, initTheta, theta0,
+              obj <- met(model, gelType, rhoFct, initTheta, theta0,
                          lambda0, vcov, ...)
               obj@call <- Call
               obj
@@ -222,33 +222,33 @@ setMethod("modelFit", signature("functionGel"), valueClass="gelfit",
 
 
 setMethod("modelFit", signature("gelModels"), valueClass="gelfit", 
-          definition = function(object, gelType=NULL, rhoFct=NULL,
+          definition = function(model, gelType=NULL, rhoFct=NULL,
               initTheta=c("gmm", "modelTheta0"), theta0=NULL,
               lambda0=NULL, vcov=FALSE, ...)
           {
               Call <- try(match.call(call=sys.call(sys.parent())), silent=TRUE)
-              if (class(Call)=="try-error")
+              if (inherits(Call,"try-error"))
                   Call <- NULL
-              spec <- modelDims(object)
+              spec <- modelDims(model)
               initTheta = match.arg(initTheta)
               if (!is.null(gelType))
-                  object@gelType$name <- gelType
+                  model@gelType$name <- gelType
               if (!is.null(rhoFct))
-                  object@gelType$rhoFct <- rhoFct
+                  model@gelType$rhoFct <- rhoFct
               if (is.null(theta0))
               {
                   if (initTheta == "gmm")
-                      theta0 <- modelFit(as(object, "gmmModels"))@theta
+                      theta0 <- modelFit(as(model, "gmmModels"))@theta
                   else if (!is.null(spec$theta0))
                       theta0 <- spec$theta0
                   else
                       stop("starting values is missing for the coefficient vector")
               }
-              res <- solveGel(object, theta0=theta0, lambda0=lambda0, ...)
+              res <- solveGel(model, theta0=theta0, lambda0=lambda0, ...)
               gelfit <- new("gelfit", theta=res$theta, convergence=res$convergence,
                             lconvergence=res$lconvergence$convergence,
-                            lambda=res$lambda, call=Call, type=object@gelType$name,
-                            vcov=list(), model=object)
+                            lambda=res$lambda, call=Call, type=model@gelType$name,
+                            vcov=list(), model=model)
               if (vcov)
                   gelfit@vcov <- vcov(gelfit)
               gelfit
@@ -258,30 +258,30 @@ setMethod("modelFit", signature("gelModels"), valueClass="gelfit",
 #### evalModel
 
 setMethod("evalModel", signature("gelModels"),
-          function(object, theta, lambda=NULL, gelType=NULL, rhoFct=NULL,
+          function(model, theta, lambda=NULL, gelType=NULL, rhoFct=NULL,
                    lamSlv=NULL, lControl=list(), ...) {
               Call <- try(match.call(call=sys.call(sys.parent())), silent=TRUE)
-              if (class(Call)=="try-error")
+              if (inherits(Call,"try-error"))
                   Call <- NULL
               if (!is.null(gelType))
-                  object <- gmmToGel(as(object, "gmmModels"), gelType, rhoFct)
-              spec <- modelDims(object)
+                  model <- gmmToGel(as(model, "gmmModels"), gelType, rhoFct)
+              spec <- modelDims(model)
               if (!is.null(names(theta)))
                   {
                       if (!all(names(theta) %in% spec$parNames))
                           stop("You provided a named theta with wrong names")
                       theta <- theta[match(spec$parNames, names(theta))]
                   } else {
-                      if (class(object) %in% c("formulaGel","nonlinearGel", "formulaGel"))
+                      if (class(model) %in% c("formulaGel","nonlinearGel", "formulaGel"))
                           stop("To evaluate nonlinear models, theta must be named")
                       names(theta) <- spec$parNames
                   }
-              type <- paste("Eval-", object@gelType$name, sep="")
+              type <- paste("Eval-", model@gelType$name, sep="")
               if (is.null(lambda))
                   {
-                      gt <- evalMoment(object, theta)
-                      gelt <- object@gelType
-                      k <- object@wSpec$k
+                      gt <- evalMoment(model, theta)
+                      gelt <- model@gelType
+                      k <- model@wSpec$k
                       args <- c(list(gmat=gt, gelType=gelt$name,
                                      rhoFct=gelt$fct), lControl, k=k[1]/k[2])
                       if (is.null(lamSlv))
@@ -296,7 +296,7 @@ setMethod("evalModel", signature("gelModels"),
                   }
               names(lambda) <- spec$momNames
               new("gelfit", theta=theta, convergence=1, lconvergence=lconvergence,
-                   lambda=lambda, call=Call, type=type, vcov=list(), model=object)
+                   lambda=lambda, call=Call, type=type, vcov=list(), model=model)
           })
 
 ### coef

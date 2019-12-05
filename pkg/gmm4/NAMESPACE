@@ -5,7 +5,7 @@ importFrom("methods", is, new, show, "slot<-", "slotNames", "validObject",
 
 importFrom("parallel", mclapply)
 
-importFrom("graphics", plot, polygon, grid, points)
+importFrom("graphics", plot, polygon, grid, points, text)
 
 importFrom("grDevices", rgb, col2rgb)
 

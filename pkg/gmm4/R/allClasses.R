@@ -87,11 +87,12 @@ setClass("specTest", representation(test = "matrix", testname="character"))
 ## confint
 
 setClass("confint", representation(interval = "matrix", type="character",
-                                   level="numeric"))
+                                   level="numeric", theta="numeric"))
 
 
 setClass("mconfint", 
-         representation(areaPoints="matrix", type="character", level="numeric"))
+         representation(areaPoints="matrix", type="character", level="numeric",
+                        theta="numeric"))
 
 ## summaryGmm
 
@@ -199,7 +200,7 @@ setAs("rgelModels", "rgmmModels",
           obj <- as(from, "gmmModels")
           cls <- strsplit(class(from), "Gel")[[1]][1]
           cls <- paste(cls, "Gmm", sep="")
-          if (grepl("linear", class(from)))
+          if (grepl("rlinear", class(from)))
               new("rlinearGmm", cstLHS=from@cstLHS, cstRHS=from@cstRHS,
                   cstSpec=from@cstSpec, obj)
           else

@@ -9,18 +9,18 @@
 It estimates a linear model using two-stage least squares.
 }
 \usage{
-\S4method{tsls}{linearGmm}(object)
+\S4method{tsls}{linearGmm}(model)
 }
 \arguments{
-  \item{object}{An object of class \code{gmmModels}.}
+  \item{model}{An object of class \code{gmmModels}.}
   }
 \section{Methods}{
 \describe{
 
-\item{\code{signature(object = "linearGmm")}}{
+\item{\code{signature(model = "linearGmm")}}{
 }
 
-\item{\code{signature(object = "slinearGmm")}}{
+\item{\code{signature(model = "slinearGmm")}}{
   2SLS for equation by equation estimation of a system of equations.
 }
 

@@ -24,51 +24,51 @@
 Method to fit a model using GMM, from an object of class \code{"gmmModels"}.
 }
 \usage{
-\S4method{modelFit}{gmmModels}(object, type=c("twostep", "iter","cue",
+\S4method{modelFit}{gmmModels}(model, type=c("twostep", "iter","cue",
               "onestep"), itertol=1e-7, initW=c("ident", "tsls"),
               weights="optimal", itermaxit=100,
               efficientWeights=FALSE, theta0=NULL, \dots)
 
-\S4method{modelFit}{formulaGmm}(object, type=c("twostep", "iter","cue",
+\S4method{modelFit}{formulaGmm}(model, type=c("twostep", "iter","cue",
               "onestep"), itertol=1e-7, initW=c("ident", "tsls"),
               weights="optimal", itermaxit=100,
               efficientWeights=FALSE, theta0=NULL, \dots)
 
-\S4method{modelFit}{sysGmmModels}(object, type=c("twostep", "iter","cue",
+\S4method{modelFit}{sysGmmModels}(model, type=c("twostep", "iter","cue",
               "onestep"), itertol=1e-7, initW=c("ident", "tsls", "EbyE"),
               weights="optimal", itermaxit=100,
               efficientWeights=FALSE, theta0=NULL, EbyE=FALSE, \dots)
 
-\S4method{modelFit}{rnonlinearGmm}(object, type=c("twostep", "iter","cue",
+\S4method{modelFit}{rnonlinearGmm}(model, type=c("twostep", "iter","cue",
               "onestep"), itertol=1e-7, initW=c("ident", "tsls"),
               weights="optimal", itermaxit=100,
               efficientWeights=FALSE, theta0=NULL, \dots)
 
-\S4method{modelFit}{rlinearGmm}(object, type=c("twostep", "iter","cue",
+\S4method{modelFit}{rlinearGmm}(model, type=c("twostep", "iter","cue",
               "onestep"), itertol=1e-7, initW=c("ident", "tsls"),
               weights="optimal", itermaxit=100,
               efficientWeights=FALSE, \dots)
 
-\S4method{modelFit}{rformulaGmm}(object, type=c("twostep", "iter","cue",
+\S4method{modelFit}{rformulaGmm}(model, type=c("twostep", "iter","cue",
               "onestep"), itertol=1e-7, initW=c("ident", "tsls"),
               weights="optimal", itermaxit=100,
               efficientWeights=FALSE, theta0=NULL, \dots)
 
-\S4method{modelFit}{rslinearGmm}(object, type=c("twostep", "iter","cue",
+\S4method{modelFit}{rslinearGmm}(model, type=c("twostep", "iter","cue",
               "onestep"), itertol=1e-7, initW=c("ident", "tsls", "EbyE"),
               weights="optimal", itermaxit=100,
               efficientWeights=FALSE, theta0=NULL, EbyE=FALSE, \dots)
 
-\S4method{modelFit}{gelModels}(object, gelType=NULL, rhoFct=NULL,
+\S4method{modelFit}{gelModels}(model, gelType=NULL, rhoFct=NULL,
               initTheta=c("gmm", "modelTheta0"), theta0=NULL,
               lambda0=NULL, vcov=FALSE, ...)
 
-\S4method{modelFit}{rgelModels}(object, gelType=NULL, rhoFct=NULL,
+\S4method{modelFit}{rgelModels}(model, gelType=NULL, rhoFct=NULL,
               initTheta=c("gmm", "modelTheta0"), theta0=NULL,
               lambda0=NULL, vcov=FALSE, ...)
 }
 \arguments{
-  \item{object}{An object of class \code{"gmmModels"}}
+  \item{model}{An object of class \code{"gmmModels"}}
   \item{type}{What GMM methods should we use? for
     \code{type=="onestep"}, if \code{"weights"} is not a matrix, the
     model will be estimated with the weights equals to the identity
@@ -114,33 +114,33 @@ Method to fit a model using GMM, from an object of class \code{"gmmModels"}.
   }
 \section{Methods}{
 \describe{
-\item{\code{signature(object = "gmmModels")}}{
+\item{\code{signature(model = "gmmModels")}}{
 The main method for all GMM-type models.
 }
 
-\item{\code{signature(object = "gelModels")}}{
+\item{\code{signature(model = "gelModels")}}{
 The main method for all GEL-type models.
 }
 
-\item{\code{signature(object = "rnonlinearGmm")}}{
+\item{\code{signature(model = "rnonlinearGmm")}}{
 It makes a difference only if the number of contraints is equal to the
 number of coefficients, in which case, the method \code{\link{evalModel}}
 is called at the contrained vector. If not, the next method is called.
 }
 
-\item{\code{signature(object = "rformulaGmm")}}{
+\item{\code{signature(model = "rformulaGmm")}}{
 It makes a difference only if the number of contraints is equal to the
 number of coefficients, in which case, the method \code{\link{evalModel}}
 is called at the contrained vector. If not, the next method is called.
 }
 
-\item{\code{signature(object = "rlinearGmm")}}{
+\item{\code{signature(model = "rlinearGmm")}}{
 It makes a difference only if the number of contraints is equal to the
 number of coefficients, in which case, the method \code{\link{evalModel}}
 is called at the contrained vector. If not, the next method is called.
 }
 
-\item{\code{signature(object = "sysGmmModels")}}{
+\item{\code{signature(model = "sysGmmModels")}}{
 Method to estimate system of equations using GMM methods.
 }
 

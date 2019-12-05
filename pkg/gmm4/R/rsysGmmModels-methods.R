@@ -282,8 +282,8 @@ setMethod("solveGmm", c("rslinearGmm","sysGmmWeights"),
 ### Three Stage Least Squares
 
 setMethod("ThreeSLS","rslinearGmm",
-          function(object, coefOnly=FALSE, qrZ=NULL, Sigma=NULL) {
-              if (!object@cstSpec$crossEquRest)
+          function(model, coefOnly=FALSE, qrZ=NULL, Sigma=NULL) {
+              if (!model@cstSpec$crossEquRest)
                   callNextMethod()
               else
                   stop("Systems with cross-equation restrictons are not considered system of equations and cannot be estimated by 3SLS")
@@ -307,14 +307,14 @@ setMethod("evalWeights", "rslinearGmm",
 ## modelFit. Almost like sysGmmModels method, bu we need to check a few things
 
 setMethod("modelFit", signature("rslinearGmm"), valueClass="sgmmfit", 
-          function(object, type=c("twostep", "iter","cue", "onestep"),
+          function(model, type=c("twostep", "iter","cue", "onestep"),
                    itertol=1e-7, initW=c("ident", "tsls", "EbyE"),
                    weights="optimal", itermaxit=100,
                    efficientWeights=FALSE, theta0=NULL, EbyE=FALSE, ...)
               {
                   type <- match.arg(type)
                   initW <- match.arg(initW)
-                  if (object@cstSpec$crossEquRest)
+                  if (model@cstSpec$crossEquRest)
                       {
                           if (EbyE || initW=="EbyE")
                               stop("Models with cross-equation restrictions cannot be estimated equation by equation because it is not considered a system of equations")
@@ -322,8 +322,8 @@ setMethod("modelFit", signature("rslinearGmm"), valueClass="sgmmfit",
                               stop("Models with cross-equation restrictions cannot be initiated by an equation by equation 2SLS because it is not considered a system of equations")
                           if (type=="onestep" || (is.character(weights) && weights=="ident"))
                               {
-                              wObj <- evalWeights(object, w="ident")
-                              return(modelFit(object, w=wObj))
+                              wObj <- evalWeights(model, w="ident")
+                              return(modelFit(model, w=wObj))
                           }
                       }
                   callNextMethod()

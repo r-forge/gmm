@@ -227,7 +227,8 @@ setMethod("confint","gmmfit",
                   p2 <- t(crossprod(v,c1) + theta[parm])
                   colnames(p2) <- names(theta)[parm]
                   rownames(p2) <- NULL
-                  obj <- new("mconfint", areaPoints=p2, type=ntest, level=level)
+                  obj <- new("mconfint", areaPoints=p2, type=ntest, level=level,
+                             theta=theta[parm])
                   return(obj)
               }                  
               se <- sqrt(diag(vcov)[parm])
@@ -238,7 +239,8 @@ setMethod("confint","gmmfit",
               ans <- cbind(theta - ch, theta + ch)
               dimnames(ans) <- list(names(theta), c((1 - level)/2, 
                                                     0.5 + level/2))
-              new("confint", interval = ans, type = ntest, level = level)
+              new("confint", interval = ans, type = ntest, level = level,
+                  theta=theta[parm])
           })
 
 ## Its print method
@@ -261,13 +263,15 @@ setMethod("update", "gmmfit",
               {
                   if (is.null(call <- getCall(object)))
                       stop("No call argument")
+                  if (call[[1]] != "modelFit")
+                      return(stats::update(object, ..., evaluate=evaluate))
                   arg <- list(...)
                   if (length(arg) == 0)
                       return(object)
                   model <- update(object@model, ...)
                   ev <- new.env(parent.frame())
                   arg <- arg[which(is.na(match(names(arg), slotNames(model))))]
-                  call[["object"]] <- quote(model)
+                  call[["model"]] <- quote(model)
                   ev$model <- model                  
                   if (length(arg) > 0)
                       for (n in names(arg))

@@ -65,7 +65,7 @@ sysGmmModel <- function(g, h=NULL, theta0=NULL,
             h <- rep(list(reg), length(g))
         } else {
             SUR <- FALSE
-            if (class(h) == "formula")
+            if (inherits(h,"formula"))
                 {
                     h <- rep(list(h), length(g))
                     sameMom <- TRUE

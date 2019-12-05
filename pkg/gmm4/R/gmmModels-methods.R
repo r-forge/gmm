@@ -723,24 +723,24 @@ setMethod("subset", "formulaGmm",
 
 ## modelFit
 
-setGeneric("modelFit", function(object, ...) standardGeneric("modelFit"))
+setGeneric("modelFit", function(model, ...) standardGeneric("modelFit"))
 
 setMethod("modelFit", signature("formulaGmm"), valueClass="gmmfit", 
-          definition = function(object, type=c("twostep", "iter","cue", "onestep"),
+          definition = function(model, type=c("twostep", "iter","cue", "onestep"),
               itertol=1e-7, initW=c("ident", "tsls"), weights="optimal", 
               itermaxit=100, efficientWeights=FALSE, theta0=NULL, ...)
           {
               Call <- try(match.call(call=sys.call(sys.parent())), silent=TRUE)
-              if (class(Call)=="try-error")
+              if (inherits(Call,"try-error"))
                   Call <- NULL
-              if (object@isMDE && object@centeredVcov)
+              if (model@isMDE && model@centeredVcov)
               {
                   if (is.character(weights) && weights == "optimal")
                   {
-                      spec <- modelDims(object)
-                      wObj <- evalWeights(object, spec$theta0, "optimal")
+                      spec <- modelDims(model)
+                      wObj <- evalWeights(model, spec$theta0, "optimal")
                       met <- getMethod("modelFit", "gmmModels")
-                      res <- met(object, weights=wObj, efficientWeights=TRUE, ...)
+                      res <- met(model, weights=wObj, efficientWeights=TRUE, ...)
                       res@type <- "mde"
                   } else {
                       res <- callNextMethod()
@@ -753,61 +753,61 @@ setMethod("modelFit", signature("formulaGmm"), valueClass="gmmfit",
           })
 
 setMethod("modelFit", signature("gmmModels"), valueClass="gmmfit", 
-         definition = function(object, type=c("twostep", "iter","cue", "onestep"),
+         definition = function(model, type=c("twostep", "iter","cue", "onestep"),
               itertol=1e-7, initW=c("ident", "tsls"), weights="optimal", 
               itermaxit=100, efficientWeights=FALSE, theta0=NULL, ...)
          {
              Call <- try(match.call(call=sys.call(sys.parent())), silent=TRUE)
-             if (class(Call)=="try-error")
+             if (inherits(Call,"try-error"))
                  Call <- NULL
-             chk <- validObject(object)                  
+             chk <- validObject(model)                  
              type <- match.arg(type)
              initW <- match.arg(initW)
              i <- 1L
-             chk <- validObject(object, TRUE)
+             chk <- validObject(model, TRUE)
              if (!chk)
-                 stop("object is not a valid gmmModels object")
-             if (initW == "tsls" && class(object) != "linearGmm")
+                 stop("model is not a valid gmmModels object")
+             if (initW == "tsls" && class(model) != "linearGmm")
                  stop("initW='tsls' is for linear models only")
              if (is.character(weights) && !(weights%in%c("optimal","ident")))
                  stop("weights is a matrix or one of 'optimal' or 'ident'")
-             spec <- modelDims(object)
+             spec <- modelDims(model)
              if (spec$q==spec$k)
              {
                  ## This allow to weight the moments in case of
                  ## large scale difference.
-                 if (!is.matrix(weights) && class(weights)!="gmmWeights")
+                 if (!is.matrix(weights) && !inherits(weights,"gmmWeights"))
                      weights <- "ident"
                  type <- "onestep"
              } else if (type == "onestep" && !is.matrix(weights)) {
                  weights <- "ident"
-             } else if (is.matrix(weights) || class(weights)=="gmmWeights") {
+             } else if (is.matrix(weights) || inherits(weights,"gmmWeights")) {
                  type <- "onestep"
              } else if (weights == "ident") {
                  type <- "onestep"
              }
              if (type == "onestep")
              {
-                 if (class(weights)=="gmmWeights")
+                 if (inherits(weights,"gmmWeights"))
                      wObj <- weights
                  else
-                     wObj <- evalWeights(object, w=weights)
-                 res <- solveGmm(object, wObj, theta0, ...)
+                     wObj <- evalWeights(model, w=weights)
+                 res <- solveGmm(model, wObj, theta0, ...)
                  convergence <- res$convergence
                  efficientGmm <- ifelse(is.character(weights), FALSE,
                                         efficientWeights)
                  ans <- new("gmmfit", theta=res$theta,
                             convergence=convergence, convIter=NULL, type=type,
-                            wObj=wObj, model=object, call=Call, niter=i,
+                            wObj=wObj, model=model, call=Call, niter=i,
                             efficientGmm=efficientGmm)
                  return(ans)
              }
-             if (class(object) == "linearGmm")
+             if (class(model) == "linearGmm")
              {
-                 if (object@vcov == "iid")
+                 if (model@vcov == "iid")
                      if (is.character(weights) && weights == "optimal")
                      {
-                         res <- tsls(object)
+                         res <- tsls(model)
                          res@call <- Call
                          return(res)
                      }
@@ -818,20 +818,20 @@ setMethod("modelFit", signature("gmmModels"), valueClass="gmmfit",
              }
              if (initW=="tsls")
              {                          
-                 theta0 <- coef(tsls(object))
+                 theta0 <- coef(tsls(model))
              } else {
-                 wObj <- evalWeights(object, NULL, "ident")
-                 theta0 <- solveGmm(object, wObj, theta0, ...)$theta
+                 wObj <- evalWeights(model, NULL, "ident")
+                 theta0 <- solveGmm(model, wObj, theta0, ...)$theta
              }
-             bw <- object@vcovOptions$bw
+             bw <- model@vcovOptions$bw
              if (type != "cue")
              {
                  while(TRUE)
              {
-                 wObj <- evalWeights(object, theta0, "optimal")
-                 if (object@vcov=="HAC" && is.character(bw))
-                     object@vcovOptions$bw <- wObj@wSpec$bw
-                 res <- solveGmm(object, wObj, theta0, ...)
+                 wObj <- evalWeights(model, theta0, "optimal")
+                 if (model@vcov=="HAC" && is.character(bw))
+                     model@vcovOptions$bw <- wObj@wSpec$bw
+                 res <- solveGmm(model, wObj, theta0, ...)
                  theta1 <- res$theta
                  convergence <- res$convergence
                  crit <- sqrt( sum((theta1-theta0)^2)/(1+sqrt(sum(theta0^2))))
@@ -853,44 +853,44 @@ setMethod("modelFit", signature("gmmModels"), valueClass="gmmfit",
              }      
              } else {
                  convIter <- NULL
-                 if (object@vcov=="HAC" && is.character(bw))
+                 if (model@vcov=="HAC" && is.character(bw))
                  {
-                     w <- momentVcov(object, theta0)
-                     object@vcovOptions$bw <- attr(w, "Spec")$bw
+                     w <- momentVcov(model, theta0)
+                     model@vcovOptions$bw <- attr(w, "Spec")$bw
                  }
-                 obj <- function(theta, object)
+                 obj <- function(theta, model)
                  {
-                     wObj <- evalWeights(object, theta, "optimal")
-                     evalObjective(object, theta, wObj)
+                     wObj <- evalWeights(model, theta, "optimal")
+                     evalObjective(model, theta, wObj)
                  }
-                 res <- optim(theta0, obj, object=object,
+                 res <- optim(theta0, obj, model=model,
                               ...)
                  theta1 <- res$par
                  convergence <- res$convergence
-                 wObj <- evalWeights(object, theta1, "optimal")                 
+                 wObj <- evalWeights(model, theta1, "optimal")                 
              }
-             object@vcovOptions$bw <- bw
+             model@vcovOptions$bw <- bw
              names(theta1) <- spec$parNames
              new("gmmfit", theta=theta1, convergence=convergence, type=type,
-                 wObj=wObj, model=object, convIter=convIter, call=Call,
+                 wObj=wObj, model=model, convIter=convIter, call=Call,
                  niter=i, efficientGmm=TRUE)
          })
 
 ## tsls
 
-setGeneric("tsls", function(object, ...) standardGeneric("tsls"))
+setGeneric("tsls", function(model, ...) standardGeneric("tsls"))
 
 setMethod("tsls", signature("linearGmm"), valueClass="tsls", 
-          function(object)
+          function(model)
           {
               Call <- try(match.call(call=sys.call(sys.parent())), silent=TRUE)
-              if (class(Call)=="try-error")
+              if (inherits(Call,"try-errors"))
                   Call <- NULL
-              chk <- validObject(object)
-              X <- model.matrix(object)
-              Z <- model.matrix(object, "instrument")
-              Y <- modelResponse(object)
-              spec <- modelDims(object)
+              chk <- validObject(model)
+              X <- model.matrix(model)
+              Z <- model.matrix(model, "instrument")
+              Y <- modelResponse(model)
+              spec <- modelDims(model)
               EndoVars <- !(spec$parNames %in% spec$momNames)
               if (any(EndoVars))
                   {
@@ -899,13 +899,13 @@ setMethod("tsls", signature("linearGmm"), valueClass="tsls",
                   }
               theta <- lm.fit(X, Y)$coefficients
               names(theta) <- spec$parNames
-              vcov <- object@vcov
-              object@vcov <- "iid"
+              vcov <- model@vcov
+              model@vcov <- "iid"
               efficientGmm <- vcov == "iid"
-              wObj <- evalWeights(object, theta, "optimal")
-              object@vcov <- vcov
+              wObj <- evalWeights(model, theta, "optimal")
+              model@vcov <- vcov
               obj <- new("tsls", theta=theta, convergence=NULL, type="tsls",
-                         wObj=wObj, model=object, convIter=NULL, call=Call,
+                         wObj=wObj, model=model, convIter=NULL, call=Call,
                          niter=1L, efficientGmm=efficientGmm)
               obj
           })
@@ -913,13 +913,13 @@ setMethod("tsls", signature("linearGmm"), valueClass="tsls",
 
 ## evalModel
 
-setGeneric("evalModel", function(object, ...) standardGeneric("evalModel"))
+setGeneric("evalModel", function(model, ...) standardGeneric("evalModel"))
 
 setMethod("evalModel", signature("gmmModels"),
-          function(object, theta, wObj=NULL, ...) {
-              spec <- modelDims(object)
+          function(model, theta, wObj=NULL, ...) {
+              spec <- modelDims(model)
               Call <- try(match.call(call=sys.call(sys.parent())), silent=TRUE)
-              if (class(Call)=="try-error")
+              if (inherits(Call,"try-error"))
                   Call <- NULL
               if (!is.null(names(theta)))
                   {
@@ -927,15 +927,15 @@ setMethod("evalModel", signature("gmmModels"),
                           stop("You provided a named theta with wrong names")
                       theta <- theta[match(spec$parNames, names(theta))]
                   } else {
-                      if (class(object) %in% c("formulaGmm","nonlinearGmm"))
+                      if (class(model) %in% c("formulaGmm","nonlinearGmm"))
                           stop("To evaluate nonlinear models, theta must be named")
                       names(theta) <- spec$parNames
                   }
               if (is.null(wObj))
-                  wObj <- evalWeights(object, theta)
+                  wObj <- evalWeights(model, theta)
               new("gmmfit", theta=theta, convergence=NULL, convIter=NULL,
                   call=Call, type="eval", wObj=wObj, niter=0L, efficientGmm=FALSE,
-                  model=object)
+                  model=model)
           })
 
 ## Convert to GEL

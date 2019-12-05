@@ -22,20 +22,20 @@ gmm4(g, x, theta0 = NULL, grad = NULL,
      itertol = 1e-07, centeredVcov = TRUE,
      data = parent.frame(), ...)
 
-\S4method{tsls}{formula}(object, x, vcov = c("iid", "HAC", "MDS", "CL"),
+\S4method{tsls}{formula}(model, x, vcov = c("iid", "HAC", "MDS", "CL"),
          vcovOptions=list(), survOptions=list(), centeredVcov = TRUE,
          data = parent.frame())
 
-\S4method{tsls}{list}(object, x=NULL, vcov = c("iid", "HAC", "MDS",
+\S4method{tsls}{list}(model, x=NULL, vcov = c("iid", "HAC", "MDS",
           "CL"), vcovOptions=list(), survOptions=list(),
           centeredVcov = TRUE, data = parent.frame())
 
-\S4method{ThreeSLS}{list}(object, x=NULL, vcov = c("iid", "HAC", "MDS",
+\S4method{ThreeSLS}{list}(model, x=NULL, vcov = c("iid", "HAC", "MDS",
           "CL"), vcovOptions=list(), survOptions=list(),
           centeredVcov = TRUE, data = parent.frame())
 }
 \arguments{
-\item{object}{A formula or a list of formulas.}  
+\item{model}{A formula or a list of formulas.}  
 \item{g}{A function of the form \eqn{g(\theta,x)} and which returns a
   \eqn{n \times q} matrix with typical element \eqn{g_i(\theta,x_t)} for
   \eqn{i=1,...q} and \eqn{t=1,...,n}. This matrix is then used to build

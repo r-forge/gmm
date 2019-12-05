@@ -17,7 +17,7 @@ gmm4 <- function (g, x, theta0 = NULL, grad = NULL,
     if (vcov == "TrueFixed")
     {
         if (!is.matrix(weights) ||
-            !(class(weights) %in% c("gmmWeights", "sysGmmWeigths")))
+            !inherits(weights,c("gmmWeights", "sysGmmWeigths")))
             stop("With TrueFixed vcov the weights must be provided")
         efficientWeights <- TRUE
         vcov2 <- "iid"
@@ -49,7 +49,7 @@ gmm4 <- function (g, x, theta0 = NULL, grad = NULL,
     }
     if (!is.null(cstLHS))
         model <- restModel(model, cstLHS, cstRHS)
-    fit <- modelFit(object=model, type=type, itertol=itertol, initW=initW,
+    fit <- modelFit(model=model, type=type, itertol=itertol, initW=initW,
                     weights=weights, itermaxit=itermaxit,
                     efficientWeights=efficientWeights, ...)
     fit@call <- Call
@@ -58,13 +58,13 @@ gmm4 <- function (g, x, theta0 = NULL, grad = NULL,
 
 
 setMethod("tsls", "formula",
-          function(object, x, vcov = c("iid", "HAC", "MDS", "CL"),                   
+          function(model, x, vcov = c("iid", "HAC", "MDS", "CL"),                   
                    vcovOptions=list(), survOptions=list(), centeredVcov = TRUE,
                    data = parent.frame())
           {
               Call <- match.call(call=sys.call(sys.parent()-1L))
               vcov <- match.arg(vcov)
-              model <- gmmModel(g = object, x = x, vcov = vcov,
+              model <- gmmModel(g = model, x = x, vcov = vcov,
                                 vcovOptions=vcovOptions,survOptions=survOptions,
                                 centeredVcov = centeredVcov, data = data)
               obj <- tsls(model)
@@ -73,13 +73,13 @@ setMethod("tsls", "formula",
               })
 
 setMethod("tsls", "list",
-          function(object, x=NULL, vcov = c("iid", "HAC", "MDS", "CL"),
+          function(model, x=NULL, vcov = c("iid", "HAC", "MDS", "CL"),
                    vcovOptions=list(), survOptions=list(), centeredVcov = TRUE,
                    data = parent.frame())
           {
               Call <- match.call(call=sys.call(sys.parent()-1L))              
               vcov <- match.arg(vcov)
-              model <- sysGmmModel(g = object, h = x, vcov = vcov,
+              model <- sysGmmModel(g = model, h = x, vcov = vcov,
                                    vcovOptions=vcovOptions,survOptions=survOptions,
                                    centeredVcov = centeredVcov, data = data)
               obj <- tsls(model)
@@ -89,13 +89,13 @@ setMethod("tsls", "list",
 
 
 setMethod("ThreeSLS", "list",
-          function(object, x=NULL, vcov = c("iid", "HAC", "MDS", "CL"),
+          function(model, x=NULL, vcov = c("iid", "HAC", "MDS", "CL"),
                    vcovOptions=list(), survOptions=list(), centeredVcov = TRUE,
                    data = parent.frame())
           {
               Call <- match.call(call=sys.call(sys.parent()-1L))              
               vcov <- match.arg(vcov)
-              model <- sysGmmModel(g = object, h = x, vcov = vcov,
+              model <- sysGmmModel(g = model, h = x, vcov = vcov,
                                    vcovOptions=vcovOptions,survOptions=survOptions,
                                    centeredVcov = centeredVcov, data = data)
               obj <- ThreeSLS(model)
