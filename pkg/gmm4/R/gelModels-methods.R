@@ -48,35 +48,58 @@ setMethod("evalMoment", "gelModels", function(object, theta)
 
 ################ evalDMoment ##########################
 
-setMethod("evalDMoment", "gelModels", function(object, theta, impProb=NULL)
-    {
-        if (object@vcov != "HAC")
-            {
-                evalDMoment(as(object, "gmmModels"), theta, impProb)
-            } else {
-                f <- function(theta, object, impProb)
-                    {
-                        gt <- evalMoment(object, theta)
-                        if (is.null(impProb))
-                            colMeans(gt)
-                        else
-                            colSums(gt*impProb)
-                    }
-                env <- new.env()
-                assign("theta", theta, envir = env)
-                assign("object", object, envir = env)
-                assign("f", f, envir = env)
-                assign("impProb", impProb, envir=env)
-                G <- numericDeriv(quote(f(theta, object, impProb)), "theta", 
-                                  env)
-                G <- attr(G, "gradient")
-                spec <- modelDims(object)
-                if (!is.matrix(G))
-                        G <- matrix(G,  spec$q, spec$k)
-                dimnames(G) <- list(spec$momNames, spec$parNames)
-                G
-            }
-    })
+setMethod("evalDMoment", "gelModels",
+          function(object, theta, impProb=NULL, lambda=NULL)
+          {
+              spec <- modelDims(object)
+              if (object@vcov != "HAC")
+              {
+                  evalDMoment(as(object, "gmmModels"), theta, impProb, lambda)
+              } else {
+                  if (!is.null(lambda))
+                  {
+                      if (length(lambda) != spec$q)
+                          stop("The length of lambda must be equal to the number of conditions")
+                      if (is.null(impProb))
+                      impProb <- 1/spec$n              
+                      f_lam <- function(theta, object, lambda)
+                      {
+                          gt <- evalMoment(object, theta)
+                          c(gt%*%lambda)
+                      }
+                      env <- new.env()
+                      assign("theta", theta, envir=env)
+                      assign("object", object, envir=env)
+                      assign("lambda", lambda, envir=env)
+                      assign("f_lam", f_lam, envir=env)
+                      G <- numericDeriv(quote(f_lam(theta, object, lambda)), "theta", env)
+                      G <- attr(G, "gradient")*c(impProb)
+                      colnames(G) <- spec$parNames
+                      rownames(G) <- NULL
+                      return(G)
+                  } 
+                  f <- function(theta, object, impProb)
+                  {
+                      gt <- evalMoment(object, theta)
+                      if (is.null(impProb))
+                          colMeans(gt)
+                      else
+                          colSums(gt*impProb)
+                  }
+                  env <- new.env()
+                  assign("theta", theta, envir = env)
+                  assign("object", object, envir = env)
+                  assign("f", f, envir = env)
+                  assign("impProb", impProb, envir=env)
+                  G <- numericDeriv(quote(f(theta, object, impProb)), "theta", 
+                                    env)
+                  G <- attr(G, "gradient")
+                  if (!is.matrix(G))
+                      G <- matrix(G,  spec$q, spec$k)
+                  dimnames(G) <- list(spec$momNames, spec$parNames)
+                  G
+              }
+          })
 
 ################ momentVcov  ##########################
 

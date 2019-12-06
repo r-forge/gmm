@@ -254,22 +254,56 @@ setMethod("modelDims", "formulaGmm",
 setGeneric("evalDMoment", function(object, ...) standardGeneric("evalDMoment"))
 
 setMethod("evalDMoment", signature("regGmm"),
-          function(object, theta, impProb=NULL) {
+          function(object, theta, impProb=NULL, lambda=NULL)
+          {
               De <- Dresiduals(object, theta)
               Z <- model.matrix(object, "instrument")
+              spec <- modelDims(object)
               if (is.null(impProb))
                   impProb <- 1/nrow(Z)
-              G <- apply(De,2, function(x) colSums(Z*x*impProb))
-              spec <- modelDims(object)
-              if (!is.matrix(G))
+              if (!is.null(lambda))
+              {
+                  if (length(lambda) != spec$q)
+                      stop("The length of lambda must be equal to the number of conditions")
+                  Z <- c(Z%*%lambda)
+                  G <- De*Z*impProb
+                  colnames(G) <- spec$parNames
+                  rownames(G) <- NULL
+              } else {
+                  G <- apply(De,2, function(x) colSums(Z*x*impProb))
+                  if (!is.matrix(G))
                       G <- matrix(G,  spec$q, spec$k)
-              dimnames(G) <- list(spec$momNames, spec$parNames)
+                  dimnames(G) <- list(spec$momNames, spec$parNames)
+              }
               G
           })
 
 setMethod("evalDMoment", signature("functionGmm"),
-          function(object, theta, impProb=NULL) {
+          function(object, theta, impProb=NULL, lambda=NULL)
+          {
               spec <- modelDims(object)
+              if (!is.null(lambda))
+              {
+                  if (length(lambda) != spec$q)
+                      stop("The length of lambda must be equal to the number of conditions")
+                  if (is.null(impProb))
+                      impProb <- 1/spec$n              
+                  f_lam <- function(theta, object, lambda)
+                  {
+                      gt <- evalMoment(object, theta)
+                      c(gt%*%lambda)
+                  }
+                  env <- new.env()
+                  assign("theta", theta, envir=env)
+                  assign("object", object, envir=env)
+                  assign("lambda", lambda, envir=env)
+                  assign("f_lam", f_lam, envir=env)
+                  G <- numericDeriv(quote(f_lam(theta, object, lambda)), "theta", env)
+                  G <- attr(G, "gradient")*c(impProb)
+                  colnames(G) <- spec$parNames
+                  rownames(G) <- NULL
+                  return(G)
+              } 
               if (is.null(object@dfct))
               {
                   f <- function(theta, object, impProb)
@@ -294,14 +328,15 @@ setMethod("evalDMoment", signature("functionGmm"),
                   G <- matrix(G,  spec$q, spec$k)
               dimnames(G) <- list(spec$momNames, spec$parNames)
               G
-              })
+          })
+
 
 setMethod("evalDMoment", signature("formulaGmm"),
-          function(object, theta, impProb=NULL) {
-              res <- modelDims(object)
+          function(object, theta, impProb=NULL, lambda=NULL)
+          {
+              spec <- modelDims(object)              
               nt <- names(theta)
-              nt0 <- names(res$theta0)
-              spec <- modelDims(object)
+              nt0 <- names(spec$theta0)
               if (is.null(impProb))
                   impProb <- 1/spec$n
               if (length(theta) != length(nt0))
@@ -311,40 +346,60 @@ setMethod("evalDMoment", signature("formulaGmm"),
               if (!all(nt%in%nt0 & nt0%in%nt))
                   stop("names in theta dont match parameter names")
               varList <- c(as.list(theta), as.list(object@modelF))
+              if (!is.null(lambda))
+              {
+                  if (length(lambda) != spec$q)
+                      stop("The length of lambda must be equal to the number of conditions")
+                  f <- function(theta, lambda, eq)
+                  {
+                      Gi <- sapply(1:spec$q, function(j)
+                      {
+                          if (!is.null(eq[[j]]))
+                          {
+                              tmp <- eval(D(eq[[j]], i), varList)*lambda[j]
+                              if (length(tmp)==1)
+                                  tmp <- rep(tmp, spec$n)
+                              tmp <- c(tmp*impProb)
+                          } else {
+                              tmp <- numeric(spec$n)
+                          }
+                          tmp
+                      })
+                      rowSums(Gi)
+                  }
+                  nG <- list(NULL, spec$parNames)
+              } else {
+                  f <- function(theta, lambda, eq)
+                  {
+                      Gi <- sapply(1:spec$q, function(j)
+                      {                          
+                          if (!is.null(eq[[j]]))
+                          {
+                              tmp <- eval(D(eq[[j]], i), varList)
+                              if (length(tmp)>1)
+                                  tmp <- sum(tmp*impProb)
+                          } else {
+                              tmp <- 0
+                          }
+                          c(tmp)
+                      })
+                      Gi
+                  }
+                  nG <- list(spec$momNames, spec$parNames)
+              }                  
               G <- numeric()
               for (i in nt)
-                  {
-                      lhs <- sapply(1:res$q, function(j) {
-                          if (!is.null(res$fLHS[[j]]))
-                              {
-                                  tmp <- eval(D(res$fLHS[[j]], i), varList)
-                                  if (length(tmp)>1)
-                                      d <- sum(tmp*impProb)
-                                  else
-                                      d <- tmp
-                              } else {
-                                  d <- 0
-                              }
-                          c(d)})
-                      rhs <- sapply(1:res$q, function(j) {
-                          if (!is.null(res$fRHS[[j]]))
-                              {
-                                  tmp <- eval(D(res$fRHS[[j]], i), varList)
-                                  if (length(tmp)>1)
-                                      d <- sum(tmp*impProb)
-                                  else
-                                      d <- tmp
-                              } else {
-                                  d <- 0
-                              }
-                          c(d)})
-                      G <- cbind(G, lhs-rhs)
-                  }
+              {
+                  lhs <- f(i, lambda, spec$fLHS)
+                  rhs <- f(i, lambda, spec$fRHS)
+                  G <- cbind(G, lhs-rhs)
+              }
               if (!is.matrix(G))
                   G <- matrix(G,  spec$q, spec$k)
-              dimnames(G) <- list(spec$momNames, spec$parNames)
+              dimnames(G) <- nG 
               G
           })
+
 
 ###########   estfun :  Don't like it ###############
 

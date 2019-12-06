@@ -13,6 +13,36 @@
 It computes the matrix of derivatives of the sample moments with respect
 to the coefficients.
 }
+
+\usage{
+\S4method{evalDMoment}{functionGmm}(object, theta, impProb=NULL,
+lambda=NULL)
+
+\S4method{evalDMoment}{formulaGmm}(object, theta, impProb=NULL,
+lambda=NULL)
+
+\S4method{evalDMoment}{regGmm}(object, theta, impProb=NULL,
+lambda=NULL)
+
+\S4method{evalDMoment}{sysGmmModels}(object, theta)
+
+\S4method{evalDMoment}{rslinearGmm}(object, theta)
+
+\S4method{evalDMoment}{gelModels}(object, theta, impProb=NULL,
+lambda=NULL)
+}
+
+\arguments{
+  \item{object}{An model object}
+  \item{theta}{A numerical vector of coefficients} 
+  \item{impProb}{If a vector of implied probablities is provided, the
+    sample means are computed using them. If not provided, the means are
+    computed using the uniform weight}
+  \item{lambda}{A vector of Lagrange multipliers associated with the
+  moment conditions. Its length must therefore match the number of
+  conditions. See details below.}
+}
+  
 \section{Methods}{
 \describe{
 
@@ -34,6 +64,22 @@ to the coefficients.
 \item{\code{signature(object = "rslinearGmm")}}{
 }
 }}
+
+\details{
+Without the argument \code{lambda}, the method returns a \eqn{q \times
+  k} matrix, where \eqn{k} is the number of coefficients, and \eqn{q} is
+the number of moment conditions. That matrix is the derivative of the
+sample mean of the moments with respect to the coefficient. 
+
+If \code{lambda} is provided, the method returns an \eqn{n \times k}
+  matrix, where \eqn{n} is the sample size. The ith row is
+  \eqn{G_i'\lambda}, where $G_i$ is the derivative of the moment
+  function evaluated at the ith observation. For now, this option is
+  used to compute robust-to-misspecified standard errors of GEL
+  estimators.
+}
+
+
 \examples{
 data(simData)
 theta <- c(1,1)

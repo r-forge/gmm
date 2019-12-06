@@ -18,7 +18,8 @@ breadOnly=FALSE, modelVcov=NULL)
 
 \S4method{vcov}{tsls}(object, sandwich=TRUE, df.adj=FALSE)
 
-\S4method{vcov}{gelfit}(object, withImpProb=FALSE, tol=1e-10)
+\S4method{vcov}{gelfit}(object, withImpProb=FALSE, tol=1e-10,
+                        robToMiss=FALSE)
 }
 \arguments{
   \item{object}{An object of class \code{"gmmfit"}}
@@ -42,6 +43,8 @@ breadOnly=FALSE, modelVcov=NULL)
   \item{withImpProb}{Should we compute the moments with the implied
     probabilities}
   \item{tol}{Any diagonal less than \code{"tol"} is set to tol}
+  \item{robToMiss}{Should we compute a covariance matrix that is robust
+    to misspecification?}
 }
 \section{Methods}{
 \describe{

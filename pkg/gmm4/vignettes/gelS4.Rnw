@@ -653,7 +653,8 @@ print(fit, lambda=FALSE, model=FALSE)
 \item \textit{getImpProb}: It computes the vector of implied
   probabilities $\hat{p}_i$'s. By default, they are defined as:
   \[
-  \hat{p}_i = \frac{-\rho'(g_i(\hat{\theta}))/n}{\sum_{j=1}^n -\rho'(g_j(\hat{\theta}))/n}
+  \hat{p}_i = \frac{-\rho'(\hat{\lambda}'g_i(\hat{\theta}))/n}{\sum_{j=1}^n -
+    \rho'(\hat{\lambda}'g_j(\hat{\theta}))/n}
   \]
   The options are
   \begin{itemize}
@@ -900,6 +901,91 @@ Here, fit3 is an ET estimation. If we restrict the model lin, which is
 EL, the \textit{update} will also use EL. That's why
 \textit{restModel} is applied to the model in fit3.
 \end{itemize}
+
+\subsection{Robust to misspecification standard errors}\label{sec:robtomiss}
+
+The covariance matrix of $\hat{\theta}$ that we described above
+assumes that the model is correctly specified. In that case, the
+constraints associated with the moment conditions are asymptotically
+not binding, which implies that $\hat{\lambda}=O_p(n^{-1/2})$. In
+misspecified models, some moment conditions are not satisfied and the
+associated Lagrange multipliers do not converge to 0. Under some
+regularity conditions \citep{schennach07}, the GEL estimator is still
+root-n consistent for a pseudo true value. However, inference using
+the above expression for the covariance matrices is not valid.
+
+One way to obtain valid inference is to rewrite the GEL model into a
+just-identified GMM one. If we collect the first order conditions of
+the GEL problem for $\theta$ and $\lambda$ into one vector, we get a
+GMM model with moment condition $E(\psi_i(\eta))=0$, where
+
+\[
+\psi_i(\eta) = \begin{pmatrix}
+  \rho'(\lambda'g_i(\theta))G_i(\theta)'\lambda\\
+  \rho'(\lambda'g_i(\theta))g_i(\theta)\\
+  \end{pmatrix}\,,
+\]
+
+and $\eta=\{\theta',\lambda'\}'$. If we define 
+\[
+\hat{\Omega}=\frac{1}{n}\sum_{i=1}^n \psi_i(\hat{\eta})\psi_i(\hat{\eta})'
+\]
+and 
+\[
+\hat{\Gamma}=\frac{1}{n}\sum_{i=1}^n \nabla_\eta \psi_i(\hat{\eta})\,,
+\]
+where $\nabla_\eta$ is the gradiant operator, then
+$\hat{\Gamma}^{-1}\hat{\Omega}\hat{\Gamma}^{-1}$ is a consistent
+estimator of the variance $\sqrt{n}(\hat{\eta}-\eta^*)$, where
+$\eta^*$ is the pseudo true value. The \textit{momFct} method for
+numeric vector and ``gelfit'' object computes the $\psi_i(\eta)$
+matrix. We could therefore obtain a robust-to-misspecification
+covariance matrix using the following steps:
+
+<<>>=
+mod1 <- gelModel(y~x1+x2, ~x2+z1+z2+z3, gelType="EL", data=simData)
+fit1 <- modelFit(mod1)
+@ 
+
+We create the $\eta$ vector:
+
+<<>>=
+eta <- c(coef(fit1), fit1@lambda)
+names(eta) <- NULL
+@ 
+
+We create a GMM model using the \textit{momFct} method:
+
+<<>>=
+mod2 <- gmmModel(momFct, fit1, theta0=eta, vcov="MDS")
+@ 
+
+After, we just need to evaluate the model and use the \textit{vcov} method:
+
+<<>>=
+fit2 <- evalModel(mod2, eta)
+v <- vcov(fit2)[1:3,1:3]
+sqrt(diag(v))
+@ 
+
+Which differs a little from the non-robust standard errors:
+
+<<>>=
+sqrt(diag(vcov(fit1)$vcov_par))
+@ 
+
+A quicker way is to use set the option ``robToMiss'' to TRUE:
+
+<<>>=
+sqrt(diag(vcov(fit1, robToMiss=TRUE)$vcov_par))
+@ 
+
+Since the ... of the \textit{summary} method is passed to
+\textit{vcov}, we can obtain a robust-to-misspecification summary table:
+
+<<>>=
+summary(fit1, robToMiss=TRUE)@coef
+@ 
 
 \section{The \textit{evalModel} Method} \label{sec:gelmodels-evalmodel}
 

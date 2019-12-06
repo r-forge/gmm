@@ -93,12 +93,12 @@ setMethod("print", "causalGel",
 ## modelFit
 
 setMethod("modelFit", signature("causalGel"), valueClass="causalGelfit", 
-          definition = function(object, gelType=NULL, rhoFct=NULL,
+          definition = function(model, gelType=NULL, rhoFct=NULL,
                                 initTheta=c("gmm", "modelTheta0"), theta0=NULL,
                                 lambda0=NULL, vcov=FALSE, ...)
           {
               Call <- try(match.call(call=sys.call(sys.parent())), silent=TRUE)
-              if (class(Call)=="try-error")
+              if (inherits(Call,"try-error"))
                   Call <- NULL              
               res <- callNextMethod()
               res@call <- Call

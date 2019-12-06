@@ -200,8 +200,22 @@ setMethod("getImpProb", "gelfit",
 ## vcov
 
 setMethod("vcov", "gelfit",
-          function(object, withImpProb=FALSE, tol=1e-10) {
+          function(object, withImpProb=FALSE, tol=1e-10, robToMiss=FALSE) {
               spec <- modelDims(object@model)
+              if (robToMiss)
+              {
+                  eta <- c(coef(object), object@lambda)
+                  names(eta) <- NULL
+                  mod <- gmmModel(g=momFct, x=object, theta0=eta, vcov="MDS")
+                  fit <- evalModel(mod, theta=eta)
+                  v <- vcov(fit)
+                  spec <- modelDims(object@model)
+                  Sigma <- v[1:spec$k, 1:spec$k]
+                  dimnames(Sigma) <- list(spec$parNames, spec$parNames)
+                  SigmaLam <- v[(spec$k+1):nrow(v), (spec$k+1):ncol(v)]
+                  dimnames(SigmaLam) <- list(spec$momNames, spec$momNames)
+                  return(list(vcov_par = Sigma, vcov_lambda = SigmaLam))
+              }              
               q <- spec$q
               gt <- evalMoment(object@model, object@theta)
               n <- nrow(gt)
@@ -563,7 +577,6 @@ setMethod("update", "gelfit",
               arg <- list(...)
               ev <- new.env(parent.frame())
               theta0 <- arg$theta0
-              
               if (object@call[[1]] == "modelFit")
               {
                   model <- if(is.null(newModel))
@@ -636,4 +649,25 @@ setMethod("update", "gelfit",
                   call
           })
 
-   
+
+### This method is for specific moment functions
+
+setGeneric("momFct", function(eta, object, ...) standardGeneric("momFct"))
+
+## That moment function is used to rewrite GEL models into
+## GMM just identified models. It is useful to compute robust-to-misspecification s.e.
+
+setMethod("momFct", signature("numeric", "gelfit"),
+          function(eta, object) {
+              spec <- modelDims(object@model)
+              if (length(eta) != (spec$k+spec$q))
+                  stop("eta must include theta and lambda")
+              object@theta <- head(eta, spec$k)
+              object@lambda <- tail(eta, spec$q)
+              pt <- getImpProb(object, FALSE, FALSE)$pt*spec$n
+              gt <- evalMoment(object@model, object@theta)*pt
+              Gtl <- evalDMoment(object@model, object@theta, pt, object@lambda)
+              cbind(Gtl, gt)
+          })
+
+

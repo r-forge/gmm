@@ -9,7 +9,7 @@ importFrom("graphics", plot, polygon, grid, points, text)
 
 importFrom("grDevices", rgb, col2rgb)
 
-importFrom("utils", capture.output)
+importFrom("utils", capture.output, head, tail)
 
 importFrom("stats", "ar", "as.formula", "model.matrix","vcov",
            "model.response", "na.omit", "terms", "residuals",
@@ -41,7 +41,7 @@ export(gmmModel, evalMoment, Dresiduals, evalDMoment, momentVcov, estfun.gmmFct,
        tsls, modelFit, meatGmm, specTest, gmm4, restModel, modelResponse, DWH,
        modelDims, printRestrict, getRestrict, sysGmmModel, ThreeSLS, gelModel,
        rhoET, rhoEL, rhoEEL, rhoHD, Wu_lam, EEL_lam, REEL_lam, getLambda, 
-       solveGel, getImpProb, rhoETEL, rhoETHD, gel4)
+       solveGel, getImpProb, rhoETEL, rhoETHD, gel4, momFct)
  
 ###  S3 methods ###
 

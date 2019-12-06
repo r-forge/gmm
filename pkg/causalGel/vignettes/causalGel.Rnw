@@ -685,9 +685,40 @@ second column is $[\sum_{i=1}^n \phat_iZ_i\mu(X_i)]/[\sum_{i=1}^n
 and $\Ex(\mu(X)|Z=1)$. We can see that the moments are well balanced,
 at least up to six decimals.
 
-\section{The aceGEL function}
+\section{The causalGEL function}
 
+The function allows to estimate the causal effect without having to go
+through the step of creating the model. The different arguments are a
+mixture of the arguments of causalModel(), the \textit{solveGel}
+method of the ``gmm4'' package, and the \textit{modelFit}
+method. The average causal effect of the training program, assuming
+random assignment and using \EL, can be obtained as follows:
 
+<<>>=
+data(nsw)
+nsw$re78 <- nsw$re78/1000
+nsw$re75 <- nsw$re75/1000
+fit1 <- causalGEL(re78~treat, ~age+ed+black+hisp+re75, nsw, gelType="EL",
+                 momType="uncondBal")
+@ 
+
+Similarly, the \ACE and \ACT can be computed as 
+
+<<>>=
+fit2 <- causalGEL(re78~treat, ~age+ed+black+hisp+re75, nsw, gelType="EL",
+                  momType="ACE")
+fit3 <- causalGEL(re78~treat, ~age+ed+black+hisp+re75, nsw, gelType="EL",
+                  momType="ACT")
+@ 
+
+The results are presented in Table \ref{t2}.
+
+<<echo=FALSE, results='asis'>>=
+texreg(list(fit1,fit2,fit3), digits=4, label="t2", 
+       custom.model.names=c("ACE(rand.)","ACE(non-random)", "ACT"),
+       caption="Causal Effect for a Training Program", ci.force=TRUE,
+       fontsize='footnotesize')
+@ 
 
 \bibliography{causal}
 
