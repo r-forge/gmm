@@ -1,20 +1,19 @@
-\name{causalGel-class}
+\name{rcausalModel-class}
 \docType{class}
-\alias{causalGel-class}
-\alias{causalGel}
+\alias{rcausalModel-class}
 
-\title{Class \code{"causalGel"}}
+\title{Class \code{"rcausalModel"}}
 \description{
-This is the basic class for causality models. 
+  Restricted causality model class.
 }
 \section{Objects from the Class}{
-Objects can be created by calls of the form \code{new("causalGel", ...)}.
-It is however, recommended to use the constructor \code{aceModel}.
+Objects can be created by calls of the form \code{new("rcausalModel", ...)}.
+It is however, recommended to use the \code{\link{restModel}} method.
 }
 \section{Slots}{
   \describe{
-    \item{\code{wSpec}:}{Object of class \code{"list"} ~~ }
-    \item{\code{gelType}:}{Object of class \code{"list"} ~~ }
+    \item{\code{R}:}{Object of class \code{"list"} ~~ }
+    \item{\code{cstSpec}:}{Object of class \code{"list"} ~~ }
     \item{\code{X}:}{Object of class \code{"ANY"} ~~ }
     \item{\code{fct}:}{Object of class \code{"function"} ~~ }
     \item{\code{dfct}:}{Object of class \code{"functionORNULL"} ~~ }
@@ -31,20 +30,19 @@ It is however, recommended to use the constructor \code{aceModel}.
     \item{\code{isEndo}:}{Object of class \code{"logical"} ~~ }
     \item{\code{omit}:}{Object of class \code{"integer"} ~~ }
     \item{\code{survOptions}:}{Object of class \code{"list"} ~~ }
+    \item{\code{sSpec}:}{Object of class \code{"sSpec"} ~~ }
+    \item{\code{smooth}:}{Object of class \code{"logical"} ~~ }
   }
 }
 \section{Extends}{
-Class \code{"\linkS4class{functionGel}"}, directly.
-Class \code{"\linkS4class{functionGmm}"}, by class "functionGel", distance 2.
-Class \code{"\linkS4class{gelModels}"}, by class "functionGel", distance 2.
-Class \code{"\linkS4class{allNLGmm}"}, by class "functionGel", distance 3.
-Class \code{"\linkS4class{gmmModels}"}, by class "functionGel", distance 3.
-}
-\section{Methods}{
-No methods defined with class "causalGel" in the signature.
+Class \code{"\linkS4class{rfunctionModel}"}, directly.
+Class \code{"\linkS4class{functionModel}"}, by class "rfunctionModel", distance 2.
+Class \code{"\linkS4class{rmomentModel}"}, by class "rfunctionModel", distance 2.
+Class \code{"\linkS4class{allNLModel}"}, by class "rfunctionModel", distance 3.
+Class \code{"\linkS4class{momentModel}"}, by class "rfunctionModel", distance 3.
 }
 
 \examples{
-showClass("causalGel")
+showClass("rcausalModel")
 }
 \keyword{classes}

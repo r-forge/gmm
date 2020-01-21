@@ -4,7 +4,7 @@
 
 \title{Class \code{"causalGelfit"}}
 \description{
-A class model causal models based on GEL methods.
+A class to store the fiited causality model obtained using the GEL method.
 }
 \section{Objects from the Class}{
 Objects can be created by calls of the form \code{new("causalGelfit",
@@ -17,9 +17,9 @@ Objects can be created by calls of the form \code{new("causalGelfit",
     \item{\code{lambda}:}{Object of class \code{"numeric"} ~~ }
     \item{\code{lconvergence}:}{Object of class \code{"numeric"} ~~ }
     \item{\code{call}:}{Object of class \code{"callORNULL"} ~~ }
-    \item{\code{type}:}{Object of class \code{"character"} ~~ }
+    \item{\code{gelType}:}{Object of class \code{"list"} ~~ }
     \item{\code{vcov}:}{Object of class \code{"list"} ~~ }
-    \item{\code{model}:}{Object of class \code{"gelModels"} ~~ }
+    \item{\code{model}:}{Object of class \code{"momentModel"} ~~ }
   }
 }
 \section{Extends}{

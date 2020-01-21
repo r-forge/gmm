@@ -4,9 +4,9 @@
 
 ## Causal Model Classes
 
-setClass("causalGel", contains="functionGel")
+setClass("causalModel", contains="functionModel")
 
-setClass("rcausalGel", contains="rfunctionGel")
+setClass("rcausalModel", contains="rfunctionModel")
 
 setClass("causalData", representation(momType="character",
                                       balCov="character",
@@ -20,13 +20,9 @@ setClass("causalGelfit", contains="gelfit")
 
 ## converters
 
-setAs("rcausalGel", "rgmmModels",
+setAs("rcausalModel", "causalModel",
       function(from) {
-          as(as(from, "rgelModels"), "rgmmModels")})
-
-setAs("rcausalGel", "causalGel",
-      function(from) {
-          obj <- as(from, "gelModels")
-          new("causalGel", obj)})
+          obj <- as(from, "momentModel")
+          new("causalModel", obj)})
 
 

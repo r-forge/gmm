@@ -29,7 +29,7 @@ balm <- ~age+ed+black+hisp:married+nodeg+re75+I(re75^2)
 g <- re78~treat
            
 model <- causalModel(g, balm, nsw)
-fit <- modelFit(model)
+fit <- gelFit(model, gelType="EL")
 checkConv(fit)
 
 }

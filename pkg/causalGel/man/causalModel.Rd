@@ -2,18 +2,16 @@
 
 \alias{causalModel}
 	
-\title{Constructor for \code{"causalGel"} classes}
+\title{Constructor for \code{"causalModel"} classes}
 
 \description{
-It builds the object of either class \code{"linearGmm"},
-\code{"nonlinearGmm"} or \code{"functionGmm"}. This is the first step
-before running any estimation algorithm.
+It builds the object of class \code{"functionModel"}, but with a
+specific function that depends on the type of causality. 
 }
 \usage{
 causalModel(g, balm, data,theta0=NULL,
             momType=c("ACE","ACT","ACC", "uncondBal","fixedMom"),
-            popMom = NULL, rhoFct=NULL,ACTmom=1L, 
-            gelType = c("EL", "ET", "EEL", "ETEL", "HD", "ETHD","REEL"))
+            popMom = NULL, ACTmom=1L) 
 }
 \arguments{
 
@@ -38,31 +36,13 @@ causalModel(g, balm, data,theta0=NULL,
     can be used if those moments are available from a census, for
     example. When available, it greatly improves efficiency.}
 
-  \item{rhoFct}{An optional function that return \eqn{\rho(v)}. This is
-    for users who want a GEL model that is not built in the package. The
-    four arguments of the function must be \code{"gmat"}, the matrix of
-    moments, \code{"lambda"}, the vector of Lagrange multipliers,
-    \code{"derive"}, which specify the order of derivative to return, and
-    \code{k} a numeric scale factor required for time series and kernel
-    smoothed moments.}
-
   \item{ACTmom}{When \code{momType} is set to 'ACT', that integer
     indicates which treated group to use to balance the covariates.}
-  
-  
-  \item{gelType}{"EL" for empirical likelihood, "ET" for exponential tilting,
-    "EEL" for Euclidean empirical likelihood, "ETEL" for exponentially
-    tilted empirical likelihood of Schennach(2007), "HD" for Hellinger
-    Distance of Kitamura-Otsu-Evdokimov (2013), and "ETHD" for the
-    exponentially tilted Hellinger distance of Antoine-Dovonon
-    (2015). "REEL" is a restricted version of "EEL" in which the
-    probabilities are bounded below by zero. In that case, an analytical
-    Kuhn-Tucker method is used to find the solution.}
-  
+   
 }
 
 \value{
-'gmmModel' returns an object of one of the subclasses of \code{"gmmModels"}.
+It returns an object of class \code{"causalModel"}.
  }
 
 \examples{

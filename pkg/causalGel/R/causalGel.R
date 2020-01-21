@@ -2,11 +2,9 @@
 
 causalModel <- function(g, balm, data,theta0=NULL,
                       momType=c("ACE","ACT","ACC", "uncondBal","fixedMom"),
-                      popMom = NULL, rhoFct=NULL,ACTmom=1L, 
-                      gelType = c("EL", "ET", "EEL", "ETEL", "HD", "ETHD","REEL"))
+                      popMom = NULL, ACTmom=1L) 
 {
     momType <- match.arg(momType)
-    gelType <- match.arg(gelType)
     if (!is.null(popMom))
         {
             momType <- "fixedMom"
@@ -14,7 +12,7 @@ causalModel <- function(g, balm, data,theta0=NULL,
             if (momType == "fixedMom")
                 stop("With fixed moments, popMom must be provided")
         }    
-    tmp_model <- gmm4:::.lGmmData(g, balm, data)
+    tmp_model <- momentfit:::.lModelData(g, balm, data)
     if (attr(terms(tmp_model$modelF), "intercept") != 1)
         stop("You cannot remove the intercept from g")
     if (attr(terms(tmp_model$instF), "intercept") != 1)
@@ -54,9 +52,9 @@ causalModel <- function(g, balm, data,theta0=NULL,
     modData <- new("causalData", reg=tmp_model$modelF, bal=tmp_model$instF,
                    momType=momType, balMom=popMom, ACTmom=ACTmom,
                    balCov=tmp_model$momNames[-1])
-    mod <- gelModel(g=causalMomFct, x=modData, gelType=gelType, rhoFct=rhoFct,
-                    theta0=theta0, grad=NULL,vcov="MDS", vcovOptions=list(),
-                    centeredVcov=TRUE, data=NULL)
+    mod <- momentModel(g=causalMomFct, x=modData, 
+                       theta0=theta0, grad=NULL, vcov="MDS", vcovOptions=list(),
+                       centeredVcov=TRUE, data=NULL)
     momNames <- lapply(treatInd, function(i)
         paste("treat", i, "_", tmp_model$momNames[-1], sep=""))
     momNames <- do.call("c", momNames)
@@ -64,7 +62,7 @@ causalModel <- function(g, balm, data,theta0=NULL,
         mod@momNames <- c(names(theta0), momNames)
     else
         mod@momNames <- c(names(theta0), momNames, tmp_model$momNames[-1])
-    new("causalGel", mod)
+    new("causalModel", mod)
 }
 
 causalGEL <- function(g, balm, data, theta0=NULL,
@@ -86,8 +84,7 @@ causalGEL <- function(g, balm, data, theta0=NULL,
     if (initTheta=="theta0" & is.null(theta0))
         stop("theta0 is required when initTheta='theta0'")
 
-    model <- causalModel(g, balm, data, theta0, momType, popMom, rhoFct, ACTmom,
-                       gelType)
+    model <- causalModel(g, balm, data, theta0, momType, popMom, ACTmom)
     
     if (initTheta == "theta0")
     {
@@ -117,9 +114,9 @@ causalGEL <- function(g, balm, data, theta0=NULL,
         if (!is.null(theta0)) 
             theta0 <- theta0[(names(theta0) %in% spec$parNames)]
     }    
-    fit <- modelFit(model=model, initTheta=initTheta, theta0=theta0,
-                    lambda0=lambda0, vcov=getVcov, coefSlv=coefSlv,
-                    lamSlv=lamSlv, tControl=tControl, lControl=lControl)
+    fit <- gelFit(model=model, gelType=gelType, rhoFct=rhoFct, initTheta=initTheta, theta0=theta0,
+                  lambda0=lambda0, vcov=getVcov, coefSlv=coefSlv,
+                  lamSlv=lamSlv, tControl=tControl, lControl=lControl)
     fit@call <- Call
     fit    
 }

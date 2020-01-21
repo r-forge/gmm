@@ -1,4 +1,4 @@
-import("gmm4")
+import("momentfit")
 
 importFrom("stats", "lm", "model.response", "terms", "model.frame", "reformulate")
 importFrom("utils", "head", "tail")
@@ -10,7 +10,7 @@ importFrom("methods", is, new, show, "slot<-", "slotNames", "validObject",
 ### S4 Methods and Classes
 exportClasses()
 
-exportClasses("causalData", "causalGel", "causalGelfit", "rcausalGel")
+exportClasses("causalData", "causalModel", "causalGelfit", "rcausalModel")
 
 exportMethods("causalMomFct", "checkConv")
 

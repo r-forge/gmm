@@ -9,16 +9,17 @@
     q <- spec$q
     k <- spec$k
     ncov <- length(spec$balCov)
-    Wk <- object@model@wSpec$k
+    Wk <- object@model@sSpec@k
     lam <- object@lambda
     theta <- coef(object)
     gt <- evalMoment(object@model, theta)
-    rhoFct <- object@model@gelType
-    if (is.null(rhoFct$fct))
+    rhoFct <- object@gelType$rhoFct
+    gelType <- object@gelType$name
+    if (is.null(rhoFct))
     {
-        rhoFct <- get(paste("rho", rhoFct$name, sep = ""))
+        rhoFct <- get(paste("rho", gelType, sep = ""))
     } else {
-        rhoFct <- rhoFct$fct
+        rhoFct <- rhoFct
     }
     rho1 <- rhoFct(gmat=gt, lambda=lam, derive=1, k=Wk[1]/Wk[2])
     rho2 <- rhoFct(gmat=gt, lambda=lam, derive=2, k=Wk[1]/Wk[2])
@@ -87,8 +88,9 @@ setMethod("print", "causalGelfit",
               theta <- coef(x)
               if (model)
                   print(x@model)
-              type <- x@type
+              type <- x@gelType$name
               spec <- modelDims(x@model)
+              cat("\nEstimation: ", type, "\n")
               cat("Convergence Theta: ", x@convergence, "\n")
               cat("Convergence Lambda: ", x@lconvergence, "\n")              
               cat("coefficients:\n")
@@ -111,7 +113,7 @@ setMethod("vcov", "causalGelfit",
                       FALSE)
                       return(allV)
                   }
-              if (inherits(object@model, "rcausalGel"))
+              if (inherits(object@model, "rcausalModel"))
               {
                   allV <- getMethod("vcov","gelfit")(object, withImpProb, tol, TRUE)
                   return(allV)                  

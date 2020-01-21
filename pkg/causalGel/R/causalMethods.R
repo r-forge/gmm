@@ -21,7 +21,7 @@ setMethod("causalMomFct", signature("numeric", "causalData"),
 
 ## evalDMoment functions
 
-setMethod("evalDMoment", signature("causalGel"),
+setMethod("evalDMoment", signature("causalModel"),
           function(object, theta, impProb=NULL, augmented=FALSE) {
               dat <- object@X
               Z <- model.matrix(terms(dat@reg), dat@reg)
@@ -57,11 +57,10 @@ setMethod("evalDMoment", signature("causalGel"),
 
 ## Print
 
-setMethod("print", "causalGel",
+setMethod("print", "causalModel",
           function(x, printBalCov=FALSE, ...) {
-              cat("Causal Model using GEL Methods\n")
-              cat("*******************************\n")
-              cat("GEL Type: ", x@gelType$name, "\n")
+              cat("Causal Model \n")
+              cat("*************\n")
               momType <- switch(x@X@momType,
                                 uncondBal = "Unconditional balancing",
                                 ACT = "Causal effect on the treated",
@@ -90,9 +89,9 @@ setMethod("print", "causalGel",
               invisible()
           })
 
-## modelFit
+## gelFit
 
-setMethod("modelFit", signature("causalGel"), valueClass="causalGelfit", 
+setMethod("gelFit", signature("causalModel"), valueClass="causalGelfit", 
           definition = function(model, gelType=NULL, rhoFct=NULL,
                                 initTheta=c("gmm", "modelTheta0"), theta0=NULL,
                                 lambda0=NULL, vcov=FALSE, ...)
@@ -108,7 +107,7 @@ setMethod("modelFit", signature("causalGel"), valueClass="causalGelfit",
 
 ## model.matrix and modelResponse
 
-setMethod("model.matrix", signature("causalGel"),
+setMethod("model.matrix", signature("causalModel"),
           function(object, type=c("regressors","balancingCov"))
           {
               type <- match.arg(type)
@@ -123,7 +122,7 @@ setMethod("model.matrix", signature("causalGel"),
               mat
           })
 
-setMethod("modelResponse", signature("causalGel"),
+setMethod("modelResponse", signature("causalModel"),
           function(object)
           {
               model.response(object@X@reg)
@@ -133,7 +132,7 @@ setMethod("modelResponse", signature("causalGel"),
 ## Residuals
 # Not sure we will need it, but the residuals are well defined in this case
 
-setMethod("residuals", signature("causalGel"), function(object, theta){
+setMethod("residuals", signature("causalModel"), function(object, theta){
     X <- model.matrix(object)
     Y <- modelResponse(object)
     e <- Y-c(X%*%theta[1:ncol(X)])
@@ -143,14 +142,14 @@ setMethod("residuals", signature("causalGel"), function(object, theta){
 ## Dresiduals 
 # Same comment as for residuals
 
-setMethod("Dresiduals", signature("causalGel"),
+setMethod("Dresiduals", signature("causalModel"),
           function(object, theta) {
               -model.matrix(object)
           })
 
 ## modelDims
 
-setMethod("modelDims", "causalGel",
+setMethod("modelDims", "causalModel",
           function(object) {
               res <- callNextMethod()
               res$balCov <- object@X@balCov
@@ -162,7 +161,7 @@ setMethod("modelDims", "causalGel",
 
 ## subset for observations selection
 
-setMethod("subset", "causalGel",
+setMethod("subset", "causalModel",
           function(x, i) {
               x@X@reg <- x@X@reg[i,,drop=FALSE]
               x@X@bal <- x@X@bal[i,,drop=FALSE]
@@ -173,7 +172,7 @@ setMethod("subset", "causalGel",
 ## "["
 ## balancing moment selection
 
-setMethod("[", c("causalGel", "numeric", "missing"),
+setMethod("[", c("causalModel", "numeric", "missing"),
           function(x, i, j){
               i <- unique(as.integer(i))
               spec <- modelDims(x)
@@ -197,13 +196,13 @@ setMethod("[", c("causalGel", "numeric", "missing"),
               x
           })
 
-setMethod("[", c("causalGel", "numeric", "numericORlogical"),
+setMethod("[", c("causalModel", "numeric", "numericORlogical"),
           function(x, i, j){
               x <- x[i]
               subset(x, j)
           })
 
-setMethod("[", c("causalGel", "missing", "numericORlogical"),
+setMethod("[", c("causalModel", "missing", "numericORlogical"),
           function(x, i, j){
               subset(x, j)
           })
