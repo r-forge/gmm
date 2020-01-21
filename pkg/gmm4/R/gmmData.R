@@ -244,9 +244,18 @@
     }
 
 .fGmmData <- function(g, x, theta0, survOptions=list(), vcovOptions=list(),
-                      na.action="na.omit")
+                      na.action="na.omit", grad=NULL)
     {
         mom <- try(g(theta0, x))
+        if (!is.null(grad))
+        {
+            dmom <- try(grad(theta0, x))
+            if (inherits(dmom, "try-error"))
+            {
+                warning("grad could not be evaluated at the starting theta. Changed to NULL")
+                grad <- NULL
+            }
+        }
         k <- length(theta0)        
         if (is.null(names(theta0)))
             {
@@ -280,7 +289,8 @@
             }
         list(q=q,n=n,k=k, momNames=momNames, parNames=parNames,
              varNames=character(), isEndo=logical(), omit=integer(),
-             vcovOptions=vcovOptions, survOptions=survOptions, theta0=theta0)
+             vcovOptions=vcovOptions, survOptions=survOptions, theta0=theta0,
+             dfct=grad)
     }
 
 .slGmmData <- function(g,h,data, survOptions=list(), vcovOptions=list(),

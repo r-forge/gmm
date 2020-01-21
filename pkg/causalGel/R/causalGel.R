@@ -72,7 +72,7 @@ causalGEL <- function(g, balm, data, theta0=NULL,
                    popMom = NULL, rhoFct=NULL,ACTmom=1L, 
                    gelType = c("EL", "ET", "EEL", "ETEL", "HD", "ETHD","REEL"),
                    initTheta = c("gmm","theta0"), getVcov=FALSE,
-                   lambda0=NULL, 
+                   lambda0=NULL, cstLHS=NULL, cstRHS=NULL,
                    lamSlv=NULL, coefSlv= c("optim","nlminb","constrOptim"),
                    lControl=list(), tControl=list())
 {
@@ -96,6 +96,27 @@ causalGEL <- function(g, balm, data, theta0=NULL,
     } else {
         theta0 <- NULL
     }
+    if (!is.null(cstLHS)) {
+        if (is.numeric(cstLHS))
+        {
+            parn <- model@parNames
+            if (is.null(cstRHS))
+            {
+                cstLHS <- paste(parn[cstLHS], "=0", sep="")
+            } else {
+                if (!is.numeric(cstRHS))
+                    stop("cstRHS is either NULL or numeric")
+                if (length(cstRHS)!=length(cstLHS))
+                    stop("cstRHS and csrLHS must have the can length")
+                cstLHS <- paste(parn[cstLHS], "=", cstRHS, sep="")
+                cstRHS <- NULL
+            }
+        }
+        model <- restModel(model, cstLHS, cstRHS)
+        spec <- modelDims(model)
+        if (!is.null(theta0)) 
+            theta0 <- theta0[(names(theta0) %in% spec$parNames)]
+    }    
     fit <- modelFit(model=model, initTheta=initTheta, theta0=theta0,
                     lambda0=lambda0, vcov=getVcov, coefSlv=coefSlv,
                     lamSlv=lamSlv, tControl=tControl, lControl=lControl)

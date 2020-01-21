@@ -22,13 +22,13 @@
         test0 <- test0[1]
     } else {
         test0 <- 0
-    }    
+    }
     f <- function(delta, pti, obj, which, type, test0, level)
     {
         b <- coef(obj)[which]
         pti <- b*(1-delta) + pti*delta
         R <- paste(names(b), "=", pti, sep="")
-        if (obj@call[[1]] == "gel4")
+        if (obj@call[[1]] != "modelFit")
         {
             fit <- suppressWarnings(update(obj, cstLHS=R))
         } else {
@@ -663,7 +663,9 @@ setMethod("momFct", signature("numeric", "gelfit"),
               if (length(eta) != (spec$k+spec$q))
                   stop("eta must include theta and lambda")
               object@theta <- head(eta, spec$k)
+              names(object@theta) <- spec$parNames
               object@lambda <- tail(eta, spec$q)
+              names(object@lambda) <- spec$momNames
               pt <- getImpProb(object, FALSE, FALSE)$pt*spec$n
               gt <- evalMoment(object@model, object@theta)*pt
               Gtl <- evalDMoment(object@model, object@theta, pt, object@lambda)

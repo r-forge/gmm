@@ -15,6 +15,10 @@
 \alias{modelDims,rlinearGmm-method}
 \alias{modelDims,rfunctionGmm-method}
 \alias{modelDims,rnonlinearGmm-method}
+\alias{modelDims,rformulaGel-method}
+\alias{modelDims,rlinearGel-method}
+\alias{modelDims,rfunctionGel-method}
+\alias{modelDims,rnonlinearGel-method}
 \title{Methods for Function \code{modelDims}}
 \description{
 It extracts important information from the model. It is mostly used by
@@ -28,6 +32,18 @@ when restrictions have been imposed on coefficients.
 }
 
 \item{\code{signature(object = "rgelModels")}}{
+}
+
+\item{\code{signature(object = "rlinearGel")}}{
+}
+
+\item{\code{signature(object = "rnonlinearGel")}}{
+}
+
+\item{\code{signature(object = "rfunctionGel")}}{
+}
+
+\item{\code{signature(object = "rformulaGel")}}{
 }
 
 \item{\code{signature(object = "rnonlinearGmm")}}{

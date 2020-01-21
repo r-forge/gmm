@@ -103,12 +103,19 @@ setMethod("print", "causalGelfit",
 ## vcov
 
 setMethod("vcov", "causalGelfit",
-          function(object, robToMiss = TRUE, withImpProb=FALSE, tol=1e-10) {
+          function(object, withImpProb=FALSE, tol=1e-10,
+                   robToMiss = TRUE) {
               if (!robToMiss)
                   {
-                      allV <- getMethod("vcov","gelfit")(object, withImpProb, tol)
+                      allV <- getMethod("vcov","gelfit")(object, withImpProb, tol,
+                      FALSE)
                       return(allV)
                   }
+              if (inherits(object@model, "rcausalGel"))
+              {
+                  allV <- getMethod("vcov","gelfit")(object, withImpProb, tol, TRUE)
+                  return(allV)                  
+              }
               res <- .psiGam(object)
               k <- res$k
               q <- res$q

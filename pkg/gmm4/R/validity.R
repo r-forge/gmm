@@ -282,6 +282,7 @@ setValidity("formulaGmm", .checkformGmm)
 
 .checkfGmm <- function(object)
 {
+    
     mom <- try(object@fct(object@theta0, object@X))
     k <-  length(object@theta0)
     error <- character()

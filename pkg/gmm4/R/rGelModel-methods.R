@@ -1,63 +1,59 @@
+
 setMethod("restModel", signature("linearGel"),
           function(object, R, rhs=NULL)
           {
-              mod <- callNextMethod()
+              mod <- restModel(as(object, "gmmModels"), R, rhs)
               gmmToGel(mod, object@gelType$name, object@gelType$rhoFct)
           })
 
 setMethod("restModel", signature("nonlinearGel"),
           function(object, R, rhs=NULL)
           {
-              mod <- callNextMethod()              
+              mod <- restModel(as(object, "gmmModels"), R, rhs)
               gmmToGel(mod, object@gelType$name, object@gelType$rhoFct)
           })
 
 setMethod("restModel", signature("formulaGel"),
           function(object, R, rhs=NULL)
           {
-              mod <- callNextMethod()
+              mod <- restModel(as(object, "gmmModels"), R, rhs)
               gmmToGel(mod, object@gelType$name, object@gelType$rhoFct)
           })
 
 setMethod("restModel", signature("functionGel"),
           function(object, R, rhs=NULL)
           {
-              mod <- callNextMethod()
+              mod <- restModel(as(object, "gmmModels"), R, rhs)
               gmmToGel(mod, object@gelType$name, object@gelType$rhoFct)
           })
 
 ## printRestrict
 
 setMethod("printRestrict", signature("rgelModels"),
-          function(object)
-          {
-              cl <- strsplit(class(object)[1],"Gel")[[1]][1]
-              cl <- paste(cl, "Gmm", sep="")
-              getMethod("printRestrict", cl)(object)
-          })
-
+          function(object) printRestrict(as(object, "rgmmModels")))
 
 ## print
 
 setMethod("print", "rgelModels",
           function(x)
           {
-              cl <- class(x)[1]
-              getMethod("print", "gelModels")(x)
+              print(as(x, "gelModels"))
               printRestrict(x)
           })
 
 ## modelDims
 
+setMethod("modelDims", "rlinearGel",
+          function(object) modelDims(as(object, "rgmmModels")))
 
-setMethod("modelDims", "rgelModels",
-          function(object)
-          {
-              cl <- strsplit(class(object)[1],"Gel")[[1]][1]
-              cl <- paste(cl, "Gmm", sep="")
-              getMethod("modelDims", cl)(object)
-              
-          })
+setMethod("modelDims", "rnonlinearGel",
+          function(object) modelDims(as(object, "rgmmModels")))
+
+setMethod("modelDims", "rfunctionGel",
+          function(object) modelDims(as(object, "rgmmModels")))
+
+setMethod("modelDims", "rformulaGel",
+          function(object) modelDims(as(object, "rgmmModels")))
 
 ## model.matrix and modelResponse
 
@@ -66,43 +62,28 @@ setMethod("model.matrix", "rlinearGel",
           function(object, type=c("regressors","instruments"))
           {
               type <- match.arg(type)
-              getMethod("model.matrix", "rlinearGmm")(object, type)
+              model.matrix(as(object, "rgmmModels"), type)
           })
 
 setMethod("modelResponse", "rlinearGel",
-          function(object)
-          {
-              getMethod("modelResponse", "rlinearGmm")(object)
-          })
+          function(object) modelResponse(as(object, "rgmmModels")))
                                        
 
 ## getRestrict
 
 
 setMethod("getRestrict", "rgelModels",
-          function(object, theta)
-          {
-              cl <- strsplit(class(object)[1],"Gel")[[1]][1]
-              cl <- paste(cl, "Gmm", sep="")
-              getMethod("getRestrict", cl)(object, theta)
-              
-          })
+          function(object, theta) getRestrict(as(object,"rgmmModels"), theta))
+
 
 setMethod("getRestrict", "gelModels",
-          function(object, theta, R, rhs=NULL) {
-              getMethod("getRestrict", "gmmModels")(object)
-          })
-
+          function(object, theta, R, rhs=NULL)
+              getRestrict(as(object,"gmmModels"), theta, R, rhs))
 
 ## coef
 
 setMethod("coef", "rgelModels",
-          function(object, theta)
-          {
-              cl <- strsplit(class(object)[1],"Gel")[[1]][1]
-              cl <- paste(cl, "Gmm", sep="")
-              getMethod("coef", cl)(object, theta)
-          })
+          function(object, theta) coef(as(object, "rgmmModels"), theta))
 
 ## subset
 
@@ -112,6 +93,19 @@ setMethod("[", c("rfunctionGel", "numeric", "missing"),
                callNextMethod()
           })
 
+## evalDMoment
+
+setMethod("evalDMoment", "rgelModels",
+          function(object, theta, impProb=NULL, lambda=NULL)
+          {
+              spec <- modelDims(object)
+              if (object@vcov != "HAC")
+              {
+                  G <- evalDMoment(as(object, "rgmmModels"), theta, impProb, lambda)
+              } else {
+                  G <- getMethod("evalDMoment","gelModels")(object, theta, impProb, lambda)
+              }
+              G})
 
 ## modelFit
 

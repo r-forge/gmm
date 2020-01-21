@@ -10,7 +10,7 @@ importFrom("methods", is, new, show, "slot<-", "slotNames", "validObject",
 ### S4 Methods and Classes
 exportClasses()
 
-exportClasses("causalData", "causalGel", "causalGelfit")
+exportClasses("causalData", "causalGel", "causalGelfit", "rcausalGel")
 
 exportMethods("causalMomFct", "checkConv")
 

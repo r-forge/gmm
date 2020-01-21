@@ -137,8 +137,9 @@ gmmModel <- function(g, x=NULL, theta0=NULL,grad=NULL,
                                       survOptions=model$survOptions)
                     }
             } else if (is.function(g)) {
-                model <- .fGmmData(g, x, theta0, survOptions, vcovOptions, na.action)
-                gmodel <- new("functionGmm", X=x, fct=g,
+                model <- .fGmmData(g, x, theta0, survOptions, vcovOptions, na.action,
+                                   grad)
+                gmodel <- new("functionGmm", X=x, fct=g, dfct=model$dfct,
                               theta0=model$theta0, vcov=vcov,vcovOptions=model$vcovOptions,
                               centeredVcov = centeredVcov, k=model$k, q=model$q,
                               n=model$n, parNames=model$parNames,

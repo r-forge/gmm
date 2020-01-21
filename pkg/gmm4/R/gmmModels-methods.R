@@ -45,7 +45,16 @@ setMethod("show", "gmmModels", function(object) print(object))
 
 setMethod("coef", "gmmModels",
           function(object, theta) {
-              names(theta) <- object@parNames
+              if (length(theta) != length(object@parNames))
+                  stop("Wrong number of coefficients")
+              if (!is.null(names(theta)))
+              {
+                  if (!all(names(theta)%in%object@parNames))
+                      stop("theta has wrong names")
+                  theta <- theta[match(object@parNames, names(theta))]
+              } else {
+                  names(theta) <- object@parNames
+              }
               theta})
 
 ################## model.matrix and modelResponse #################
@@ -195,6 +204,7 @@ setMethod("Dresiduals", signature("linearGmm"),
 
 setMethod("Dresiduals", signature("nonlinearGmm"),
           function(object, theta) {
+              theta <- coef(object, theta)
               res <- modelDims(object)
               nt <- names(theta)
               nt0 <- names(res$theta0)
@@ -334,6 +344,7 @@ setMethod("evalDMoment", signature("functionGmm"),
 setMethod("evalDMoment", signature("formulaGmm"),
           function(object, theta, impProb=NULL, lambda=NULL)
           {
+              theta <- coef(object, theta)
               spec <- modelDims(object)              
               nt <- names(theta)
               nt0 <- names(spec$theta0)

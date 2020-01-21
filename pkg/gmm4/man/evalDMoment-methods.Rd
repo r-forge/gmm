@@ -3,8 +3,12 @@
 \alias{evalDMoment}
 \alias{evalDMoment-methods}
 \alias{evalDMoment,functionGmm-method}
+\alias{evalDMoment,rfunctionGmm-method}
 \alias{evalDMoment,gelModels-method}
+\alias{evalDMoment,rgelModels-method}
 \alias{evalDMoment,formulaGmm-method}
+\alias{evalDMoment,rformulaGmm-method}
+\alias{evalDMoment,rnonlinearGmm-method}
 \alias{evalDMoment,sysGmmModels-method}
 \alias{evalDMoment,rslinearGmm-method}
 \alias{evalDMoment,regGmm-method}
@@ -18,7 +22,16 @@ to the coefficients.
 \S4method{evalDMoment}{functionGmm}(object, theta, impProb=NULL,
 lambda=NULL)
 
+\S4method{evalDMoment}{rfunctionGmm}(object, theta, impProb=NULL,
+lambda=NULL)
+
+\S4method{evalDMoment}{rnonlinearGmm}(object, theta, impProb=NULL,
+lambda=NULL)
+
 \S4method{evalDMoment}{formulaGmm}(object, theta, impProb=NULL,
+lambda=NULL)
+
+\S4method{evalDMoment}{rformulaGmm}(object, theta, impProb=NULL,
 lambda=NULL)
 
 \S4method{evalDMoment}{regGmm}(object, theta, impProb=NULL,
@@ -29,6 +42,9 @@ lambda=NULL)
 \S4method{evalDMoment}{rslinearGmm}(object, theta)
 
 \S4method{evalDMoment}{gelModels}(object, theta, impProb=NULL,
+lambda=NULL)
+
+\S4method{evalDMoment}{rgelModels}(object, theta, impProb=NULL,
 lambda=NULL)
 }
 
@@ -49,10 +65,23 @@ lambda=NULL)
 \item{\code{signature(object = "functionGmm")}}{
 }
 
+\item{\code{signature(object = "rfunctionGmm")}}{
+The theta vector must match the number of coefficients in the restricted
+model.
+}
+
 \item{\code{signature(object = "gelModels")}}{
 }
 
+\item{\code{signature(object = "rgelModels")}}{
+}
+
 \item{\code{signature(object = "formulaGmm")}}{
+}
+
+\item{\code{signature(object = "rformulaGmm")}}{
+The theta vector must match the number of coefficients in the restricted
+model.
 }
 
 \item{\code{signature(object = "regGmm")}}{

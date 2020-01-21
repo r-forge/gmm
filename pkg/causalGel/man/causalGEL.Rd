@@ -15,7 +15,7 @@ causalGEL(g, balm, data, theta0=NULL,
           popMom = NULL, rhoFct=NULL,ACTmom=1L, 
           gelType = c("EL", "ET", "EEL", "ETEL", "HD", "ETHD","REEL"),
           initTheta = c("gmm","theta0"), getVcov=FALSE,
-          lambda0=NULL, 
+          lambda0=NULL, cstLHS=NULL, cstRHS=NULL,
           lamSlv=NULL, coefSlv= c("optim","nlminb","constrOptim"),
           lControl=list(), tControl=list())
 }
@@ -70,6 +70,12 @@ causalGEL(g, balm, data, theta0=NULL,
   \item{lambda0}{Manual starting values for the Lagrange
     multiplier. By default, it is a vector of zeros.}
 
+  \item{cstLHS}{The left hand side of the constraints to impose on the
+    coefficients. See \code{\link{restModel}} for more details.}
+
+  \item{cstRHS}{The right hand side of the constraints to impose on the
+    coefficients. See \code{\link{restModel}} for more details.}
+  
   \item{getVcov}{Should the method computes the covariance matrices of the
               coefficients and Lagrange multipliers.}
 

@@ -197,6 +197,7 @@ setClass("summarySysGmm",
 
 setAs("rgelModels", "rgmmModels",
       function(from) {
+          
           obj <- as(from, "gmmModels")
           cls <- strsplit(class(from), "Gel")[[1]][1]
           cls <- paste(cls, "Gmm", sep="")

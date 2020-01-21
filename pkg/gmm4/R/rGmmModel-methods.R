@@ -172,19 +172,21 @@
                 else
                     lhs[[i]] <- NULL      
                 for (r in R)
-                    {
-                        rhs[[i]] <- gsub(as.character(r[2]), paste("(", as.character(r[3]),
-                                                                   ")", sep=""), rhs[[i]])
-                        if (!is.null(lhs[[i]]))
-                            lhs[[i]] <- gsub(as.character(r[2]),
-                                             paste("(", as.character(r[3]),
-                                                   ")", sep=""), lhs[[i]])
-                    }
+                {
+                    rhs[[i]] <- gsub(as.character(r[2]), paste("(", as.character(r[3]),
+                                                               ")", sep=""), rhs[[i]])
+                    if (!is.null(lhs[[i]]))
+                        lhs[[i]] <- gsub(as.character(r[2]),
+                                         paste("(", as.character(r[3]),
+                                               ")", sep=""), lhs[[i]])
+                }
                 rhs[[i]] <- parse(text=rhs[[i]])
                 lhs[[i]] <- parse(text=lhs[[i]])
             }
         k <- object@k-length(R)
         parNames <- object@parNames[!(object@parNames %in% rest)]
+        if (length(parNames)!=k)
+            stop("Failed to create the restricted model")
         theta0 <- object@theta0[!(object@parNames %in% rest)]        
         list(rhs=rhs, lhs=lhs, parNames=parNames, theta0=theta0, k=k)
     }
@@ -257,8 +259,41 @@ setMethod("modelDims", "rfunctionGmm",
               res <- object@cstSpec
               list(k = res$k, q = object@q, n = object@n, parNames = res$newParNames, 
                    momNames = object@momNames, theta0 = res$theta0, 
-                   fct = res$fct, dfct = res$dfct)
+                   fct = object@fct, dfct = object@dfct)
           })
+
+### evalDMoment
+
+setMethod("evalDMoment", signature("rfunctionGmm"),
+          function(object, theta, impProb=NULL, lambda=NULL)
+          {
+              G <- evalDMoment(as(object, "functionGmm"),
+                               coef(object, theta), impProb, lambda)
+              ntheta <- modelDims(object)$parNames
+              G <- G[,colnames(G) %in% ntheta, drop=FALSE]
+              G
+          })
+
+setMethod("evalDMoment", signature("rformulaGmm"),
+          function(object, theta, impProb=NULL, lambda=NULL)
+          {
+              G <- evalDMoment(as(object, "formulaGmm"),
+                               coef(object, theta), impProb, lambda)
+              ntheta <- modelDims(object)$parNames
+              G <- G[,colnames(G) %in% ntheta, drop=FALSE]
+              G
+          })
+
+setMethod("evalDMoment", signature("rnonlinearGmm"),
+          function(object, theta, impProb=NULL, lambda=NULL)
+          {
+              G <- evalDMoment(as(object, "nonlinearGmm"),
+                               coef(object, theta), impProb, lambda)
+              ntheta <- modelDims(object)$parNames
+              G <- G[,colnames(G) %in% ntheta, drop=FALSE]
+              G
+          })
+
 
 ### print restricted equation
 
@@ -649,7 +684,6 @@ setMethod("coef", "rlinearGmm",
 setMethod("coef", "rnonlinearGmm",
           function(object, theta)
           {
-              
               spec <- modelDims(object)
               if (length(theta)>0)
               {
