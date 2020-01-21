@@ -411,12 +411,16 @@ different options in the next section.
 
 \section{Estimating the causal effect}\label{sec:estim}
 
-The package is based on the ``gmm4'' package \citep{gmm4}. As for the
-methods included in the package, there are two ways to proceed. We can
-create a model object and use the \textit{modelFit} method to estimate
-it, or we can directly estimate a model using a general function. We
-first present the first approach because it helps better understand
-the structure of the package. 
+The package is based on the ``momentfit'' package \citep{momentfit},
+which offers ways to build classes for moment-based models, and
+algorithms to estimate them. It offers two ways to fit a model. We can
+either create the model object and call the \textit{gmmFit} or
+\textbf{gelFit} method to estimate it by GMM or GEL, or diectly call
+the gmm4() or gel4() function. The ``causalGEL'' package is built in
+th same way. Section \ref{sec:causalobj} presents the two-step way,
+which is useful is we want to fit the same model using different
+methods, and Section \ref{sec:causalgel} presents the one-step way,
+using the causalGel() function.
 
 \subsection{An S4 class object for causal inference}\label{sec:causalobj}
 
@@ -439,9 +443,9 @@ nsw$re78 <- nsw$re78/1000
 nsw$re75 <- nsw$re75/1000
 @ 
 
-The model class, is ``causalModel'' which inherits directly from
-``functionModel'' class. The constructor is the causalModel()
-function. The arguments are:
+The model class, is ``causalModel'' which inherits directly from the
+``functionModel'' class defined in the ``modelfit'' package. The
+constructor is the causalModel() function. The arguments are:
 
 \begin{itemize}
 \item \textit{g}: A formula that defines the regression of the outome
@@ -474,7 +478,7 @@ balm <- ~age+ed+black+hisp+re75
       \]
     \item ``ACT'': This is for the causal effect on the treated. In
       that case, the argument ``ACTmom'' determines which of the
-      treatment groups we are refering to. The moment function
+      treated groups we are refering to. The moment function
       $g(t;\theta)$ is defined by Equation \eqref{eq:13}, and $\mu_0$
       is defined as:
       \[
@@ -482,9 +486,9 @@ balm <- ~age+ed+black+hisp+re75
       \]
       where $n_j=\sum_{i=1}^n Z_{ji}$, and $j$ is the value of
       ``ACTmom''.
-    \item ``ACC'': This is for the causal effect on the control. The moment function
-      $g(t;\theta)$ is defined by Equation \eqref{eq:13}, and $\mu_0$
-      is defined as:
+    \item ``ACC'': This is for the causal effect on the control. The
+      moment function $g(t;\theta)$ is defined by Equation
+      \eqref{eq:13}, and $\mu_0$ is defined as:
       \[
       \mu_0 = \frac{1}{n_0}\sum_{i=1}^n Z_{0i}u(X_i)\,,
       \]
@@ -493,13 +497,13 @@ balm <- ~age+ed+black+hisp+re75
       effect in randomized trials. The moment function $g(t;\theta)$
       is defined by Equation \eqref{eq:8}. In the case of
       observational data, it is not recommended because the moments
-      are balanced, but represent estimates of the moments of an
+      are balanced, but represent estimates of the moments for an
       undefined population.
     \item ``fixedMom'': The causal effect of a target population for
-      which $\Ex(\mu(X)$ is known is estimated. The moment function
-      $g(t;\theta)$ is defined by Equation \eqref{eq:13}, and $\mu_0$
-      is set to ``popMom'', which is another argument of
-      causalModel() (see below).
+      which $\Ex(\mu(X)$ is known. The moment function $g(t;\theta)$
+      is defined by Equation \eqref{eq:13}, and $\mu_0$ is set to
+      ``popMom'', which is another argument of causalModel() (see
+      below).
     \end{itemize}
   \item \textit{popMom}: A $k\times 1$ vector, representing
     $\Ex(\mu(X))$. If provided, \textit{momType} is automatically set
@@ -513,8 +517,8 @@ balm <- ~age+ed+black+hisp+re75
     implied probability, defined in Equation \eqref{eq:11}, to be
     non-negative.
  \item \textit{rhoFct}: An optional $\rho(v)$ function if the desired
-   GEL method is not available in the package (see the vignette of
-   gmm4 for more details).
+   GEL method is not available in the package (see the GEL vignette
+   from the ``momentfit'' package for more details).
  \item \textit{data}: A data.frame with all the variables needed to
    evaluate the formulas \textit{g} and \textit{balm}.
   \end{itemize}
@@ -541,7 +545,8 @@ print(act, printBalCov=TRUE)
 @ 
 
 To add powers and interactions, we can follow the usual rules for
-formula. Here is an example:
+formulas. Here is an example in which age is interacted with
+education, and 1975 income squared is included:
 
 <<>>=
 balm2 <- ~age*ed+black+hisp+re75+I(re75^2)
@@ -549,12 +554,17 @@ ace2 <- causalModel(g, balm2, nsw, momType="ACE")
 print(ace2, printBalCov=TRUE)
 @ 
 
-\subsection{The \textit{gelFit} method and the ``causalGelfit'' object}\label{sec:causalfit}
+\subsection{The \textit{gelFit} method and the ``causalGelfit'' object}\label{sec:gelfit}
 
-It simply calls the method for ``functionGel'', and creates a
-``causalGelfit'' class object. The simpliest way to use it is to only
-provide the model object. The \textit{print} allows to show the
-$\lambdahat$ and model. 
+As mentioned in the previous section, the ``causalModel'' inherits
+from the ``functionModel'' class. The \textit{gelFit} method is
+therefore a slightly modified method that calls the \textit{gelFit}
+for ``functionModel'' objects, and creates a ``causalGelfit''
+object. It inherits directly from ``gelfit'' class, but having a
+different one allows to build other methods such as \textit{print} and
+\textit{vcov}, that are specific to our model. The following
+\textit{print} method offers the option of printing the $\lambdahat$
+and the model info.
 
 <<>>=
 fit1 <- gelFit(ace, gelType="EL") ## EL is the default
@@ -563,9 +573,11 @@ print(fit1, model=FALSE, lambda=TRUE)
 
 The coefficients are labeled as ``control'' for $\theta_1$,
 ``causalEffect'' for $\theta_2$, and ``probTreatment'' for
-$\theta_3$. The following are the existing methods for
-``causalGelfit'' objects. Since ``causalGelfit'' contains a ``gelfit''
-object, most methods are for \GEL fit objects. 
+$\theta_3$. For the case of multiple treatments, the treatment effect
+coefficients are labeled ``causalEffecti'', where $i$ identifies the
+treatment. The following are the existing methods for ``causalGelfit''
+objects. Since ``causalGelfit'' contains a ``gelfit'' object, most
+methods are the one built for ``gelfit'' objects. Here is a list:
 
 \begin{itemize}
   \item \textit{vcov}: It computes the covariance matrix of
@@ -655,7 +667,8 @@ print(ace[1:3,nsw$re75>0], TRUE)
 @ 
 
 An easy way to re-estimate a new model specified by ``[``, is to use
-  the method for ``causalGelfit'' objects:
+  the method for ``causalGelfit'' objects. It changes the model and
+  re-estimate it.
   
 <<>>=
 fit <- gelFit(ace)
@@ -687,12 +700,12 @@ second column is $[\sum_{i=1}^n \phat_iZ_i\mu(X_i)]/[\sum_{i=1}^n
 and $\Ex(\mu(X)|Z=1)$. We can see that the moments are well balanced,
 at least up to six decimals.
 
-\section{The causalGEL function}
+\section{The causalGEL function}\label{sec:causalgel}
 
 The function allows to estimate the causal effect without having to go
 through the step of creating the model. The different arguments are a
 mixture of the arguments of causalModel(), the \textit{solveGel}
-method of the ``gmm4'' package, and the \textit{modelFit}
+method of the ``momentfit'' package, and the \textit{gelFit}
 method. The average causal effect of the training program, assuming
 random assignment and using \EL, can be obtained as follows:
 
@@ -762,6 +775,25 @@ causalGEL(re78~treat, ~age+ed+black+hisp+re75, nsw, gelType="EL",
           tControl=list(method="Brent", lower=0, upper=10))@theta
 @ 
 
+Notice that it is also possible to create a restricted model and
+follow the method described in Section \ref{sec:estim}. To create the
+above two restricted models, we first create the unrestricted one:
+
+<<>>=
+Un_model <- causalModel(re78~treat, ~age+ed+black+hisp+re75, nsw,
+                    momType="uncondBal")
+@ 
+
+Then, we use the \textit{restModel} method from the ``momentfit'' package:
+
+<<>>=
+restModel(Un_model, causalEffect~1)
+# or restModel(Un_model, "causalEffect=1")
+restModel(Un_model, list(causalEffect~1, probTreatment~0.5))
+# or restModel(Un_model, c("causalEffect=1", "probTreatment=0.5"))
+@ 
+
+The \textit{gelFit} method can then be applied to the restricted models.
 
 \bibliography{causal}
 
