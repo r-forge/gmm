@@ -740,7 +740,9 @@ setMethod("momentStrength", signature("linearModel"),
                                           OLS=vcov(resu),
                                           HC=vcovHC(resu,"HC1"),
                                           HAC=vcovHAC(resu),
-                                          CL=do.call(vcovCL,c(object@vcovOptions, x=resu)))
+                                          CL=do.call(vcovCL,c(object@vcovOptions,
+                                                              list(x=resu)))
+                                          )
                               v <- v[!exoInst,!exoInst]
                               b <- coef(resu)[!exoInst]
                               f <- b%*%solve(v, b)/df1
