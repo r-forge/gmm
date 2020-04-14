@@ -1,0 +1,15 @@
+useDynLib(SEIR, .registration = TRUE, .fixes="F_")
+
+importFrom("stats", "spline")
+importFrom("utils", "tail")
+importFrom("graphics", "plot", "lines", "legend")
+
+export(SEIR, solveSEIR, plot.seir, print.seir)
+
+S3method(plot, seir)
+S3method(print, seir)
+S3method("[", seir)
+
+
+
+

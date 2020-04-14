@@ -1,0 +1,237 @@
+\documentclass[11pt,letterpaper]{article}
+\usepackage{amsthm}
+
+\usepackage[hmargin=2cm,vmargin=2.5cm]{geometry}
+\newtheorem{theorem}{Theorem}
+\newtheorem{col}{Corollary}
+\newtheorem{lem}{Lemma}
+\usepackage[utf8x]{inputenc}
+\newtheorem{ass}{Assumption}
+\usepackage{amsmath}
+\usepackage{verbatim}
+\usepackage[round]{natbib}
+\usepackage{amsfonts}
+\usepackage{amssymb}
+\usepackage{graphicx}
+\usepackage{hyperref}
+\hypersetup{
+  colorlinks,
+  citecolor=black,
+  filecolor=black,
+  linkcolor=black,
+  urlcolor=black
+}
+
+\bibliographystyle{plainnat}
+
+
+\author{Pierre Chauss\'e}
+\title{The Susceptible, Exposed, Infectious, Removed (SEIR) Model}
+\begin{document}
+
+\maketitle
+
+\newcommand{\E}{\mathrm{E}}
+\newcommand{\diag}{\mathrm{diag}}
+\newcommand{\Prob}{\mathrm{Pr}}
+\newcommand{\Var}{\mathrm{Var}}
+\newcommand{\Vect}{\mathrm{Vec}}
+\newcommand{\Cov}{\mathrm{Cov}}
+\newcommand{\conP}{\overset{p}{\to}}
+\newcommand{\conD}{\overset{d}{\to}}
+\newcommand\R{ \mathbb{R} }
+\newcommand\N{ \mathbb{N} }
+\newcommand\C{ \mathbb{C} }
+\newcommand\rv{{\cal R}}
+\newcommand\Q{\mathbb{Q}}
+\newcommand\PR{{\cal R}}
+\newcommand\T{{\cal T}}
+\newcommand\Hi{{\cal H}}
+\newcommand\La{{\cal L}}
+\newcommand\plim{plim}
+\renewcommand{\epsilon}{\varepsilon}
+
+\abstract{This vignette presents how to use the SEIR package}
+%\VignetteIndexEntry{SEIR Model}
+%\VignetteKeywords{virus, spread}
+%\VignettePackage{SEIR}
+%\VignetteEngine{knitr::knitr}
+<<echo=FALSE>>=
+library(knitr)
+opts_chunk$set(size='footnotesize')
+@ 
+
+\section{The SEIR Model}\label{sec:single}
+
+This package solves the SEIR model for the spread of a virus. In the
+example, the parameters of \cite{wang-all20} are used for the case of
+Wuhan, China. The model is available in Matlab on Peter Forsyth
+webpage
+(\href{https://cs.uwaterloo.ca/~paforsyt/SEIR.html}{https://cs.uwaterloo.ca/~paforsyt/SEIR.html}). In
+fact, the R package is based on the work of Peter. You are invited to
+read his page for more details about the model. The system of
+differencial equations is:
+\begin{eqnarray*}
+\dot{S}(t) &=& -\beta(t) \frac{S(t)I(t)}{N}\\
+\dot{E}(t) &=& \beta(t) \frac{S(t)I(t)}{N} - \sigma E(t)\\
+\dot{I}(t) &=& \sigma E(t) - \gamma I(t) +c\frac{R(t)I(t)}{N}\\
+\dot{R}(t) &=& \gamma I(t)- c \frac{R(t)I(t)}{N}
+\end{eqnarray*}
+where $\beta(t)=\gamma RZero(t)$ and $RZero(t)$ is the number of
+individuals infected by an infectious person. It is a function of time
+because the transmission if function of the social distancing policy
+in place.
+
+\section{The Package}
+
+The main function is solveSEIR. It creates an object of class ``seir''. The main arguments are (See Peter's Matlab code for the source):
+\begin{itemize}
+\item h: The time interval used in the Runge-Kutta method.
+\item T: The number of days to solve.
+\item c: Mutation parameter (0 when no mutation is present)  
+\item sigma: Set to 1/5.2 for the Wuhan case.
+\item gamma: Set to 1/18 for the Wuhan case.
+\item y0: The initial value  $\{S(0), E(0), I(0), R(0)\}$.
+\item r0: The matrix of breaks for RZero(t).  See below.
+\item type: Type of RZero(t). See below.
+\end{itemize}
+
+In this document, we use the default parameter used by Peter
+Forsyth. The important factor is $RZero(t)$, which is determined by
+the arguments tyee an r0. The default type is ``LIN'' and the default r0 is:
+
+<<>>=
+matrix(c(0, 20, 70, 
+    84, 90, 3, 2.6, 1.9, 1, 0.5), ncol = 2)
+@ 
+
+It means that the value of RZero(t) changes at t=20, 70, 84 and 90
+(days). The type argument determines how it changes. By default it
+looks like the following:
+\begin{center}
+  \begin{minipage}{.7\textwidth}
+<<echo=FALSE, fig.height=4.5>>=
+library(SEIR) # we first load the package
+s <- solveSEIR()
+plot(s, "rzero")
+@     
+  \end{minipage}
+\end{center}
+Therefore, $RZero(t)$ is a linear interpolation between the different
+values. The other option is to have a constant $RZero(t)$ between
+periods as in the following graph.
+\begin{center}
+  \begin{minipage}{.7\textwidth}
+<<echo=FALSE, fig.height=4.5>>=
+s <- solveSEIR( type="C")
+plot(s, "rzero")
+@     
+\end{minipage}
+\end{center}
+The first $RZero(t)$ is the default option. If we run the function
+with all default values we obtain (the print method summarizes the result):
+
+<<>>=
+Sol <- solveSEIR()
+Sol
+@ 
+
+The object contains the following elements:
+
+<<>>=
+names(Sol)
+@ 
+
+The element y is an $nT\times4$ matrix, where $nT$ is the number of
+grid points (the closest integer of T/h), with the $i^{th}$ row being
+the solution $\{S(t_i), E(t_i), I(t_i), R(t_i)\}$. The element t is
+the time grid and $RZero$ is an $nT$ vector with the $i^{th}$ element
+being $RZero(t_i)$. The "["  method can be used to get the solution
+  at different points in time:
+<<>>=
+Sol[c(10,50,100,150)]  
+@   
+
+It is possible to use those elements to plot the solution, but the
+easiest ways is to use the plot method. The plot method gives you
+options to plot any of the curve:
+
+\begin{center}
+  \begin{minipage}{.4\textwidth}
+<<fig.height=5>>=
+plot(Sol, "acase")
+@     
+\end{minipage}
+\begin{minipage}{.4\textwidth}
+<<fig.height=5>>=
+plot(Sol, "tcase")
+@     
+\end{minipage}
+\end{center}
+
+\begin{center}
+\begin{minipage}{.4\textwidth}
+<<fig.height=5>>=
+plot(Sol, "both")
+@     
+\end{minipage}
+\begin{minipage}{.4\textwidth}
+<<fig.height=5>>=
+plot(Sol, "rzero")
+@     
+\end{minipage}
+\end{center}
+
+You can also plot them one by one:
+
+\begin{center}
+\begin{minipage}{.4\textwidth}
+<<fig.height=5>>=
+plot(Sol, "E")
+@     
+\end{minipage}
+\begin{minipage}{.4\textwidth}
+<<fig.height=5>>=
+plot(Sol, "I")
+@     
+\end{minipage}
+\end{center}
+
+As a last example, we can reproduce the second wave case produced by
+Peter Forsyth on his website. Suppose RZero stays at 0.5 for 30 days
+and then the government start relaxing the social distancing
+restrictions. The following is what he proposes:
+
+\begin{center}
+\begin{minipage}{.7\textwidth}
+<<fig.height=5>>=
+zbreaks <- matrix(c(0,  20,  70,  84,  90, 120, 240, 360,
+                    3, 2.6,  1.9, 1,  0.5, 0.5, 1.75, 0.5), ncol = 2)
+Sol <- solveSEIR(T=450, r0=zbreaks)
+plot(Sol, "rzero")
+@ 
+\end{minipage}
+\end{center}
+
+The new solution is:
+\begin{center}
+  \begin{minipage}{.4\textwidth}
+<<fig.height=5>>=
+plot(Sol, "acase")
+@     
+\end{minipage}
+\begin{minipage}{.4\textwidth}
+<<fig.height=5>>=
+plot(Sol, "both")
+@     
+\end{minipage}
+\end{center}
+
+
+
+
+
+
+\bibliography{seir}
+\end{document} 
+
