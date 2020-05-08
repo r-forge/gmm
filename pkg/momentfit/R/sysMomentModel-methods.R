@@ -114,7 +114,7 @@ setMethod("[", c("snonlinearModel", "numeric", "missing"),
               if (length(x@q) > 1)
                   return(x)
               instF <- model.frame(x@instT[[1]], x@data)
-              varN <- c(all.vars(x@fLHS[[1]]), all.vars(x@fRHS))
+              varN <- c(all.vars(x@fLHS[[1]]), all.vars(x@fRHS[[1]]))
               varN <- varN[!(varN%in%names(x@theta0[[1]]))]
               modelF <- x@data[,varN, drop=FALSE]
               new("nonlinearModel", instF=instF, modelF=modelF, q=x@q[[1]],
@@ -122,7 +122,7 @@ setMethod("[", c("snonlinearModel", "numeric", "missing"),
                   k=x@k[[1]], parNames=x@parNames[[1]], momNames=x@momNames[[1]],
                   vcov=x@vcov, n=spec$n,vcovOptions=x@vcovOptions,
                   centeredVcov=x@centeredVcov, varNames=x@varNames[[1]],
-                  isEndo=x@isEndo[[1]], survOptions=x@survOptions, smooth=)
+                  isEndo=x@isEndo[[1]], survOptions=x@survOptions, smooth=FALSE)
           })
 
 
