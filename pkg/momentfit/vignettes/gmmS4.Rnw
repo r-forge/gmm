@@ -2078,14 +2078,19 @@ Notice that the equations are merged to the first argument. It the
 \subsection{Restricted models}\label{sec:smomentmodel-rest}
 
 As for the single equation case, we can create an object with
-restrictions imposed on the coefficients. For now, only linear
-restrictions on linear models are implemented in the package. The
-class is ``rslinearModel'' and it contains its unrestricted
-counterpart. Restrictions are imposed in the same way they are imposed
-in the single equation case. We can impose cross-equation
-restrictions, or simply impose restrictions equation by equation. The
-method \textit{restModel} is used to create the restricted models. In
-the following example, restrictions are imposed equation by equation.
+restrictions imposed on the coefficients. It is possible to impose
+linear and nonlinear restrictions on systems of linear and nonlinear
+equations. The classes are ``rslinearModel'' and ``rsnonlinearModel'',
+and they contain their unrestricted counterparts. Restrictions are
+imposed differently on linear and nonlinear models. For systems of
+linear equations it is like imposing restrictions on single equation
+models. We can impose cross-equation restrictions, or simply impose
+restrictions equation by equation. 
+
+\subsubsection*{System of linear equations}
+The method \textit{restModel} is used to create the restricted
+models. In the following example, restrictions are imposed equation by
+equation.
 
 <<>>=
 R1 <- list(c("x1=-12*z2"), character(), c("x3=0.8", "z1=0.3"))
@@ -2093,12 +2098,11 @@ rsmod1 <- restModel(smod1, R1)
 rsmod1
 @
 
-For now, $R$ is a list of the same length as the number of
-equations. For equations with no restrictions, an empty character
-vector must be provided. (Eventually, we will allow $R$ to be a named
-list with the names being the equation names.) For cross-equation
-restrictions, we need to add to the coefficient names the equation
-names.
+$R$ is a list of the same length as the number of equations. For
+equations with no restrictions, an empty character vector must be
+provided. (Eventually, we will allow $R$ to be a named list with the
+names being the equation names.) For cross-equation restrictions, we
+need to add to the coefficient names the equation names.
 
 <<>>=
 R2<- c("Supply.x1=1", "Demand1.x3=Demand2.x3")
@@ -2186,6 +2190,29 @@ The \textit{"["} method works the same way. We can therefore get the
 <<>>=
 rsmod1[1]
 @ 
+
+\subsubsection*{Systems of nonlinear equations}
+
+It is easier to impose restrictions on nonlinear models because the
+names of the coefficients are different across equations. We can start
+by converting the above system of linear equations to an
+``snonlinearModel'' object:
+
+<<>>=
+nsmod <- as(smod1, "snonlinearModel")
+nsmod
+@ 
+
+This conversion method is particularly useful to impose nonlinear
+restrictions on the coefficients of linear models. We use it here to
+illustrate how to impose restrictions. The parameters of the model are:
+
+<<>>=
+nsmod@parNames
+@ 
+
+
+
 
 \subsection{Genelarized method of moments}\label{sec:sysgmm}
 

@@ -358,7 +358,7 @@ setMethod("evalDMoment", signature("rnonlinearModel"),
     n <- length(hypothesis)
     k <- length(cnames)
     # an attempt to rename all special variable names (from transformed I() e.g. or
-    # interection :. 
+    # interaction :. 
     newN <- paste("theta", 1:k, sep="")
     tmp <- cnames
     hasI <- grepl("I(", cnames, fixed=TRUE)
@@ -613,6 +613,7 @@ setGeneric("getRestrict", function(object, ...)
 
 setMethod("getRestrict", "rlinearModel",
           function(object, theta) {
+              theta <- setCoef(as(object, "linearModel"), theta)
               R <- c(object@cstLHS%*%theta)
               cst <- .printHypothesis(object@cstLHS, object@cstRHS, object@parNames)
               list(dR=object@cstLHS, R=R, q=object@cstRHS, hypo=cst,
@@ -623,6 +624,7 @@ setMethod("getRestrict", "rnonlinearModel",
           function(object, theta) {
               dR <-numeric()
               R <- numeric()
+              theta <- setCoef(as(object, "nonlinearModel"), theta)              
               for (r in object@R)
                   {
                       dlhs <- sapply(object@parNames, function(pn)
@@ -685,18 +687,7 @@ setMethod("coef", "rnonlinearModel",
           function(object, theta)
           {
               spec <- modelDims(object)
-              if (length(theta)>0)
-              {
-                  if (is.null(names(theta)))
-                  {
-                      if (length(theta)!=length(spec$parNames))
-                          stop("Wrong number of coefficients")
-                      names(theta) <- spec$parNames
-                  } else {
-                      if (!all(names(theta)%in%spec$parNames))
-                          stop("theta has wrong names")
-                  }
-              }
+              theta <- setCoef(object, theta)
               theta2 <- rep(0,object@k)
               names(theta2) <- object@parNames
               theta2[names(theta)] <- theta
