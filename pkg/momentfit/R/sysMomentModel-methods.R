@@ -5,28 +5,28 @@
 
 setMethod("print", "sysModel",
           function(x, ...)
-              {
-                  cat("System of Equations Model\n")
-                  cat("*************************\n")
-                  type <- gsub("s", "", is(x)[1])
-                  cat("Moment type: ", strsplit(type, "G")[[1]][1], "\n", 
-                      sep = "")
-                  cat("Covariance matrix: ", x@vcov, sep = "")
-                  if (x@vcov == "HAC") {
-                      option <- x@vcovOptions
-                      cat(" with ", option$kernel, " kernel and ")
-                      if (is.numeric(option$bw)) 
-                          cat("Fixed  bandwidth (", round(option$bw, 3), ")", sep = "")
-                      else cat(option$bw, " bandwidth", sep = "")
-                  }
-                  cat("\n")
-                  d <- modelDims(x)
-                  for (i in 1:length(d$eqnNames))
-                      cat(d$eqnNames[i], ": coefs=", d$k[i],
-                          ", moments=", d$q[i], ", number of Endogenous: ",
-                          sum(d$isEndo[[i]]), "\n", sep="")
-                  cat("Sample size: ", d$n, "\n")
-              })
+          {
+              cat("System of Equations Model\n")
+              cat("*************************\n")
+              type <- gsub("s", "", is(x)[1])
+              cat("Moment type: ", strsplit(type, "G")[[1]][1], "\n", 
+                  sep = "")
+              cat("Covariance matrix: ", x@vcov, sep = "")
+              if (x@vcov == "HAC") {
+                  option <- x@vcovOptions
+                  cat(" with ", option$kernel, " kernel and ")
+                  if (is.numeric(option$bw)) 
+                      cat("Fixed  bandwidth (", round(option$bw, 3), ")", sep = "")
+                  else cat(option$bw, " bandwidth", sep = "")
+              }
+              cat("\n")
+              d <- modelDims(x)
+              for (i in 1:length(d$eqnNames))
+                  cat(d$eqnNames[i], ": coefs=", d$k[i],
+                      ", moments=", d$q[i], ", number of Endogenous: ",
+                      sum(d$isEndo[[i]]), "\n", sep="")
+              cat("Sample size: ", d$n, "\n")
+          })
 
 setMethod("show", "sysModel", function(object) print(object))
 
@@ -651,19 +651,19 @@ setMethod("solveGmm", signature("snonlinearModel", "sysMomentWeights"),
                   theta0 <- setCoef(object, theta0)
               g <- function(theta, wObj, object){
                   spec <- modelDims(object)
-                  theta <- momentfit:::.tetReshape(theta, object@eqnNames, spec$parNames)
+                  theta <- .tetReshape(theta, object@eqnNames, spec$parNames)
                   evalGmmObj(object, theta, wObj)
               }
               dg <- function(theta, wObj, object) {
                   spec <- modelDims(object)
-                  theta <- momentfit:::.tetReshape(theta, object@eqnNames, spec$parNames)
+                  theta <- .tetReshape(theta, object@eqnNames, spec$parNames)
                   gt <- evalMoment(object, theta)
                   gt <- do.call(cbind, gt)
                   n <- nrow(gt)
                   gt <- colMeans(gt)
                   G <- evalDMoment(object, theta)
                   full <- all(sapply(1:length(G), function(i) ncol(G[[i]])==sum(spec$k)))
-                  G <- momentfit:::.GListToMat(G, full)
+                  G <- .GListToMat(G, full)
                   obj <- 2 * n * quadra(wObj, G, gt)
                   obj
               }

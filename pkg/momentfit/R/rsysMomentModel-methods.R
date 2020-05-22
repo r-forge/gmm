@@ -32,33 +32,43 @@
         stop("The derivative of the constraints at theta0 is either infinite or NAN")
     if (qr(dR)$rank < length(R))
         stop("The matrix of derivatives of the constraints is not full rank")
-    rhs <- lapply(fRHS, function(ri) as.character(ri))
-    lhs <- lapply(fLHS, function(ri) ifelse(is.null(ri),NULL,as.character(ri)))
+    rhs <- object@fRHS
+    lhs <- object@fLHS
+    env <-  new.env()
+    varNames <- list()
     for (r in R)
     {
-        rhs <- gsub(as.character(r[2]), paste("(", as.character(r[3]),
-                                              ")", sep=""), rhs)
-        if (!is.null(lhs))
-            lhs <- gsub(as.character(r[2]),
-                        paste("(", as.character(r[3]),
-                              ")", sep=""), lhs)
+        assign(as.character(r[2]),
+               parse(text=paste("(", as.character(r[3]), ")", sep=""))[[1]], env)
     }
-    rhs <- lapply(rhs, function(ri) parse(text=ri))
-    lhs <- lapply(lhs, function(ri) parse(text=ri))
+    for (i in 1:length(rhs))
+    {
+        rhs[[i]] <- as.expression(do.call('substitute', list(rhs[[i]][[1]], env)))
+        if (!is.null(lhs[[i]]))
+            lhs[[i]] <- as.expression(do.call('substitute', list(lhs[[i]][[1]], env)))
+        tmp <- c(all.vars(rhs[[i]]))
+    }
     k <- sum(spec$k)-length(R)
     parNames <- if (is.list(spec$parNames))
-                    lapply(spec$parNames, function(pi) pi[!(pi %in% rest)])
-                else
-                    spec$parNames[!(spec$parNames %in% rest)]
+                    {
+                        lapply(spec$parNames, function(pi) pi[!(pi %in% rest)])
+                    } else {
+                        spec$parNames[!(spec$parNames %in% rest)]
+                    }
     theta0 <- if (is.list(spec$theta0))
+              {
                   lapply(spec$theta0, function(ti) ti[!(names(ti) %in% rest)])
-              else
+              } else {
                   spec$theta0[!(names(spec$theta0) %in% rest)]
+              }
+    
     if (length(rhs) == 1)
     {
         rhs <- rhs[[1]]
         lhs <- lhs[[1]]
     }
+    if (is.list(parNames))
+        k <- sapply(parNames, length)
     list(rhs=rhs, lhs=lhs, parNames=parNames,
          theta0=theta0, k=k, crossEquRest=crossRest)
 }
@@ -231,7 +241,8 @@ setMethod("modelDims", "rsnonlinearModel",
               fLHS <- cst$fLHS
               list(k=k, q=object@q, n=object@n, parNames=parNames,
                    momNames=object@momNames, theta0=theta0,
-                   fRHS=fRHS, fLHS=fLHS, eqnNames=object@eqnNames)
+                   fRHS=fRHS, fLHS=fLHS, eqnNames=object@eqnNames,
+                   isEndo=object@isEndo)
           })
 
 ## printRestrict
@@ -302,7 +313,8 @@ setMethod("print", "rslinearModel",
 
 setMethod("print", "rsnonlinearModel", 
           function (x, ...) {
-              print(as(x, "snonlinearModel"))
+              callNextMethod()
+              cat("(The number of endogenous variables is unreliable)\n")              
               printRestrict(x)
               cat("\n")
           } )

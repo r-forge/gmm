@@ -103,22 +103,17 @@
             stop("The derivative of the constraints at theta0 is either infinite or NAN")
         if (qr(dR)$rank < length(R))
             stop("The matrix of derivatives of the constraints is not full rank")
-        rhs <- as.character(object@fRHS)
-        if (!is.null(object@fLHS))
-            lhs <- as.character(object@fLHS)
-        else
-            lhs <- NULL
+        rhs <- object@fRHS
+        lhs <- object@fLHS
+        env <-  new.env()        
         for (r in R)
-            {
-                rhs <- gsub(as.character(r[2]), paste("(", as.character(r[3]),
-                                                      ")", sep=""), rhs)
-                if (!is.null(lhs))
-                    lhs <- gsub(as.character(r[2]),
-                                paste("(", as.character(r[3]),
-                                      ")", sep=""), lhs)
-            }
-        rhs <- parse(text=rhs)
-        lhs <- parse(text=lhs)
+        {
+            assign(as.character(r[2]),
+                   parse(text=paste("(", as.character(r[3]), ")", sep=""))[[1]], env)
+        }
+        rhs <- as.expression(do.call('substitute', list(rhs[[1]], env)))
+        if (!is.null(lhs))
+            lhs <- as.expression(do.call('substitute', list(lhs[[1]], env)))
         k <- object@k-length(R)
         parNames <- object@parNames[!(object@parNames %in% rest)]
         theta0 <- object@theta0[!(object@parNames %in% rest)]        
@@ -162,27 +157,20 @@
             stop("The derivative of the constraints at theta0 is either infinite or NAN")
         if (qr(dR)$rank < length(R))
             stop("The matrix of derivatives of the constraints is not full rank")
-        rhs <- list()
-        lhs <- list()
-        for (i in 1:length(object@fRHS))
-            {
-                rhs[[i]] <- as.character(object@fRHS[[i]])
-                if (!is.null(object@fLHS[[i]]))
-                    lhs[[i]] <- as.character(object@fLHS[[i]])
-                else
-                    lhs[[i]] <- NULL      
-                for (r in R)
-                {
-                    rhs[[i]] <- gsub(as.character(r[2]), paste("(", as.character(r[3]),
-                                                               ")", sep=""), rhs[[i]])
-                    if (!is.null(lhs[[i]]))
-                        lhs[[i]] <- gsub(as.character(r[2]),
-                                         paste("(", as.character(r[3]),
-                                               ")", sep=""), lhs[[i]])
-                }
-                rhs[[i]] <- parse(text=rhs[[i]])
-                lhs[[i]] <- parse(text=lhs[[i]])
-            }
+        rhs <- object@fRHS
+        lhs <- object@fLHS
+        env <-  new.env()
+        for (r in R)
+        {
+            assign(as.character(r[2]),
+                   parse(text=paste("(", as.character(r[3]), ")", sep=""))[[1]], env)
+        }
+        for (i in 1:length(rhs))
+        {
+            rhs[[i]] <- as.expression(do.call('substitute', list(rhs[[i]][[1]], env)))
+            if (!is.null(lhs[[i]]))
+                lhs[[i]] <- as.expression(do.call('substitute', list(lhs[[i]][[1]], env)))
+        }
         k <- object@k-length(R)
         parNames <- object@parNames[!(object@parNames %in% rest)]
         if (length(parNames)!=k)
