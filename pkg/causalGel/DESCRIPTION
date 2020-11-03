@@ -1,12 +1,12 @@
 Package: causalGel
-Version: 0.0-1
-Date: 2020-01-20
+Version: 0.1-0
+Date: 2020-11-03
 Title: Causal Inference using Generalized Empirical
         Likelihood Methods
 Author: Pierre Chausse <pchausse@uwaterloo.ca>
 Maintainer: Pierre Chausse <pchausse@uwaterloo.ca>
 Description: Methods for causal inference in which covariates are balanced using generalized empirical likelihod methods.
-Depends: R (>= 3.0.0), momentfit (>= 0.1.0)
+Depends: R (>= 3.0.0), momentfit (>= 0.1.1)
 Imports: stats, methods
 Suggests: lmtest, knitr, texreg
 Collate: 'allClasses.R' 'causalMethods.R' 'rcausalMethods.R' 'causalGel.R'

@@ -1,17 +1,14 @@
 ## Model builder
 
 causalModel <- function(g, balm, data,theta0=NULL,
-                      momType=c("ACE","ACT","ACC", "uncondBal","fixedMom"),
+                      momType=c("ACE","ACT","ACC", "uncondBal"),
                       popMom = NULL, ACTmom=1L) 
 {
     momType <- match.arg(momType)
     if (!is.null(popMom))
         {
             momType <- "fixedMom"
-        } else {
-            if (momType == "fixedMom")
-                stop("With fixed moments, popMom must be provided")
-        }    
+        }
     tmp_model <- momentfit:::.lModelData(g, balm, data)
     if (attr(terms(tmp_model$modelF), "intercept") != 1)
         stop("You cannot remove the intercept from g")

@@ -10,7 +10,7 @@ specific function that depends on the type of causality.
 }
 \usage{
 causalModel(g, balm, data,theta0=NULL,
-            momType=c("ACE","ACT","ACC", "uncondBal","fixedMom"),
+            momType=c("ACE","ACT","ACC", "uncondBal"),
             popMom = NULL, ACTmom=1L) 
 }
 \arguments{

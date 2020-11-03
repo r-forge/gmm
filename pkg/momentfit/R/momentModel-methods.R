@@ -168,7 +168,7 @@ setMethod("residuals", signature("nonlinearModel"),
           function(object, theta)
               {
                   res <- modelDims(object)
-                  theta <- setCoef(object, theta)
+                  theta <- coef(object, setCoef(object, theta))
                   varList <- c(as.list(theta), as.list(object@modelF))
                   if (!is.null(res$fLHS))
                       {
@@ -200,7 +200,7 @@ setMethod("evalMoment", signature("regModel"),
 
 setMethod("evalMoment", signature("functionModel"),
           function(object, theta) {
-              theta <- setCoef(object, theta)
+              theta <- coef(object, setCoef(object, theta))              
               gt <- object@fct(theta, object@X)
               if (!is.null(sub <- attr(object@X, "subset")))
                   gt <- gt[,sub]
@@ -212,7 +212,7 @@ setMethod("evalMoment", signature("functionModel"),
 setMethod("evalMoment", signature("formulaModel"),
           function(object, theta) {
               res <- modelDims(object)
-              theta <- setCoef(object, theta)
+              theta <- coef(object, setCoef(object, theta))              
               varList <- c(as.list(theta), as.list(object@modelF))
               gt <- sapply(1:res$q, function(i) {
                   if (!is.null(res$fLHS[[i]]))
@@ -249,7 +249,7 @@ setMethod("Dresiduals", signature("linearModel"),
 
 setMethod("Dresiduals", signature("nonlinearModel"),
           function(object, theta) {
-              theta <- setCoef(object, theta)
+              theta <- coef(object, setCoef(object, theta))              
               res <- modelDims(object)
               varList <- c(as.list(theta), as.list(object@modelF))
               De <- numeric()
@@ -354,7 +354,7 @@ setMethod("evalDMoment", signature("functionModel"),
           function(object, theta, impProb=NULL, lambda=NULL)
           {
               spec <- modelDims(object)
-              theta <- setCoef(object, theta)
+              theta <- coef(object, setCoef(object, theta))              
               if (object@smooth && !is.null(object@dfct))
               {
                   object@dfct <- NULL
@@ -411,7 +411,7 @@ setMethod("evalDMoment", signature("functionModel"),
 setMethod("evalDMoment", signature("formulaModel"),
           function(object, theta, impProb=NULL, lambda=NULL)
           {
-              theta <- setCoef(object, theta)
+              theta <- coef(object, setCoef(object, theta))              
               spec <- modelDims(object)              
               if (is.null(impProb))
                   impProb <- 1/spec$n
@@ -962,7 +962,7 @@ setMethod("gmmFit", signature("momentModel"), valueClass="gmmfit",
                  wObj <- evalWeights(model, NULL, "ident")
                  theta0 <- solveGmm(model, wObj, theta0, ...)$theta
              }
-             bw <- model@vcovOptions$bw             
+             bw <- model@vcovOptions$bw
              if (type != "cue")
              {
                  while(TRUE)
