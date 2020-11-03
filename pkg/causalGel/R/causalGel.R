@@ -6,9 +6,7 @@ causalModel <- function(g, balm, data,theta0=NULL,
 {
     momType <- match.arg(momType)
     if (!is.null(popMom))
-        {
-            momType <- "fixedMom"
-        }
+        momType <- "fixedMom"
     tmp_model <- momentfit:::.lModelData(g, balm, data)
     if (attr(terms(tmp_model$modelF), "intercept") != 1)
         stop("You cannot remove the intercept from g")
@@ -111,7 +109,8 @@ causalGEL <- function(g, balm, data, theta0=NULL,
         if (!is.null(theta0)) 
             theta0 <- theta0[(names(theta0) %in% spec$parNames)]
     }    
-    fit <- gelFit(model=model, gelType=gelType, rhoFct=rhoFct, initTheta=initTheta, theta0=theta0,
+    fit <- gelFit(model=model, gelType=gelType, rhoFct=rhoFct,
+                  initTheta=initTheta, theta0=theta0,
                   lambda0=lambda0, vcov=getVcov, coefSlv=coefSlv,
                   lamSlv=lamSlv, tControl=tControl, lControl=lControl)
     fit@call <- Call

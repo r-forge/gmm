@@ -39,10 +39,10 @@ setMethod("evalDMoment", signature("causalModel"),
               G[(k+1):ntet, (k+1):ntet] <- -sum(impProb)*diag(k-1)
               uK <- colSums(impProb*X[,-1,drop=FALSE])
               G[(2*k):q, (k+1):ntet] <- -kronecker(diag(k-1), uK)
-              if (!(dat@momType %in% c("uncondBal", "fixedMom")))
+              if (dat@momType != "uncondBal")
               {
                       G <- rbind(G, matrix(0, ncol(X)-1, ntet))
-                      if (augmented)
+                      if (augmented & dat@momType != "fixedMom")
                       {
                           ncov <- length(object@X@balCov)
                           q <- nrow(G)- ncov

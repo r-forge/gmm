@@ -660,7 +660,7 @@ setMethod("solveGmm", signature("linearModel", "momentWeights"),
 
 setMethod("solveGmm", signature("allNLModel", "momentWeights"),
           function(object, wObj, theta0=NULL, algo=c("optim","nlminb"), ...)
-              {
+          {
                   algo <- match.arg(algo)
                   if (is.null(theta0))
                       theta0 <- modelDims(object)$theta0
