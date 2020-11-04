@@ -23,7 +23,7 @@ causalModel <- function(g, balm, data,theta0=NULL,
     if (!is.null(theta0))
     {
         if (length(theta0) != ncoef)
-            stop(paste("The leangth of theta0 must be ", ncoef, sep=""))
+            stop(paste("The length of theta0 must be ", ncoef, sep=""))
         if (is.null(names(theta0)))
             names(theta0) <- name_coef
     } else {
@@ -67,7 +67,7 @@ causalGEL <- function(g, balm, data, theta0=NULL,
                    initTheta = c("gmm","theta0"), getVcov=FALSE,
                    lambda0=NULL, cstLHS=NULL, cstRHS=NULL,
                    lamSlv=NULL, coefSlv= c("optim","nlminb","constrOptim"),
-                   lControl=list(), tControl=list())
+                   lControl=list(), tControl=list(), restrictLam=FALSE)
 {
     Call <- try(match.call(call=sys.call(sys.parent())), silent=TRUE)
     if (class(Call)=="try-error")
@@ -108,7 +108,17 @@ causalGEL <- function(g, balm, data, theta0=NULL,
         spec <- modelDims(model)
         if (!is.null(theta0)) 
             theta0 <- theta0[(names(theta0) %in% spec$parNames)]
-    }    
+        if (inherits(model, "rcausalModel") & restrictLam)
+        {
+            warning(paste("restrictLam=TRUE is not recommended for restricted model.",
+                          "\nIt is then set to FALSE. Use gelFit if you really what it",
+                          sep=""))
+            restrictLam <- FALSE
+        }        
+    }
+    if (restrictLam)
+        lControl$restrictedLam <- grep("control|causalEffect",
+                                       modelDims(model)$momNames)
     fit <- gelFit(model=model, gelType=gelType, rhoFct=rhoFct,
                   initTheta=initTheta, theta0=theta0,
                   lambda0=lambda0, vcov=getVcov, coefSlv=coefSlv,

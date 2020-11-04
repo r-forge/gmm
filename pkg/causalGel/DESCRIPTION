@@ -6,7 +6,7 @@ Title: Causal Inference using Generalized Empirical
 Author: Pierre Chausse <pchausse@uwaterloo.ca>
 Maintainer: Pierre Chausse <pchausse@uwaterloo.ca>
 Description: Methods for causal inference in which covariates are balanced using generalized empirical likelihod methods.
-Depends: R (>= 3.0.0), momentfit (>= 0.1.1)
+Depends: R (>= 3.0.0), momentfit (>= 0.2)
 Imports: stats, methods
 Suggests: lmtest, knitr, texreg
 Collate: 'allClasses.R' 'causalMethods.R' 'rcausalMethods.R' 'causalGel.R'

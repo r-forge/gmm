@@ -20,6 +20,7 @@ Objects can be created by calls of the form \code{new("causalGelfit",
     \item{\code{gelType}:}{Object of class \code{"list"} ~~ }
     \item{\code{vcov}:}{Object of class \code{"list"} ~~ }
     \item{\code{model}:}{Object of class \code{"momentModel"} ~~ }
+    \item{\code{restrictedLam}:}{Object of class \code{"integer"} ~~ }    
   }
 }
 \section{Extends}{

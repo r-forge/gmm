@@ -17,7 +17,7 @@ causalGEL(g, balm, data, theta0=NULL,
           initTheta = c("gmm","theta0"), getVcov=FALSE,
           lambda0=NULL, cstLHS=NULL, cstRHS=NULL,
           lamSlv=NULL, coefSlv= c("optim","nlminb","constrOptim"),
-          lControl=list(), tControl=list())
+          lControl=list(), tControl=list(), restrictLam=FALSE)
 }
 \arguments{
 
@@ -90,6 +90,9 @@ causalGEL(g, balm, data, theta0=NULL,
     algorithm.}
   
   \item{tControl}{A list of controls for the coefficient algorithm.}
+
+  \item{restrictLam}{Should we restrict the lambdas for which the
+  analytical solution is 0 to be fixed at 0?}
 	    
 }
 
