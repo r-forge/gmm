@@ -795,6 +795,43 @@ restModel(Un_model, list(causalEffect~1, probTreatment~0.5))
 
 The \textit{gelFit} method can then be applied to the restricted models.
 
+\subsection{Restricting the $\lambda$'s}
+
+For the moment conditions defined by Equations \ref{eq:13} and
+\ref{eq:8}, the analytical solution of the $\lambda$'s associated with
+the first two lines is exactly 0. However, the numerical solution is
+not exactly zero:
+
+<<>>=
+fit1 <- causalGEL(re78~treat, ~age+ed+black+hisp+re75, nsw, gelType="EL",
+                 momType="uncondBal")
+fit1@lambda[1:2]
+@ 
+
+It may be faster and more precise to restrict these $\lambda$'s to be
+zero. If we set the option reatrictLam to TRUE, these lambda are fixed
+at 0 and the coefficients associated with the causal effect equation
+are computed by solving:
+\[
+\sum_{i=1}^n \hat{p}_i(\hat{\theta},\hat{\lambda})
+  \begin{pmatrix}
+    Y_i - \theta_1 - \tp{\theta_2} Z_i \\
+    (Y_i - \theta_1 - \tp{\theta_2} Z_i) Z_i \\
+  \end{pmatrix}\,.
+\]
+Notice that the implied probabilities do not depend on $\theta_1$ and
+$\theta_2$, which is why we can get them first and then solve for
+$\theta_1$ and $\theta_2$. We can see that the results are similar,
+but it may speedup estimation especially in simulation studies.
+
+<<>>=
+fit2 <- causalGEL(re78~treat, ~age+ed+black+hisp+re75, nsw, gelType="EL",
+                 momType="uncondBal", restrictLam=TRUE)
+rbind(coef(fit1), coef(fit2))
+rbind(fit1@lambda, fit2@lambda)
+@ 
+
+
 \bibliography{causal}
 
 \appendix

@@ -123,6 +123,24 @@ causalGEL <- function(g, balm, data, theta0=NULL,
                   initTheta=initTheta, theta0=theta0,
                   lambda0=lambda0, vcov=getVcov, coefSlv=coefSlv,
                   lamSlv=lamSlv, tControl=tControl, lControl=lControl)
+    if (restrictLam)
+    {
+        spec <- modelDims(model)
+        nz <- (spec$k-1)/2
+        phi <- tail(coef(fit),nz)
+        if (length(phi) == 1)
+        {
+            phi <- matrix(c(1,phi,phi,phi),2,2)
+        } else {
+            phi <- rbind(c(1,phi), cbind(phi, diag(phi)))
+        }
+        pt <- getImpProb(fit)$pt
+        Z <- model.matrix(terms(model@X@reg), model@X@reg)
+        Y <- model.response(model@X@reg)
+        YZ <- colSums(pt*Y*Z) 
+        theta <- solve(phi, YZ)
+        fit@theta[1:(1+nz)] <- theta
+    }
     fit@call <- Call
     fit    
 }
