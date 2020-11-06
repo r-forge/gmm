@@ -17,7 +17,8 @@ causalGEL(g, balm, data, theta0=NULL,
           initTheta = c("gmm","theta0"), getVcov=FALSE,
           lambda0=NULL, cstLHS=NULL, cstRHS=NULL,
           lamSlv=NULL, coefSlv= c("optim","nlminb","constrOptim"),
-          lControl=list(), tControl=list(), restrictLam=FALSE)
+          lControl=list(), tControl=list(), restrictLam=FALSE,
+          orthoBases=FALSE)
 }
 \arguments{
 
@@ -92,7 +93,12 @@ causalGEL(g, balm, data, theta0=NULL,
   \item{tControl}{A list of controls for the coefficient algorithm.}
 
   \item{restrictLam}{Should we restrict the lambdas for which the
-  analytical solution is 0 to be fixed at 0?}
+    analytical solution is 0 to be fixed at 0?}
+
+  \item{orthoBases}{If \code{TRUE}, the matrix of balancing moments is
+  replaced by the matrix of orthogonal bases that span the same
+  space. It is likely to be more stable and to prevent some balancing
+  moments to be collinear.}  
 	    
 }
 

@@ -1,12 +1,36 @@
 ## Model builder
 
+.orth <- function (M) 
+{
+    if (length(M) == 0) 
+        return(c())
+    if (!is.numeric(M)) 
+        stop("Argument 'M' must be a numeric matrix.")
+    if (is.vector(M)) 
+        M <- matrix(c(M), nrow = length(M), ncol = 1)
+    svdM <- svd(M)
+    U <- svdM$u
+    s <- svdM$d
+    tol <- max(dim(M)) * max(s) * .Machine$double.eps
+    r <- sum(s > tol)
+    U[, 1:r, drop = FALSE]
+}
+
 causalModel <- function(g, balm, data,theta0=NULL,
                       momType=c("ACE","ACT","ACC", "uncondBal"),
-                      popMom = NULL, ACTmom=1L) 
+                      popMom = NULL, ACTmom=1L, orthoBases=FALSE) 
 {
     momType <- match.arg(momType)
     if (!is.null(popMom))
         momType <- "fixedMom"
+    if (orthoBases)
+    {
+        X <- model.matrix(balm, data)[,-1]
+        X <- .orth(X)
+        colnames(X) <- paste("Basis", 1:ncol(X), sep="")
+        balm <- as.formula(paste("~", paste(colnames(X), collapse="+")))
+        data <- cbind(data, X)
+    }    
     tmp_model <- momentfit:::.lModelData(g, balm, data)
     if (attr(terms(tmp_model$modelF), "intercept") != 1)
         stop("You cannot remove the intercept from g")
@@ -67,7 +91,8 @@ causalGEL <- function(g, balm, data, theta0=NULL,
                    initTheta = c("gmm","theta0"), getVcov=FALSE,
                    lambda0=NULL, cstLHS=NULL, cstRHS=NULL,
                    lamSlv=NULL, coefSlv= c("optim","nlminb","constrOptim"),
-                   lControl=list(), tControl=list(), restrictLam=FALSE)
+                   lControl=list(), tControl=list(), restrictLam=FALSE,
+                   orthoBases=FALSE)
 {
     Call <- try(match.call(call=sys.call(sys.parent())), silent=TRUE)
     if (class(Call)=="try-error")
@@ -79,7 +104,8 @@ causalGEL <- function(g, balm, data, theta0=NULL,
     if (initTheta=="theta0" & is.null(theta0))
         stop("theta0 is required when initTheta='theta0'")
 
-    model <- causalModel(g, balm, data, theta0, momType, popMom, ACTmom)
+    model <- causalModel(g, balm, data, theta0, momType, popMom, ACTmom,
+                         orthoBases)
     
     if (initTheta == "theta0")
     {

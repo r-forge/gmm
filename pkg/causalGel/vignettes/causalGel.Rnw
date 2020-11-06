@@ -831,6 +831,41 @@ rbind(coef(fit1), coef(fit2))
 rbind(fit1@lambda, fit2@lambda)
 @ 
 
+\subsection{Using orthogonal bases}
+
+When the number of balancing moments increases, it may become
+numerically unstable to use them directly. It is also likely that they
+become collinear. To avoid the problem, we can replace the balancing
+matrix by the matrix of orthogonal bases that span the same space. We
+borrowed the function orth() from the pracma package
+\citep{pracma}. This is done by adding the option orthoBases=TRUE. The
+following is used to compare the results, which are shown in Table
+\ref{ortho}. We can see that in most cases, there is very little
+difference. 
+
+<<>>=
+fit1 <- causalGEL(re78~treat, ~age+ed+black+hisp+re75, nsw, gelType="EL",
+                 momType="ACT")
+fit2 <- causalGEL(re78~treat, ~age+ed+black+hisp+re75, nsw, gelType="EL",
+                 momType="ACT", orthoBases=TRUE)
+@ 
+
+<<echo=FALSE, results='asis'>>=
+texreg(list(fit1, fit2), label='ortho', digits=6,
+       custom.model.names=c("Original","Orthogonal Bases"),
+       caption="Comparing estimates with and without the orthogonal bases")
+@ 
+
+The difference can be seen by looking at the ouput from the checkConv method:
+
+<<>>=
+checkConv(fit2)
+@ 
+
+The method no longer compare the moments of the original data (age,
+educ, black, etc.) but the moments of the bases. If some moments
+happen to be nearly collinear, we may see fewer bases.
+
 
 \bibliography{causal}
 

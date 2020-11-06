@@ -11,7 +11,7 @@ specific function that depends on the type of causality.
 \usage{
 causalModel(g, balm, data,theta0=NULL,
             momType=c("ACE","ACT","ACC", "uncondBal"),
-            popMom = NULL, ACTmom=1L) 
+            popMom = NULL, ACTmom=1L, orthoBases=FALSE) 
 }
 \arguments{
 
@@ -38,6 +38,11 @@ causalModel(g, balm, data,theta0=NULL,
 
   \item{ACTmom}{When \code{momType} is set to 'ACT', that integer
     indicates which treated group to use to balance the covariates.}
+
+  \item{orthoBases}{If \code{TRUE}, the matrix of balancing moments is
+  replaced by the matrix of orthogonal bases that span the same
+  space. It is likely to be more stable and to prevent some balancing
+  moments to be collinear.}
    
 }
 

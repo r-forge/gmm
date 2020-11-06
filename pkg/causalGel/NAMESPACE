@@ -1,6 +1,6 @@
 import("momentfit")
 
-importFrom("stats", "lm", "model.response", "terms", "model.frame", "reformulate")
+importFrom("stats", "lm", "model.response", "terms", "model.frame", "reformulate", "as.formula")
 importFrom("utils", "head", "tail")
 
 importFrom("methods", is, new, show, "slot<-", "slotNames", "validObject",
