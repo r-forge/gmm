@@ -1,6 +1,6 @@
 Package: causalGel
 Version: 0.1-1
-Date: 2020-11-03
+Date: 2020-11-09
 Title: Causal Inference using Generalized Empirical
         Likelihood Methods
 Author: Pierre Chausse <pchausse@uwaterloo.ca>
