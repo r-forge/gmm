@@ -16,6 +16,53 @@
     U[, 1:r, drop = FALSE]
 }
 
+.getLamEEL <- function (gmat, k=1, restrictedLam = integer(), ...)
+{
+    gmat <- as.matrix(gmat)
+    if (length(restrictedLam))
+    {
+        if (length(restrictedLam) > ncol(gmat)) 
+            stop("The number of restricted Lambda exceeds the number of moments")
+        if (!all(restrictedLam %in% (1:ncol(gmat)))) 
+            stop(paste("restrictedLam must be a vector of integers between 1 and ", 
+                       ncol(gmat), sep = ""))
+        gmat <- gmat[, -restrictedLam, drop = FALSE]
+    } else {
+        restrictedLam <- integer()
+    }
+    res <- .EEL_quad(gmat, k = 1)
+    if (res$convergence == 2)
+    {
+        res <- EEL_lam(gmat, k = 1)
+        res$convergence <- 2
+    }
+    if (length(restrictedLam)) {
+        lambda <- numeric(ncol(gmat) + length(restrictedLam))
+        lambda[-restrictedLam] <- res$lambda
+        res$lambda <- lambda
+    }
+    res
+}
+
+.EEL_quad <- function (gmat, k = 1) 
+{
+    Dmat <- crossprod(gmat)/nrow(gmat)
+    dvec <- -colMeans(gmat)
+    Amat <- t(gmat)
+    bvec <- rep(-1, nrow(gmat))
+    res <- try(solve.QP(Dmat, dvec, Amat, bvec), silent=TRUE)
+    if (any(class(res) == "try-error"))
+    {
+        conv <- list(convergence = 2)
+        lambda0 <- rep(0, ncol(gmat))
+    } else {            
+        conv <- list(convergence = 0)
+        lambda0 <- res$solution
+    }
+    list(lambda = lambda0, convergence = conv,
+         obj = mean(rhoEEL(gmat, lambda0, 0, k)))
+}
+
 causalModel <- function(g, balm, data,theta0=NULL,
                       momType=c("ACE","ACT","ACC", "uncondBal"),
                       popMom = NULL, ACTmom=1L, orthoBases=FALSE) 
@@ -101,9 +148,10 @@ causalGEL <- function(g, balm, data, theta0=NULL,
     initTheta <- match.arg(initTheta)
     coefSlv <- match.arg(coefSlv)
     gelType <- match.arg(gelType)
+    if (gelType == "REEL")
+        lamSlv <- .getLamEEL
     if (initTheta=="theta0" & is.null(theta0))
         stop("theta0 is required when initTheta='theta0'")
-
     model <- causalModel(g, balm, data, theta0, momType, popMom, ACTmom,
                          orthoBases)
     

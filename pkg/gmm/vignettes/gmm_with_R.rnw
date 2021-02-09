@@ -5,11 +5,7 @@
 \newtheorem{lem}{Lemma}
 \newtheorem{ass}{Assumption}
 
-\usepackage[active]{srcltx}
-\usepackage{amsmath}
-\usepackage{amsfonts}
 \usepackage{amssymb}
-\usepackage{ucs}
 \usepackage[utf8x]{inputenc}
 %% need no \usepackage{Sweave.sty}
 \SweaveOpts{keep.source=TRUE} 
@@ -28,8 +24,8 @@
   finance. It is a modified version of \cite{chausse10} published in
   the Journal of Statistical Software. It has been adapted to the
   version 1.4-0. \textbf{Notice that the maintenance of the package is
-    converging to zero. The new \pkg{gmm4} package, available on
-    RForge, will soon replace the \pkg{gmm} package.} }
+    converging to zero. The new \pkg{momentfit} package, available on
+    CRAN, will soon replace the \pkg{gmm} package.} }
 
 \Keywords{generalized empirical likelihood,
   generalized method of moments, empirical likelihood, continuous
@@ -54,8 +50,8 @@
 %\VignetteKeywords{generalized empirical likelihood, generalized method of moments, empirical likelihood, continuous updated estimator, exponential tilting, exponentially tilted empirical likelihood}
 %\VignettePackage{gmm}
 
-\newcommand\R{ \mathbb{R} }
-\newcommand\C{ \mathbb{C} }
+\newcommand\Real{ \mathbb{R} }
+\newcommand\Complex{ \mathbb{C} }
 \newcommand\rv{{\cal R}}
 
 \section{Introduction}
@@ -74,7 +70,7 @@ The paper is organized as follows. Section 2 presents the theoretical aspects of
 
 This section presents an overview of the GMM method. It is intended to help the users understand the options that the \pkg{gmm} package offers. For those who are not familiar with the method and require more details, see \cite{hansen82} and \cite{hansen-heaton-yaron96} for the method itself, \cite{newey-west94} and \cite{andrews91} for the choice of the covariance matrix or \cite{hamilton94}.
  
-We want to estimate a vector of parameters $\theta_0 \in \R^p$ from a model based on the following $q\times 1$ vector of unconditional moment conditions:
+We want to estimate a vector of parameters $\theta_0 \in \Real^p$ from a model based on the following $q\times 1$ vector of unconditional moment conditions:
 \begin{equation}\label{mcond}
 E[g(\theta_0,x_i)] = 0 ,
 \end{equation}
@@ -273,17 +269,19 @@ ML& 0.0021  &0.0823  &  0.0822 & -0.0349 & 0.0411& 0.0423 \\ \hline
 
 \subsection{Estimating the parameters of a stable distribution}
 
-The previous example showed that ML should be used when the true distribution is known. However, when the density does not have a closed form expression, we have to consider other alternatives. \cite{garcia-renault-veredas06} propose to use indirect inference and perform a numerical study to compare it with several other methods. One of them is GMM for a continuum of moment conditions and was suggested by \cite{carrasco-florens02}. It uses the fact that the characteristic function $E(e^{ix_i\tau})$, where $i$ is the imaginary number and $\tau\in\R$, has a closed form expression (for more details on stable distribution, see \cite{nolan09}). The \pkg{gmm} package does not yet deal with continuum of moment conditions but we can choose a certain grid $\{\tau_1,..., \tau_q\}$ over a given interval and estimate the parameters using the following moment conditions:
+The previous example showed that ML should be used when the true distribution is known. However, when the density does not have a closed form expression, we have to consider other alternatives. \cite{garcia-renault-veredas06} propose to use indirect inference and perform a numerical study to compare it with several other methods. One of them is GMM for a continuum of moment conditions and was suggested by \cite{carrasco-florens02}. It uses the fact that the characteristic function $E(e^{ix_i\tau})$, where $i$ is the imaginary number and $\tau\in\Real$, has a closed form expression (for more details on stable distribution, see \cite{nolan09}). The \pkg{gmm} package does not yet deal with continuum of moment conditions but we can choose a certain grid $\{\tau_1,..., \tau_q\}$ over a given interval and estimate the parameters using the following moment conditions:
 \[
 E\left[e^{ix_i\tau_l}-\Psi(\theta;\tau_l) \right]=0~~\mbox{for}~~l=1,...,q~,
 \]
-where $\Psi(\theta;\tau_l)$ is the characteristic function. There is more than one way to define a stable distribution and it depends on the choice of parametrization. We will follow the notation of \cite{nolan09} and consider stable distributions $S(\alpha,\beta,\gamma,\delta;1)$, where $\alpha\in (0,2]$ is the characteristic exponent and $\beta\in[-1,1]$, $\gamma>0$ and $\delta\in\R$ are respectively the skewness, the scale and the location parameters. The last argument defines which parametrization we use. The \pkg{stabledist} package of \cite{stabledist} offers a function to generate random variables from stable distributions and uses the same notation. This parametrization implies that:
+where $\Psi(\theta;\tau_l)$ is the characteristic function. There is more than one way to define a stable distribution and it depends on the choice of parametrization. We will follow the notation of \cite{nolan09} and consider stable distributions $S(\alpha,\beta,\gamma,\delta;1)$, where $\alpha\in (0,2]$ is the characteristic exponent and $\beta\in[-1,1]$, $\gamma>0$ and $\delta\in\Real$ are respectively the skewness, the scale and the location parameters. The last argument defines which parametrization we use. The \pkg{stabledist} package of \cite{stabledist} offers a function to generate random variables from stable distributions and uses the same notation. This parametrization implies that:
 \[
 \Psi(\theta;\tau_l) = 
 \left\{
 \begin{array}{lcr}
-\exp{(-\gamma^\alpha|\tau_l|^\alpha[1-i\beta(\tan{\frac{\pi\alpha}{2}})(\text{sign}(\tau_l))] + i\delta \tau_l)} &\mbox{for}&\alpha\neq 1\\
-\exp{(-\gamma|\tau_l|[1+i\beta\frac{2}{\pi}(\text{sign}(\tau_l))\log{|\tau_l|}] + i\delta \tau_l)} &\mbox{for}&\alpha= 1\\
+\exp{(-\gamma^\alpha|\tau_l|^\alpha[1-i\beta(\tan{\frac{\pi\alpha}{2}})(\mathrm{sign}(\tau_l))]
+  + i\delta \tau_l)} &\mbox{for}&\alpha\neq
+1\\ \exp{(-\gamma|\tau_l|[1+i\beta\frac{2}{\pi}(\mathrm{sign}(\tau_l))\log{|\tau_l|}]
+  + i\delta \tau_l)} &\mbox{for}&\alpha= 1\\
 \end{array}
 \right. ,
 \]
@@ -766,7 +764,7 @@ where $k_5(s)$ is the Bartlett kernel with a bandwidth of 5 defined as
 \end{array}\right. .
 \]
 See \cite{smith01} for more details. The model will therefore be estimated using the kernel Truncated. The GMM estimate with the identity matrix is selected as starting value. 
-<<>>=
+<<warning=FALSE>>=
 tet0 <- gmm(g4,x=x5t[,4:7],wmatrix="ident")$coef
 res <- gel(g4,x=x5t[,4:7],tet0,smooth=TRUE,kernel="Truncated")
 summary(res)

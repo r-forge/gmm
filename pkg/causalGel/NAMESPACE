@@ -1,8 +1,11 @@
+useDynLib(causalGel, .registration = TRUE, .fixes="F_")
 import("momentfit")
 
-importFrom("stats", "lm", "model.response", "terms", "model.frame", "reformulate", "as.formula")
+importFrom("stats", "lm", "model.response", "terms", "model.frame",
+           "reformulate", "as.formula", "binomial", "fitted", "glm",
+           "lm.wfit", "optim", "plogis")
 importFrom("utils", "head", "tail")
-
+importFrom("quadprog", "solve.QP")
 importFrom("methods", is, new, show, "slot<-", "slotNames", "validObject",
            "getClassDef", "selectMethod", "callNextMethod", "as", "setAs",
            "getMethod")
@@ -10,11 +13,12 @@ importFrom("methods", is, new, show, "slot<-", "slotNames", "validObject",
 ### S4 Methods and Classes
 exportClasses()
 
-exportClasses("causalData", "causalModel", "causalGelfit", "rcausalModel")
+exportClasses("causalData", "causalModel", "causalGelfit", "rcausalModel",
+              "causalfit")
 
 exportMethods("causalMomFct", "checkConv")
 
-export("causalModel", "causalGEL")
+export("causalModel", "causalGEL", "matching", "LLmatching", "ipw")
 
 
 

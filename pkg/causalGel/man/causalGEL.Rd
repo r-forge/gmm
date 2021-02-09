@@ -118,5 +118,11 @@ fit1
 fit2 <-  causalGEL(g, balm, nsw, gelType="EL")
 fit2
 
+## This is REEL, which is EEL with restriction in pt to be positive.
+## It is based on the quadprog package
+
+fit3 <-  causalGEL(g, balm, nsw, gelType="REEL")
+fit3
+
 }
 

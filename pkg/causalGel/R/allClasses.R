@@ -17,6 +17,14 @@ setClass("causalData", representation(momType="character",
 
 setClass("causalGelfit", contains="gelfit")
 
+setClass("causalfit", representation(estim="numeric", 
+                                     type="character",
+                                     method="character",
+                                     form="list",
+                                     details="list",
+                                     info="list",
+                                     data="data.frame",
+                                     call="callORNULL"))
 
 ## converters
 
