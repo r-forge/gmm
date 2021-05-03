@@ -955,14 +955,14 @@ setMethod("gmmFit", signature("sysModel"), valueClass="sgmmfit",
                       wObj0 <- NULL
                   obj <- function(theta, model, wObj0, spec)
                   {
-                      theta <- .tetReshape(theta, model@eqnNames,
+                      theta <- .tetReshape(theta, spec$eqnNames,
                                            spec$parNames)
                       wObj <- evalWeights(model, theta, "optimal", wObj0)
                       evalGmmObj(model, theta, wObj)
                   }
                   res <- optim(do.call("c",theta0), obj, model=model, wObj0=wObj0,
                                spec=spec, ...)
-                  theta1 <- .tetReshape(res$par, model@eqnNames,spec$parNames)
+                  theta1 <- .tetReshape(res$par, spec$eqnNames,spec$parNames)
                   convergence <- res$convergence
                   wObj <- evalWeights(model, theta1, "optimal", wObj0)
               }
