@@ -12,7 +12,8 @@ setMethod("causalMomFct", signature("numeric", "causalData"),
               e <- Y-c(Z%*%theta[1:k])
               m1 <- e*Z
               e <- t(t(Z[,-1,drop=FALSE])-theta[-(1:k)])
-              m2 <- sapply(1:ncol(X), function(i) e*X[,i])
+              m2 <- lapply(1:ncol(X), function(i) e*X[,i])
+              m2 <- do.call('cbind', m2)
               if (object@momType == "uncondBal")
                   return(cbind(m1,m2))
               m3 <- sweep(X[,-1,drop=FALSE], 2, object@balMom, "-")

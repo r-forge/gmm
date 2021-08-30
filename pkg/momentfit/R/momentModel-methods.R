@@ -272,7 +272,7 @@ setGeneric("modelDims", function(object, ...) standardGeneric("modelDims"))
 setMethod("modelDims", "linearModel",
           function(object) {
               n <- if (object@smooth)
-                       object@n-object@sSpec@w$m
+                       object@n-2*object@sSpec@w$m
                    else
                        object@n
               list(k=object@k, q=object@q, n=n, parNames=object@parNames,
@@ -282,7 +282,7 @@ setMethod("modelDims", "linearModel",
 setMethod("modelDims", "nonlinearModel",
           function(object) {
               n <- if (object@smooth)
-                       object@n-object@sSpec@w$m
+                       object@n-2*object@sSpec@w$m
                    else
                        object@n              
               list(k=object@k, q=object@q, n=n, parNames=object@parNames,
@@ -293,7 +293,7 @@ setMethod("modelDims", "nonlinearModel",
 setMethod("modelDims", "functionModel",
           function(object) {
               n <- if (object@smooth)
-                       object@n-object@sSpec@w$m
+                       object@n-2*object@sSpec@w$m
                    else
                        object@n              
               list(k=object@k, q=object@q, n=n, parNames=object@parNames,
@@ -304,7 +304,7 @@ setMethod("modelDims", "functionModel",
 setMethod("modelDims", "formulaModel",
           function(object) {
               n <- if (object@smooth)
-                       object@n-object@sSpec@w$m
+                       object@n-2*object@sSpec@w$m
                    else
                        object@n              
               list(k=object@k, q=object@q, n=n, parNames=object@parNames,
