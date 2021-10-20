@@ -49,6 +49,13 @@ setMethod("modelDims", "snonlinearModel",
                    isEndo=object@isEndo)
           })
 
+setMethod("modelDims", "sfunctionModel",
+          function(object) {
+              list(k=object@k, q=object@q, n=object@n, parNames=object@parNames,
+                   momNames=object@momNames, theta0=object@theta0,
+                   fct=object@fct, eqnNames=object@eqnNames)
+          })
+
 ## setCoef
 ## Used to validate and format the coefficient into a named list
 
@@ -192,6 +199,38 @@ setMethod("[", c("snonlinearModel", "numeric", "missing"),
           })
 
 
+setMethod("[", c("sfunctionModel", "numeric", "missing"),
+          function(x, i, j){
+              i <- unique(as.integer(i))
+              spec <- modelDims(x)
+              neqn <- length(spec$k)              
+              if (!all(abs(i) %in% (1:neqn)))
+                  stop("Selected equations out of range")
+              x@fct <- x@fct[i]
+              x@dfct <- x@dfct[i]
+              if (length(x@fct) == 0)
+                  stop("Removed too many equations; the model is empty")
+              x@k=x@k[i]
+              x@q <- x@q[i]
+              x@parNames <- x@parNames[i]
+              x@momNames <- x@momNames[i]
+              x@eqnNames <- x@eqnNames[i]
+              x@theta0 <- x@theta0[i]
+              x@varNames <- x@varNames[i]
+              if (length(x@q) > 1)
+                  return(x)
+              new("functionModel", X=x@X, fct=x@fct[[1]],
+                  dfct=x@dfct[[1]],
+                  theta0=x@theta0[[1]], vcov=x@vcov,
+                  vcovOptions=x@vcovOptions,
+                  centeredVcov = x@centeredVcov, k=x@k[[1]], q=x@q[[1]],
+                  n=x@n, parNames=x@parNames[[1]],
+                  momNames=x@momNames[[1]], varNames=x@varNames[[1]],
+                  isEndo=logical(), omit=x@omit, 
+                  survOptions=x@survOptions, smooth=x@smooth)
+          })
+
+
 setMethod("[", c("slinearModel", "numeric", "missing"),
           function(x, i, j){
               i <- unique(as.integer(i))
@@ -222,6 +261,7 @@ setMethod("[", c("slinearModel", "numeric", "missing"),
                   isEndo=x@isEndo[[1]],survOptions=x@survOptions,
                   sSpec=new("sSpec"), smooth=FALSE)
           })
+
 
 setMethod("[", c("sysModel", "numeric", "list"),
           function(x, i, j){
@@ -673,6 +713,15 @@ setMethod("solveGmm", signature("snonlinearModel", "sysMomentWeights"),
                            object = object, wObj = wObj, ...)
               theta <- .tetReshape(res$par, spec$eqnNames, spec$parNames)
               list(theta = theta, convergence = res$convergence)
+    })
+
+
+setMethod("solveGmm", signature("sfunctionModel", "sysMomentWeights"),
+          function (object, wObj, theta0 = NULL, ...) 
+          {
+              met <- getMethod("solveGmm",
+                               c("snonlinearModel", "sysMomentWeights"))
+              met(object, wObj, theta0, ...)
     })
 
 ## vcov
