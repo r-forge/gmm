@@ -1,0 +1,13 @@
+importFrom(stats, quantile, lm, predict, coef, vcov, printCoefmat, cov, pnorm)
+importFrom(car, linearHypothesis)
+importFrom(sandwich, vcovHC)
+importFrom(cvTools, cvFolds)
+importFrom(splines, bs)
+
+export(otlse, print.otlse, summary.otlse, print.summary.otlse,
+       splineMatrix, selASY, selIC, selCV)
+ 
+S3method(summary, otlse)
+S3method(print, otlse)
+S3method(print, summary.otlse)
+
