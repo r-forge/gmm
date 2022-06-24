@@ -10,7 +10,7 @@ optimal thresholding least squares method.
 \usage{
 otlse(form, data, crit = c("ASY", "AIC", "BIC", "CV"),
       pFact=0.3, splineMet=c("manual","bs"), HCtype="HC",
-      mZeroProp=0.1)
+      mZeroProp=0.1, ...)
 }
 \arguments{
   \item{form}{A formula to identify the outcome, the treatment
@@ -28,7 +28,8 @@ otlse(form, data, crit = c("ASY", "AIC", "BIC", "CV"),
   \item{mZeroProp}{If the proportion of zeros is greater than this
     value, the knots and spline matrices are based on the non-zero
     observations. This is particularly useful when binary variables are
-    interacted with continuous variables.}  
+    interacted with continuous variables.}
+  \item{...}{Other arguments to pass to the basis selection function.}
 }
 
 \examples{

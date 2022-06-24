@@ -9,7 +9,7 @@ This is a collection of methods to select the piecewise polynomials.
 }
 \usage{
 selASY(form, data, pFact = 0.3, splineMet = c("manual", "bs"),
-       HCtype="HC", mZeroProp=0.1)
+       HCtype="HC", mZeroProp=0.1, minPV=function(p) 1/(p*log(p)))
 selIC(form, data, pFact = 0.3, type=c("AIC", "BIC", "CV"),
       splineMet = c("manual", "bs"), HCtype="HC",
       mZeroProp=0.1) 
@@ -30,7 +30,9 @@ selIC(form, data, pFact = 0.3, type=c("AIC", "BIC", "CV"),
   \item{mZeroProp}{If the proportion of zeros is greater than this
     value, the knots and spline matrices are based on the non-zero
     observations. This is particularly useful when binary variables are
-    interacted with continuous variables.}  
+    interacted with continuous variables.}
+  \item{minPV}{A function to determine the cuttoff point for the
+    significance. the argument of the function is the total number of basis.}
 }
 
 \keyword{selection, polynomial}

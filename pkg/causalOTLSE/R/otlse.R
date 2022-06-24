@@ -158,7 +158,7 @@ ppSplines <- function(form, data, knots = NA, pFact = 0.3,
 }
 
 selASY <- function (form, data, pFact = 0.3, splineMet = c("manual", "bs"),
-                    HCtype="HC", mZeroProp=0.1)
+                    HCtype="HC", mZeroProp=0.1, minPV=function(p) 1/(p*log(p)))
 {
     splineMet <- match.arg(splineMet)
     res <- .getPval(form, data, pFact, splineMet, HCtype, mZeroProp)
@@ -166,10 +166,11 @@ selASY <- function (form, data, pFact = 0.3, splineMet = c("manual", "bs"),
     n <- nrow(data)
     q <- length(pval)
     p <- sum(res$p0) + sum(res$p1)
+    crit <- minPV(p)
     id0 <- res$Z == 0
     knots0 <- lapply(1:length(res$pval0), function(i)
     {      
-        jhat <- res$pval0[[i]]  <= 1/(p * log(p))
+        jhat <- res$pval0[[i]]  <= crit
         ans <- if (all(!jhat) | any(is.na(jhat)))
                {
                    NULL
@@ -179,7 +180,7 @@ selASY <- function (form, data, pFact = 0.3, splineMet = c("manual", "bs"),
     })
     knots1 <- lapply(1:length(res$pval1), function(i)
     {
-        jhat <- res$pval1[[i]]  <= 1/(p * log(p))
+        jhat <- res$pval1[[i]]  <= crit
         ans <- if (all(!jhat) | any(is.na(jhat)))
                {
                    NULL
@@ -291,17 +292,22 @@ selIC <- function(form, data, pFact = 0.3, type=c("AIC", "BIC", "CV"),
          treatment=res$treatment)
 }
 
+
 otlse <- function(form, data, crit = c("ASY", "AIC", "BIC", "CV"),
                   pFact=0.3, splineMet=c("manual","bs"), HCtype="HC",
-                  mZeroProp=0.1)
+                  mZeroProp=0.1, ...)
 {
     crit <- match.arg(crit)
     splineMet <- match.arg(splineMet)
     optBasis <- switch(crit,
-                       ASY = selASY(form, data, pFact, splineMet, HCtype, mZeroProp),
-                       AIC = selIC(form, data, pFact, "AIC", splineMet, HCtype, mZeroProp),
-                       BIC = selIC(form, data, pFact, "BIC", splineMet, HCtype, mZeroProp),
-                       CV = selIC(form, data, pFact, "CV", splineMet, HCtype, mZeroProp))
+                       ASY = selASY(form=form, data, pFact, splineMet, HCtype, mZeroProp,
+                                    ...),
+                       AIC = selIC(form, data, pFact, "AIC", splineMet, HCtype, mZeroProp,
+                                   ...),
+                       BIC = selIC(form, data, pFact, "BIC", splineMet, HCtype, mZeroProp,
+                                   ...),
+                       CV = selIC(form, data, pFact, "CV", splineMet, HCtype, mZeroProp,
+                                  ...))
     data2 <- data
     data2$Xf0 <- optBasis$Xf0
     data2$Xf1 <- optBasis$Xf1
@@ -333,6 +339,7 @@ otlse <- function(form, data, crit = c("ASY", "AIC", "BIC", "CV"),
     Xbar1 <- apply(X1, 2, mean)
     vcovXf0 <- cov(X0)
     vcovXf1 <- cov(X1)
+    vcovXf01 <- cov(X0, X1)
     ace <- c(beta[2] - beta[1] + crossprod(beta[idb1], Xbar1) - 
              crossprod(beta[idb0], Xbar0))
     
@@ -343,7 +350,8 @@ otlse <- function(form, data, crit = c("ASY", "AIC", "BIC", "CV"),
     Dvec[idb1] <- Xbar1
     se.ace <- c((crossprod(Dvec, crossprod(vcov, Dvec)) + 
                  crossprod(beta[idb0], crossprod(vcovXf0, beta[idb0])) / n + 
-                 crossprod(beta[idb1], crossprod(vcovXf1, beta[idb1])) / n)^.5)
+                 crossprod(beta[idb1], crossprod(vcovXf1, beta[idb1])) / n -
+                 2 * beta[idb0] %*% vcovXf01 %*% beta[idb1] / n )^.5)
     
     ## ACT
   
@@ -351,13 +359,15 @@ otlse <- function(form, data, crit = c("ASY", "AIC", "BIC", "CV"),
     Xbar1 <- apply(X1[!id0, , drop = FALSE], 2, mean)
     vcovXf0 <- cov(X0[!id0, , drop = FALSE])
     vcovXf1 <- cov(X1[!id0, , drop = FALSE])
+    vcovXf01 <- cov(X0[!id0, , drop = FALSE], X1[!id0, , drop = FALSE])
     act <- c(beta[2] - beta[1] + crossprod(beta[idb1], Xbar1) - 
              crossprod(beta[idb0], Xbar0))
     Dvec[idb0] <- - Xbar0
     Dvec[idb1] <- Xbar1
     se.act <- c((crossprod(Dvec, crossprod(vcov, Dvec)) + 
                  crossprod(beta[idb0], crossprod(vcovXf0, beta[idb0])) / n1 + 
-                 crossprod(beta[idb1], crossprod(vcovXf1, beta[idb1])) / n1)^.5)
+                 crossprod(beta[idb1], crossprod(vcovXf1, beta[idb1])) / n1 -
+                 2 * beta[idb0] %*% vcovXf01 %*% beta[idb1] / n1)^.5)
    
     ## ACN
     
@@ -365,13 +375,15 @@ otlse <- function(form, data, crit = c("ASY", "AIC", "BIC", "CV"),
     Xbar1 <- apply(X1[id0, , drop = FALSE], 2, mean)
     vcovXf0 <- cov(X0[id0, , drop = FALSE])
     vcovXf1 <- cov(X1[id0, , drop = FALSE])
+    vcovXf01 <- cov(X0[id0, , drop = FALSE], X1[id0, , drop = FALSE])
     acn <- c(beta[2] - beta[1] + crossprod(beta[idb1], Xbar1) - 
              crossprod(beta[idb0], Xbar0))
     Dvec[idb0] <- - Xbar0
     Dvec[idb1] <- Xbar1
     se.acn <- c((crossprod(Dvec, crossprod(vcov, Dvec)) + 
                  crossprod(beta[idb0], crossprod(vcovXf0, beta[idb0])) / n0 + 
-                 crossprod(beta[idb1], crossprod(vcovXf1, beta[idb1])) / n0)^.5)
+                 crossprod(beta[idb1], crossprod(vcovXf1, beta[idb1])) / n0 -
+                 2 * beta[idb0] %*% vcovXf01 %*% beta[idb1] / n0)^.5)
     names(knots0) <- names(attr(optBasis$Xf0, "colnames"))
     names(knots1) <- names(attr(optBasis$Xf1, "colnames"))
     ans <- list(beta = beta, se.beta = se.beta, 
