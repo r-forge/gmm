@@ -1,31 +1,29 @@
-splineMatrix <- function(X, knots = NA, pFact=0.3, deg=1, method=c("manual","bs"))
+.splineMatrix <- function (X, knots = NA, pFact = 0.3,
+                          deg = 1, method = c("manual", "bs")) 
 {
     method <- match.arg(method)
     n <- length(X)
-    if (is.null(knots))
+    if (is.null(knots)) 
         return(as.matrix(X))
-    if(any(is.na(knots)))
-    {
-        p <- floor(n^pFact)        
+    if (any(is.na(knots))) {
+        p <- floor(n^pFact)
         prop.seq <- seq(from = 0, to = 1, length.out = p + 1)
         prop.seq <- prop.seq[-c(1, p + 1)]
         knots <- quantile(X, probs = prop.seq, type = 1)
     }
-    if (method == "bs")
-    {
-        Xfi <- bs(x=X, knots=knots, degree=deg)
-    } else {
+    if (method == "bs") {
+        Xfi <- bs(x = X, knots = knots, degree = deg)
+    }
+    else {
         p <- length(knots) + 1
         Xfi <- matrix(nrow = n, ncol = p)
         Xfi[, 1] <- X * (X <= knots[1]) + knots[1] * (X > knots[1])
         Xfi[, p] <- (X - knots[p - 1]) * (X > knots[p - 1])
-        if(p >= 3)
-        {
-            for(j in 2:(p - 1))
-            {
-                Xfi[, j] <- (X - knots[j - 1]) *
-                    (X >= knots[j - 1]) * (X <= knots[j]) + 
-                    (knots[j] - knots[j - 1]) * (X > knots[j])
+        if (p >= 3) {
+            for (j in 2:(p - 1)) {
+                Xfi[, j] <- (X - knots[j - 1]) * (X >= knots[j - 
+                  1]) * (X <= knots[j]) + (knots[j] - knots[j - 
+                  1]) * (X > knots[j])
             }
         }
         attr(Xfi, "knots") <- knots
@@ -33,139 +31,169 @@ splineMatrix <- function(X, knots = NA, pFact=0.3, deg=1, method=c("manual","bs"
     Xfi
 }
 
-.getPval <- function(X, Y, Z, ppow, splineMet)
+ppSplines <- function(form, data, knots = NA, pFact = 0.3,
+                     deg = 1, method = c("manual", "bs"), minZeroProp=0.1,
+                     subGroup=NULL)
 {
-    n <- length(Y)
-    id0 <- Z == 0
-    id1 <- Z == 1
-    Y0 <- Y[id0]
-    Y1 <- Y[id1]
-    X0 <- X[id0]
-    X1 <- X[id1]
-
-    Xfi0 <- splineMatrix(X=X0, pFact=ppow, method=splineMet)
-    myknots0 <- attr(Xfi0, "knots")
-    p0 <- ncol(Xfi0)
-  
-    Xfi1 <- splineMatrix(X=X1, pFact=ppow, method=splineMet)
-    myknots1 <- attr(Xfi1, "knots")
-    p1 <- ncol(Xfi1)
-
-    p <- p0 + p1  
-
-    Xf0 <- matrix(nrow = n, ncol = p0, 0)
-    Xf1 <- matrix(nrow = n, ncol = p1, 0)
-    Xf0[id0, ] <- Xfi0
-    Xf1[id1, ] <- Xfi1
-
-    Z <- factor(Z)
-    pval0 <- rep(NA, p0 - 1)
-    pval1 <- rep(NA, p1 - 1)
-    lm.out0 <- lm(Y ~ 0 + factor(Z) + Xf0 + Xf1)
-  
-    for(j in 1 : (p0 - 1))
+    X <- model.matrix(form, data)
+    if (attr(terms(form), "intercept") == 1)
+        X <- X[,-1,drop=FALSE]
+    if (!is.null(subGroup))
     {
-        null_hyp <- paste("Xf0", j + 1, "-", "Xf0", j, "=0", sep = "")
-        pval0[j] <- linearHypothesis(lm.out0, null_hyp, 
-                                     vcov = vcovHC(lm.out0, type = "HC3"))[2, 4]
+        if (length(subGroup) != nrow(data))
+            stop(paste("The length of the subGroup vector should be ", nrow(data),
+                       sep=""))
+        if (!is.logical(subGroup))
+        {
+            if (!all(subGroup %in% c(1,0)))
+                stop("subGroup must be logical or binary")
+            subGroup <- subGroup == 1
+        }
+        X <- X[subGroup,,drop=FALSE]
     }
-  
-    for(j in 1 : (p1 - 1))
+    
+    if (!is.list(knots))
     {
-        null_hyp <- paste("Xf1", j + 1, "-", "Xf1", j, "=0", sep = "")
-        pval1[j] <- linearHypothesis(lm.out0, null_hyp, 
-                                     vcov = vcovHC(lm.out0, type = "HC3"))[2, 4]
-    }  
-    list(pval0=pval0, pval1=pval1, p0=p0, p1=p1, knots0=myknots0,
-         knots1=myknots1)
+        if (length(knots) > 1)
+            warning("knots is either a list or a scalar. Only the first element is used")
+        knots <- lapply(1:ncol(X), function(i) knots[1])
+    }
+    isBinary <- apply(X, 2, function(x) all(x %in% c(1,0)))
+    isTruncated <- sapply(1:ncol(X),
+                          function(i) (!isBinary[i])&(mean(X[,i]==0)>=minZeroProp))    
+    if (length(knots) != ncol(X))
+        stop(paste("The length of knots must be equal to ", ncol(X), sep=""))
+        
+    all <- lapply(1:ncol(X), function(i){
+        k <- if (isBinary[i]) NULL else knots[[i]]
+        if (!isTruncated[i])
+        {
+            ans <- .splineMatrix(X[,i] , k, pFact, deg, method)
+        } else {
+            id <- X[,i] != 0
+            tmp <- .splineMatrix(X[id,i] , k, pFact, deg, method)
+            ans <- matrix(0, nrow(X), ncol(tmp))
+            ans[id,] <- tmp
+            attr(ans, "knots") <- attr(tmp, "knots")
+        }
+        if (!is.null(subGroup))
+        {
+            tmp <- ans
+            ans <- matrix(0, nrow(data), ncol(ans))
+            ans[subGroup,] <- tmp
+            attr(ans, "knots") <- attr(tmp, "knots")
+        }
+        nk <- length(attr(ans, "knots"))+1
+        colnames(ans) <- if (nk==1)
+                         {
+                             colnames(X)[i]
+                         } else {
+                             paste(colnames(X)[i], "_", 1:nk, sep="")
+                         }
+        ans})
+    names(all) <- colnames(X)
+    knots <- lapply(all, function(li) attr(li, "knots"))
+    names(knots) <- names(all)
+    cnames <- lapply(all, colnames)
+    names(cnames) <- names(all)
+    all <- do.call(cbind, all)
+    attr(all, "knots") <- knots
+    attr(all, "p") <- sapply(knots, length) + 1
+    attr(all, "colnames") <- cnames
+    all
 }
 
-selASY <- function(X, Y, Z, pFact=0.3, splineMet=c("manual","bs"))
+.getPval <- function (form,  data,  ppow, splineMet, HCtype="HC",
+                     mZeroProp=0.1) 
+{
+    tmp <- as.character(form)
+    if (!grepl("\\|", tmp[3]))
+        stop("form must be of the type y~z|~x")
+    tmp2 <- strsplit(tmp[3], "\\|")[[1]]
+    formX <- as.formula(tmp2[2], env=.GlobalEnv)
+    formY <- as.formula(paste(tmp[2], "~",tmp2[1],sep=""))
+    Z <- model.matrix(formY, data)
+    Y <- model.frame(formY, data)[[1]]
+    if (attr(terms(formY), "intercept") == 1)
+        Z <- Z[,-1,drop=FALSE]
+    if (ncol(Z)>1)
+        stop("The right hand side must be a single vector of treatment indicator")
+    if (!all(Z %in% c(0,1)))
+        stop("The right hand side must be a binary variable")
+    formY <- as.formula(paste(tmp[2], "~factor(",tmp2[1],")+Xf0+Xf1-1"),
+                        env=.GlobalEnv)
+    n <- length(Z)    
+    id0 <- Z == 0
+
+    data$Xf0 <- ppSplines(form=formX, data=data, pFact=ppow,
+                          method=splineMet, subGroup=id0, minZeroProp=mZeroProp)
+    data$Xf1 <- ppSplines(form=formX, data=data, pFact=ppow,
+                          method=splineMet, subGroup=!id0, minZeroProp=mZeroProp)    
+    fit <- lm(formY, data)
+    knots0 <- attr(data$Xf0, "knots")
+    knots1 <- attr(data$Xf1, "knots")
+    p0 <- attr(data$Xf0, "p")
+    p1 <- attr(data$Xf1, "p")
+    cn0 <- attr(data$Xf0, "colnames")
+    cn1 <- attr(data$Xf1, "colnames")
+    pval0 <- lapply(1:length(p0), function(i){
+        if (p0[i] == 1)
+            return(NA)
+        sapply(1:(p0[i] - 1),  function(j){
+            t <- paste("Xf0", cn0[[i]][j], "=Xf0", cn0[[i]][j+1], sep="")
+            linearHypothesis(fit, t, vcov. = vcovHC(fit, type = HCtype))[2, 4]
+        })})
+    names(pval0) <- names(p0)
+    pval1 <- lapply(1:length(p1), function(i){
+        if (p1[i] == 1)
+            return(NA)        
+        sapply(1:(p1[i] - 1),  function(j){
+            t <- paste("Xf1", cn1[[i]][j], "=Xf1", cn1[[i]][j+1], sep="")
+            linearHypothesis(fit, t, vcov. = vcovHC(fit, type = HCtype))[2, 4]
+        })})
+    names(pval1) <- names(p1)
+    list(pval0 = pval0, pval1 = pval1, p0 = p0, p1 = p1, knots0 = knots0, 
+         knots1 = knots1, Z=Z, Y=Y, formX=formX, formY=formY,
+         treatment=colnames(Z))
+}
+
+selASY <- function (form, data, pFact = 0.3, splineMet = c("manual", "bs"),
+                    HCtype="HC", mZeroProp=0.1)
 {
     splineMet <- match.arg(splineMet)
-    res <- .getPval(X, Y, Z, pFact, splineMet)
-    pval=c(res$pval0, res$pval1)
-    n <- length(X)
+    res <- .getPval(form, data, pFact, splineMet, HCtype, mZeroProp)
+    pval <- c(do.call("c", res$pval0), do.call("c", res$pval1))
+    n <- nrow(data)
     q <- length(pval)
-    p <- res$p0+res$p1
-    id0 <- Z==0
-    Jhat0 <- res$pval0 <= 1 / (p * log(p))
-    Jhat1 <- res$pval1 <= 1 / (p * log(p))
-    if(all(!Jhat0))
+    p <- sum(res$p0) + sum(res$p1)
+    id0 <- res$Z == 0
+    knots0 <- lapply(1:length(res$pval0), function(i)
+    {      
+        jhat <- res$pval0[[i]]  <= 1/(p * log(p))
+        ans <- if (all(!jhat) | any(is.na(jhat)))
+               {
+                   NULL
+               } else {
+                   res$knots0[[i]][jhat]
+               }
+    })
+    knots1 <- lapply(1:length(res$pval1), function(i)
     {
-        myknots0 <- NULL
-    } else {
-        myknots0 <- res$knots0[Jhat0]
-    }
-    Xfi0 <- splineMatrix(X=X[id0], knots=myknots0, method=splineMet)
-    p00 <- ncol(Xfi0)
-    Xf0 <- matrix(nrow = n, ncol = p00, 0)
-    Xf0[id0, ] <- Xfi0
-    
-    if(all(!Jhat1))
-    {
-        myknots1 <- NULL
-    } else {
-        myknots1 <- res$knots1[Jhat1]
-    }
-    Xfi1 <- splineMatrix(X=X[!id0], knots=myknots1, method=splineMet)
-    p10 <- ncol(Xfi1)
-    Xf1 <- matrix(nrow = n, ncol = p10, 0)
-    Xf1[!id0, ] <- Xfi1        
-    list(Xf1=Xf1, Xf0=Xf0, knots0=myknots0, knots1=myknots1,
-         pval=pval)
-}
-
-selIC <- function(X, Y, Z, pFact=0.3, type=c("AIC", "BIC"), splineMet=c("manual","bs"))
-{
-    type <- match.arg(type)
-    splineMet <- match.arg(splineMet)    
-    res <- .getPval(X, Y, Z, pFact, splineMet)
-    pval=c(res$pval0, res$pval1)
-    n <- length(X)    
-    q <- length(pval)
-    p <- res$p0+res$p1
-    pval_sort <- sort(pval)
-    Xf0 <- matrix(nrow = n, ncol = 1, 0)
-    id0 <- Z==0
-    Xf0[id0] <- X[id0]
-    Xf1 <- matrix(nrow = n, ncol = 1, 0)
-    Xf1[!id0] <- X[!id0]
-    lm.out0 <- lm(Y ~ 0 + factor(Z) + Xf0 + Xf1)
-    icV <- ic_seq0 <- get(type)(lm.out0)
-    knots0 <- NULL
-    knots1 <- NULL
-    for(i in 1 : q)
-    {    
-        Jhat0i <- res$pval0 <= pval_sort[i]
-        Jhat1i <- res$pval1 <= pval_sort[i]
-        
-        myknots0i <- if(all(!Jhat0i)) NULL else res$knots0[Jhat0i]
-        Xfi0i <- splineMatrix(X=X[id0], knots=myknots0i, method=splineMet)
-        p0i <- ncol(Xfi0i)
-        Xf0i <- matrix(nrow = n, ncol = p0i, 0)
-        Xf0i[id0, ] <- Xfi0i
-
-        myknots1i <- if(all(!Jhat1i)) NULL else res$knots1[Jhat1i]
-        Xfi1i <- splineMatrix(X=X[!id0], knots=myknots1i, method=splineMet)
-        p1i <- ncol(Xfi1i)
-        Xf1i <- matrix(nrow = n, ncol = p1i, 0)
-        Xf1i[!id0, ] <- Xfi1i
-
-        lm.out1 <- lm(Y ~ 0 + factor(Z) + Xf0i + Xf1i)
-        ic_seq1 <- get(type)(lm.out1)
-        icV <- c(icV, ic_seq1)
-        if (ic_seq1<ic_seq0)
-        {
-            ic_seq0 <- ic_seq1
-            Xf0 <- Xf0i
-            Xf1 <- Xf1i
-            knots0 <- myknots0i
-            knots1 <- myknots1i
-        } 
-    }
-    list(Xf1=Xf1, Xf0=Xf0, knots0=knots0, knots1=knots1, IC=icV,
-         pval=pval)
+        jhat <- res$pval1[[i]]  <= 1/(p * log(p))
+        ans <- if (all(!jhat) | any(is.na(jhat)))
+               {
+                   NULL
+               } else {
+                   res$knots1[[i]][jhat]
+               }
+    })
+    Xf0 <- ppSplines(res$formX, data, knots0, pFact, 1, splineMet,
+                     subGroup=id0, minZeroProp=mZeroProp)
+    Xf1 <- ppSplines(res$formX, data, knots1, pFact, 1, splineMet,
+                     subGroup=!id0, minZeroProp=mZeroProp)    
+    list(Xf1 = Xf1, Xf0 = Xf0, knots0 = knots0, knots1 = knots1, 
+         pval = pval, id0=id0, formY=res$formY, formX=res$formX,
+         treatment=res$treatment)
 }
 
 .getCV <- function(Y, Z, X0, X1)
@@ -195,97 +223,118 @@ selIC <- function(X, Y, Z, pFact=0.3, type=c("AIC", "BIC"), splineMet=c("manual"
     mean(mspe_pred, na.rm = TRUE)
 }
 
-selCV <- function(X, Y, Z, pFact=0.3, splineMet=c("manual","bs"))
+selIC <- function(form, data, pFact = 0.3, type=c("AIC", "BIC", "CV"),
+                  splineMet = c("manual", "bs"), HCtype="HC",
+                  mZeroProp=0.1) 
 {
-    splineMet <- match.arg(splineMet)    
-    res <- .getPval(X, Y, Z, pFact, splineMet)
-    pval=c(res$pval0, res$pval1)    
-    n <- length(X)    
+    type <- match.arg(type)
+    splineMet <- match.arg(splineMet)
+    res <- .getPval(form, data, pFact, splineMet, HCtype, mZeroProp)
+    pval <- c(do.call("c", res$pval0), do.call("c", res$pval1))
+    n <- nrow(data)
     q <- length(pval)
-    p <- res$p0+res$p1
-    myK <- floor(log(n))
+    p <- sum(res$p0) + sum(res$p1)
+    id0 <- res$Z == 0
     pval_sort <- sort(pval)
-    mspe_seq <- rep(NA, q + 1)
-    mspe_pred <- rep(NA, myK)
-    cv.outi <- cvFolds(n, K = myK)
-    id0 <- Z==0
-    Xf0 <- matrix(nrow = n, ncol = 1, 0)
-    Xf0[id0] <- X[id0]
-    Xf1 <- matrix(nrow = n, ncol = 1, 0)
-    Xf1[!id0] <- X[!id0]
+    data$Xf0 <- ppSplines(form = res$formX, data = data, knots = NULL,
+                                 pFact = pFact, deg = 1, method = splineMet,
+                                 subGroup=id0, minZeroProp=mZeroProp)
+    data$Xf1 <- ppSplines(form = res$formX, data = data, knots = NULL,
+                                 pFact = pFact, deg = 1, method = splineMet,
+                                 subGroup=!id0, minZeroProp=mZeroProp)
+    if (type != "CV")
+    {       
+        fit0 <- lm(res$formY, data)
+        icV <- ic_seq0 <- get(type)(fit0)
+    } else {
+        icV <- ic_seq0 <- .getCV(res$Y, res$Z, data$Xf0, data$Xf1)
+    }
+    Xf0 <- data$Xf0
+    Xf1 <- data$Xf1    
     knots0 <- NULL
     knots1 <- NULL
-    mspe0 <- mspe_seq[1] <- .getCV(Y, Z, Xf0, Xf1)
     for(i in 1 : q)
     {
-        Jhat0i <- res$pval0 <= pval_sort[i]
-        Jhat1i <- res$pval1 <= pval_sort[i]
-        cv.outi <- cvFolds(n, K = myK)
-        mspe_pred <- rep(NA, myK)
-
-        myknots0i <- if(all(!Jhat0i)) NULL else res$knots0[Jhat0i]
-        Xfi0i <- splineMatrix(X=X[id0], knots=myknots0i, method=splineMet)
-        p0i <- ncol(Xfi0i)
-        Xf0i <- matrix(nrow = n, ncol = p0i, 0)
-        Xf0i[id0, ] <- Xfi0i
-
-        myknots1i <- if(all(!Jhat1i)) NULL else res$knots1[Jhat1i]
-        Xfi1i <- splineMatrix(X=X[!id0], knots=myknots1i, method=splineMet)
-        p1i <- ncol(Xfi1i)
-        Xf1i <- matrix(nrow = n, ncol = p1i, 0)
-        Xf1i[!id0, ] <- Xfi1i
-        mspe1 <- mspe_seq[i+1] <- .getCV(Y, Z, Xf0i, Xf1i)
-        if (mspe1 < mspe0)
+        knots02 <- lapply(1:length(res$pval0), function(j) {
+            jhat <- res$pval0[[j]] <= pval_sort[i]
+            if(all(!jhat) | any(is.na(jhat))) NULL else res$knots0[[j]][jhat]
+        })
+        knots12 <- lapply(1:length(res$pval1), function(j) {
+            jhat <- res$pval1[[j]] <= pval_sort[i]
+            if(all(!jhat) | any(is.na(jhat))) NULL else res$knots1[[j]][jhat]
+        })
+        data$Xf0 <- ppSplines(form = res$formX, data = data, knots = knots02,
+                              pFact = pFact, deg = 1, method = splineMet,
+                              subGroup=id0, minZeroProp=mZeroProp)
+        data$Xf1 <- ppSplines(form = res$formX, data = data, knots = knots12,
+                              pFact = pFact, deg = 1, method = splineMet,
+                              subGroup=!id0, minZeroProp=mZeroProp)
+        if (type != "CV")
         {
-            mspe0 <- mspe1
-            knots0 <- myknots0i
-            knots1 <- myknots1i
-            Xf0 <- Xf0i
-            Xf1 <- Xf1i
+            fit1 <- lm(res$formY, data)
+            ic_seq1 <- get(type)(fit1)
+        } else {
+            ic_seq1 <- .getCV(res$Y, res$Z, data$Xf0, data$Xf1)
         }
+        icV <- c(icV, ic_seq1)
+        if (ic_seq1<ic_seq0)
+        {
+            ic_seq0 <- ic_seq1
+            Xf0 <- data$Xf0
+            Xf1 <- data$Xf1
+            knots0 <- knots02
+            knots1 <- knots12
+        } 
     }
-    list(Xf1=Xf1, Xf0=Xf0, knots0=knots0, knots1=knots1, IC=mspe_seq,
-         pval=pval)
+    list(Xf1 = Xf1, Xf0 = Xf0, knots0 = knots0, knots1 = knots1, 
+         IC=icV, pval = pval, id0=id0, formY=res$formY, formX=res$formX,
+         treatment=res$treatment)
 }
 
-# currently implemented only for the case when X is univariate
-otlse <- function(X, Y, Z, crit = c("ASY", "AIC", "BIC", "CV"),
-                  pFact=0.3, splineMet=c("manual","bs"))
+otlse <- function(form, data, crit = c("ASY", "AIC", "BIC", "CV"),
+                  pFact=0.3, splineMet=c("manual","bs"), HCtype="HC",
+                  mZeroProp=0.1)
 {
     crit <- match.arg(crit)
     splineMet <- match.arg(splineMet)
     optBasis <- switch(crit,
-                       ASY = selASY(X, Y, Z, pFact, splineMet),
-                       AIC = selIC(X, Y, Z, pFact, "AIC", splineMet),
-                       BIC = selIC(X, Y, Z, pFact, "BIC", splineMet),
-                       CV = selCV(X, Y, Z, pFact, splineMet))
-    n <- length(Y)
-    n1 <- sum(Z)
-    n0 <- n-n1
-    Xf0 <- optBasis$Xf0
-    Xf1 <- optBasis$Xf1
+                       ASY = selASY(form, data, pFact, splineMet, HCtype, mZeroProp),
+                       AIC = selIC(form, data, pFact, "AIC", splineMet, HCtype, mZeroProp),
+                       BIC = selIC(form, data, pFact, "BIC", splineMet, HCtype, mZeroProp),
+                       CV = selIC(form, data, pFact, "CV", splineMet, HCtype, mZeroProp))
+    data2 <- data
+    data2$Xf0 <- optBasis$Xf0
+    data2$Xf1 <- optBasis$Xf1
+    lm.out <- lm(optBasis$formY, data2, na.action="na.exclude")
+
+    n <- nrow(data2)
+    id0 <- optBasis$id0
+    n0 <- sum(id0)
+    n1 <- n-n0
     knots0 <- optBasis$knots0
     knots1 <- optBasis$knots1
     pval <- optBasis$pval
-    p00 <- ncol(Xf0)
-    p10 <- ncol(Xf1)
-    lm.out <- lm(Y ~ 0 + factor(Z) + Xf0 + Xf1)
-    vcov <- vcovHC(lm.out)
+    p00 <- ncol(optBasis$Xf0)
+    p10 <- ncol(optBasis$Xf1)
+    vcov <- vcovHC(lm.out, type=HCtype)
     idb0 <- 3 : (p00 + 2)
     idb1 <- (p00 + 3) : (p00 + p10 + 2)
     beta <- coef(lm.out)
     se.beta <- sqrt(diag(vcov))
     
     ## ACE
-    
-    X0 <- splineMatrix(X=X, knots=knots0, method=splineMet)
-    X1 <- splineMatrix(X=X, knots=knots1, method=splineMet)
+
+    X0 <- ppSplines(optBasis$formX, data, knots0, pFact, 1, splineMet, mZeroProp,
+                    NULL)
+    X1 <- ppSplines(optBasis$formX, data, knots1, pFact, 1, splineMet, mZeroProp,
+                    NULL)    
+
     Xbar0 <- apply(X0, 2, mean)
     Xbar1 <- apply(X1, 2, mean)
     vcovXf0 <- cov(X0)
     vcovXf1 <- cov(X1)
     ace <- c(beta[2] - beta[1] + crossprod(beta[idb1], Xbar1) - 
-                                 crossprod(beta[idb0], Xbar0))
+             crossprod(beta[idb0], Xbar0))
     
     Dvec <- rep(0, p00 + p10 + 2)
     Dvec[1] <- - 1
@@ -295,13 +344,13 @@ otlse <- function(X, Y, Z, crit = c("ASY", "AIC", "BIC", "CV"),
     se.ace <- c((crossprod(Dvec, crossprod(vcov, Dvec)) + 
                  crossprod(beta[idb0], crossprod(vcovXf0, beta[idb0])) / n + 
                  crossprod(beta[idb1], crossprod(vcovXf1, beta[idb1])) / n)^.5)
-
-    ## ACT
     
-    Xbar0 <- apply(X0[Z == 1, , drop = FALSE], 2, mean)
-    Xbar1 <- apply(X1[Z == 1, , drop = FALSE], 2, mean)
-    vcovXf0 <- cov(X0[Z == 1, , drop = FALSE])
-    vcovXf1 <- cov(X1[Z == 1, , drop = FALSE])
+    ## ACT
+  
+    Xbar0 <- apply(X0[!id0, , drop = FALSE], 2, mean)
+    Xbar1 <- apply(X1[!id0, , drop = FALSE], 2, mean)
+    vcovXf0 <- cov(X0[!id0, , drop = FALSE])
+    vcovXf1 <- cov(X1[!id0, , drop = FALSE])
     act <- c(beta[2] - beta[1] + crossprod(beta[idb1], Xbar1) - 
              crossprod(beta[idb0], Xbar0))
     Dvec[idb0] <- - Xbar0
@@ -309,13 +358,13 @@ otlse <- function(X, Y, Z, crit = c("ASY", "AIC", "BIC", "CV"),
     se.act <- c((crossprod(Dvec, crossprod(vcov, Dvec)) + 
                  crossprod(beta[idb0], crossprod(vcovXf0, beta[idb0])) / n1 + 
                  crossprod(beta[idb1], crossprod(vcovXf1, beta[idb1])) / n1)^.5)
-
+   
     ## ACN
     
-    Xbar0 <- apply(X0[Z == 0, , drop = FALSE], 2, mean)
-    Xbar1 <- apply(X1[Z == 0, , drop = FALSE], 2, mean)
-    vcovXf0 <- cov(X0[Z == 0, , drop = FALSE])
-    vcovXf1 <- cov(X1[Z == 0, , drop = FALSE])
+    Xbar0 <- apply(X0[id0, , drop = FALSE], 2, mean)
+    Xbar1 <- apply(X1[id0, , drop = FALSE], 2, mean)
+    vcovXf0 <- cov(X0[id0, , drop = FALSE])
+    vcovXf1 <- cov(X1[id0, , drop = FALSE])
     acn <- c(beta[2] - beta[1] + crossprod(beta[idb1], Xbar1) - 
              crossprod(beta[idb0], Xbar0))
     Dvec[idb0] <- - Xbar0
@@ -323,11 +372,15 @@ otlse <- function(X, Y, Z, crit = c("ASY", "AIC", "BIC", "CV"),
     se.acn <- c((crossprod(Dvec, crossprod(vcov, Dvec)) + 
                  crossprod(beta[idb0], crossprod(vcovXf0, beta[idb0])) / n0 + 
                  crossprod(beta[idb1], crossprod(vcovXf1, beta[idb1])) / n0)^.5)
-    
+    names(knots0) <- names(attr(optBasis$Xf0, "colnames"))
+    names(knots1) <- names(attr(optBasis$Xf1, "colnames"))
     ans <- list(beta = beta, se.beta = se.beta, 
                 lm.out = lm.out, ace = ace, se.ace = se.ace, 
                 act = act, se.act = se.act, acn = acn, se.acn = se.acn,
-                myknots0 = knots0, myknots1 = knots1, pval = pval, crit=crit)
+                knots0 = knots0, knots1 = knots1, pval = pval, crit=crit,
+                data=data, formX=optBasis$formX, formY=optBasis$formY,
+                pFact=pFact, splineMet=splineMet, HCtype=HCtype,
+                mZeroProp=mZeroProp, treatment=optBasis$treatment)
     class(ans) <- "otlse"
     ans
 }
@@ -339,6 +392,7 @@ print.otlse <- function (x, ...)
     cat("Selection method: ", x$crit, "\n\n", sep="")
     cat("ACE = ", x$ace, "\nACT = ", x$act, "\nACN = ", x$acn,"\n")
 }
+
 
 summary.otlse <- function(object, ...)
 {
@@ -355,15 +409,16 @@ summary.otlse <- function(object, ...)
     t <- object$beta/object$se.beta
     pv <- 2*pnorm(-abs(t))
     beta <- cbind(object$beta, object$se.beta, t, pv)
-    colnames(beta) <- c("Estimate", "Std. Error", "t value", "Pr(>|t|)")
-    ans <- list(causal=ace, beta=beta, crit=object$crit)
+    colnames(beta) <- c("Estimate", "Std. Error", "t value", "Pr(>|t|)")    
+    ans <- list(causal=ace, beta=beta, crit=object$crit, knots0=object$knots0,
+                knots1=object$knots1, covNames = names(object$knots0))
     class(ans) <- "summary.otlse"
     ans
 }
 
 print.summary.otlse <- function(x, digits = 4,
                                 signif.stars = getOption("show.signif.stars"),
-                                beta=FALSE, ...)
+                                beta=FALSE, knots=FALSE, ...)
 {
     cat("Causal Effect using Optimal Thresholding Least Squares\n")
     cat("******************************************************\n")
@@ -372,10 +427,66 @@ print.summary.otlse <- function(x, digits = 4,
                  na.print = "NA", ...)
     if (beta)
     {
-        cat("Piecewise polynomials coefficients\n")
+        cat("\nPiecewise polynomials coefficients\n")
         cat("**********************************\n")
         printCoefmat(x$beta, digits = digits, signif.stars = signif.stars, 
                      na.print = "NA", ...)        
     }
+    if (knots)
+    {
+        cat("\nNumber of selected knots per variables\n")
+        cat("***************************************\n")        
+        cat("Treated group:\n")
+        print.default(format(sapply(x$knots1, length)), print.gap = 2L, 
+                      quote = FALSE)        
+        cat("Control group:\n")
+        print.default(format(sapply(x$knots0, length)), print.gap = 2L, 
+                      quote = FALSE)        
+        cat("\n")
+    }
 }
-        
+
+plot.otlse <- function(x, y, which=y, addInterval=FALSE, level=0.95, 
+                       leg.pos="topright", ...)
+{
+    fit <- x$lm.out
+    vnames <- all.vars(x$formX)
+    if (is.numeric(which))
+        which <- vnames[which]
+    if (!is.character(which) & length(which) != 1)
+        stop("which must be a character type")
+    if (!(which %in% vnames))
+        stop("which must be one of the names of the variables")
+    data <- x$data[order(x$data[,which]),]
+    treat <- x$treatment
+    Z <- data[,treat]
+    data[,!(names(data)%in%c(which, treat))] <-
+        sapply(which(!(names(data)%in%c(which, treat))), function(i)
+            rep(mean(data[,i], na.rm=TRUE), nrow(data)))
+    data$Xf0 <- ppSplines(x$formX, data, x$knots0, x$pFact, 1,
+                          x$splineMet, x$mZeroProp, Z==0)
+    data$Xf1 <- ppSplines(x$formX, data, x$knots1, x$pFact, 1,
+                          x$splineMet, x$mZeroProp, Z==1)
+    main <- paste("Outcome versus ", which, " using piecewise polynomials", sep="")
+    if (addInterval)
+    {
+        int <- "confidence"
+        lty=c(1,3,3)
+        lwd=c(2,1,1)
+    } else {
+        int <- "none"
+        lty=1
+        lwd=2
+    }
+    pr.t <- predict(x$lm.out, newdata=data[Z==1,], interval=int, level=level)
+    pr.c <- predict(x$lm.out, newdata=data[Z==0,], interval=int, level=level)    
+    ylim <- range(c(pr.c, pr.t))
+    matplot(data[Z==1,which], pr.t, col=2, ylim=ylim, type='l',
+            lty=lty, lwd=lwd, main=main, ylab="Outcome", xlab=which)
+    matplot(data[Z==0,which], pr.c, col=5, type='l',
+            lty=lty, lwd=lwd, add=TRUE)
+    grid()
+    legend(leg.pos, c("Treated","Control"), col=c(2,5), lty=lty, lwd=2,
+           bty='n')
+    invisible()
+}  

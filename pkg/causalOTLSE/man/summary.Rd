@@ -14,7 +14,7 @@ The method builds the coefficient matrices.
 
 \examples{
 data(simData)
-fit <- otlse(simData$X, simData$Y, simData$Z) 
+fit <- otlse(Y~Z|~X1*X2*male, simData, crit="AIC", HCtype="HC3")
 summary(fit)
 }
 
