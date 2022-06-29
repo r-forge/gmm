@@ -1,6 +1,5 @@
 importFrom(stats, quantile, lm, predict, coef, vcov, printCoefmat, cov, pnorm,
-           terms, model.matrix, as.formula, model.frame)
-importFrom(car, linearHypothesis)
+           terms, model.matrix, as.formula, model.frame, lm.fit, na.omit, pf)
 importFrom(graphics, grid, legend, matplot)
 importFrom(sandwich, vcovHC)
 importFrom(cvTools, cvFolds)

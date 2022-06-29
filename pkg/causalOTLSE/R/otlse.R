@@ -128,7 +128,7 @@ ppSplines <- function(form, data, knots = NA, pFact = 0.3,
     data$Xf0 <- ppSplines(form=formX, data=data, pFact=ppow,
                           method=splineMet, subGroup=id0, minZeroProp=mZeroProp)
     data$Xf1 <- ppSplines(form=formX, data=data, pFact=ppow,
-                          method=splineMet, subGroup=!id0, minZeroProp=mZeroProp)    
+                          method=splineMet, subGroup=!id0, minZeroProp=mZeroProp)
     fit <- lm(formY, data)
     knots0 <- attr(data$Xf0, "knots")
     knots1 <- attr(data$Xf1, "knots")
@@ -136,26 +136,44 @@ ppSplines <- function(form, data, knots = NA, pFact = 0.3,
     p1 <- attr(data$Xf1, "p")
     cn0 <- attr(data$Xf0, "colnames")
     cn1 <- attr(data$Xf1, "colnames")
+    v <- vcovHC(fit, type = HCtype)
     pval0 <- lapply(1:length(p0), function(i){
         if (p0[i] == 1)
             return(NA)
         sapply(1:(p0[i] - 1),  function(j){
-            t <- paste("Xf0", cn0[[i]][j], "=Xf0", cn0[[i]][j+1], sep="")
-            linearHypothesis(fit, t, vcov. = vcovHC(fit, type = HCtype))[2, 4]
+            t <- c(paste("Xf0", cn0[[i]][j], sep=""),
+                   paste("Xf0", cn0[[i]][j+1], sep=""))
+            .lintest(fit, t[1], t[2], v)
         })})
+    names(pval0) <- NULL
     names(pval0) <- names(p0)
     pval1 <- lapply(1:length(p1), function(i){
         if (p1[i] == 1)
             return(NA)        
         sapply(1:(p1[i] - 1),  function(j){
-            t <- paste("Xf1", cn1[[i]][j], "=Xf1", cn1[[i]][j+1], sep="")
-            linearHypothesis(fit, t, vcov. = vcovHC(fit, type = HCtype))[2, 4]
+            t <- c(paste("Xf1", cn0[[i]][j], sep=""),
+                   paste("Xf1", cn0[[i]][j+1], sep=""))
+            .lintest(fit, t[1], t[2], v)            
         })})
+    names(pval1) <- NULL
     names(pval1) <- names(p1)
     list(pval0 = pval0, pval1 = pval1, p0 = p0, p1 = p1, knots0 = knots0, 
          knots1 = knots1, Z=Z, Y=Y, formX=formX, formY=formY,
          treatment=colnames(Z))
 }
+
+.lintest <- function(obj, c1, c2, v)
+{
+    b <- coef(obj)
+    b <- na.omit(b)
+    c1 <- which(names(b) == c1)
+    c2 <- which(names(b) == c2)
+    s2 <- v[c1,c1]+v[c2,c2]-2*v[c1,c2]
+    ans <- 1-pf((b[c1]-b[c2])^2/s2, 1, obj$df)
+    names(ans) <- NULL
+    ans
+}
+
 
 selASY <- function (form, data, pFact = 0.3, splineMet = c("manual", "bs"),
                     HCtype="HC", mZeroProp=0.1, minPV=function(p) 1/(p*log(p)))
@@ -204,22 +222,15 @@ selASY <- function (form, data, pFact = 0.3, splineMet = c("manual", "bs"),
     X1 <- as.matrix(X1)
     myK <- floor(log(n))
     cv.outi <- cvFolds(n, K = myK)
-    mspe_pred <- rep(NA, myK)    
+    mspe_pred <- rep(NA, myK)
+    X <- cbind(1-Z,Z,X0,X1)
     for(k in 1 : myK)
     {
         id.train <- cv.outi$subsets[cv.outi$which != k]
         id.valid <- cv.outi$subsets[cv.outi$which == k]
-        train.datak <- list(Yk = Y[id.train], Zk = Z[id.train], 
-                            Xf0ik = X0[id.train, , drop = FALSE],
-                            Xf1ik = X1[id.train, , drop = FALSE])
-        valid.datak <- list(Yk = Y[id.valid], Zk = Z[id.valid], 
-                            Xf0ik = X0[id.valid, , drop = FALSE],
-                            Xf1ik = X1[id.valid, , drop = FALSE])
-        lm.outk <- lm(Yk ~ 0 + factor(Zk) + Xf0ik + Xf1ik, data = train.datak)
-        pred.outk <- predict(lm.outk, newdata = valid.datak,
-                             type = "response")
-        mspe_pred[k] <- mean((valid.datak$Yk - pred.outk)^2,
-                             na.rm = TRUE)
+        lm.outk <- lm.fit(X[id.train,],Y[id.train])
+        pred.outk <- c(X[id.valid,]%*%lm.outk$coefficients)
+        mspe_pred[k] <- mean((Y[id.valid]-pred.outk)^2, na.rm=TRUE)
     }    
     mean(mspe_pred, na.rm = TRUE)
 }
