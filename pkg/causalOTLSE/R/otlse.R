@@ -302,12 +302,9 @@ otlse <- function(form, data, crit = c("ASY", "AIC", "BIC", "CV"),
     optBasis <- switch(crit,
                        ASY = selASY(form=form, data, pFact, splineMet, HCtype, mZeroProp,
                                     ...),
-                       AIC = selIC(form, data, pFact, "AIC", splineMet, HCtype, mZeroProp,
-                                   ...),
-                       BIC = selIC(form, data, pFact, "BIC", splineMet, HCtype, mZeroProp,
-                                   ...),
-                       CV = selIC(form, data, pFact, "CV", splineMet, HCtype, mZeroProp,
-                                  ...))
+                       AIC = selIC(form, data, pFact, "AIC", splineMet, HCtype, mZeroProp),
+                       BIC = selIC(form, data, pFact, "BIC", splineMet, HCtype, mZeroProp),
+                       CV = selIC(form, data, pFact, "CV", splineMet, HCtype, mZeroProp))
     data2 <- data
     data2$Xf0 <- optBasis$Xf0
     data2$Xf1 <- optBasis$Xf1
