@@ -151,8 +151,8 @@ ppSplines <- function(form, data, knots = NA, pFact = 0.3,
         if (p1[i] == 1)
             return(NA)        
         sapply(1:(p1[i] - 1),  function(j){
-            t <- c(paste("Xf1", cn0[[i]][j], sep=""),
-                   paste("Xf1", cn0[[i]][j+1], sep=""))
+            t <- c(paste("Xf1", cn1[[i]][j], sep=""),
+                   paste("Xf1", cn1[[i]][j+1], sep=""))
             .lintest(fit, t[1], t[2], v)            
         })})
     names(pval1) <- NULL
