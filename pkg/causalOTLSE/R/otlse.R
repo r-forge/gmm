@@ -104,7 +104,7 @@ ppSplines <- function(form, data, knots = NA, pFact = 0.3,
 }
 
 .getPval <- function (form,  data,  ppow, splineMet, HCtype="HC",
-                     mZeroProp=0.1) 
+                     mZeroProp=0.1, knots.) 
 {
     tmp <- as.character(form)
     if (!grepl("\\|", tmp[3]))
@@ -125,11 +125,14 @@ ppSplines <- function(form, data, knots = NA, pFact = 0.3,
     n <- length(Z)    
     id0 <- Z == 0
 
-    data$Xf0 <- ppSplines(form=formX, data=data, pFact=ppow,
+    data$Xf0 <- ppSplines(form=formX, data=data, pFact=ppow, knots=knots., 
                           method=splineMet, subGroup=id0, minZeroProp=mZeroProp)
-    data$Xf1 <- ppSplines(form=formX, data=data, pFact=ppow,
+    data$Xf1 <- ppSplines(form=formX, data=data, pFact=ppow, knots=knots.,
                           method=splineMet, subGroup=!id0, minZeroProp=mZeroProp)
     fit <- lm(formY, data)
+    naCoef <- is.na(coef(fit))
+    if (any(naCoef))       
+        warning(paste("The coefficients of the following variables are NA's:\n", paste(names(coef(fit)[naCoef]), collapse="\n"), "\n", sep=""))
     knots0 <- attr(data$Xf0, "knots")
     knots1 <- attr(data$Xf1, "knots")
     p0 <- attr(data$Xf0, "p")
@@ -168,6 +171,8 @@ ppSplines <- function(form, data, knots = NA, pFact = 0.3,
     b <- na.omit(b)
     c1 <- which(names(b) == c1)
     c2 <- which(names(b) == c2)
+    if (length(c(c1,c2))<2)
+        return(NA)
     s2 <- v[c1,c1]+v[c2,c2]-2*v[c1,c2]
     ans <- 1-pf((b[c1]-b[c2])^2/s2, 1, obj$df)
     names(ans) <- NULL
@@ -176,10 +181,11 @@ ppSplines <- function(form, data, knots = NA, pFact = 0.3,
 
 
 selASY <- function (form, data, pFact = 0.3, splineMet = c("manual", "bs"),
-                    HCtype="HC", mZeroProp=0.1, minPV=function(p) 1/(p*log(p)))
+                    HCtype="HC", mZeroProp=0.1, minPV=function(p) 1/(p*log(p)),
+                    knots=NA)
 {
     splineMet <- match.arg(splineMet)
-    res <- .getPval(form, data, pFact, splineMet, HCtype, mZeroProp)
+    res <- .getPval(form, data, pFact, splineMet, HCtype, mZeroProp, knots)
     pval <- c(do.call("c", res$pval0), do.call("c", res$pval1))
     n <- nrow(data)
     q <- length(pval)
@@ -229,7 +235,8 @@ selASY <- function (form, data, pFact = 0.3, splineMet = c("manual", "bs"),
         id.train <- cv.outi$subsets[cv.outi$which != k]
         id.valid <- cv.outi$subsets[cv.outi$which == k]
         lm.outk <- lm.fit(X[id.train,],Y[id.train])
-        pred.outk <- c(X[id.valid,]%*%lm.outk$coefficients)
+        sel <- !is.na(lm.outk$coefficients)
+        pred.outk <- c(X[id.valid,sel]%*%lm.outk$coefficients[sel])
         mspe_pred[k] <- mean((Y[id.valid]-pred.outk)^2, na.rm=TRUE)
     }    
     mean(mspe_pred, na.rm = TRUE)
@@ -237,11 +244,11 @@ selASY <- function (form, data, pFact = 0.3, splineMet = c("manual", "bs"),
 
 selIC <- function(form, data, pFact = 0.3, type=c("AIC", "BIC", "CV"),
                   splineMet = c("manual", "bs"), HCtype="HC",
-                  mZeroProp=0.1) 
+                  mZeroProp=0.1, knots=NA) 
 {
     type <- match.arg(type)
     splineMet <- match.arg(splineMet)
-    res <- .getPval(form, data, pFact, splineMet, HCtype, mZeroProp)
+    res <- .getPval(form, data, pFact, splineMet, HCtype, mZeroProp, knots)
     pval <- c(do.call("c", res$pval0), do.call("c", res$pval1))
     n <- nrow(data)
     q <- length(pval)
@@ -255,7 +262,7 @@ selIC <- function(form, data, pFact = 0.3, type=c("AIC", "BIC", "CV"),
                                  pFact = pFact, deg = 1, method = splineMet,
                                  subGroup=!id0, minZeroProp=mZeroProp)
     if (type != "CV")
-    {       
+    {
         fit0 <- lm(res$formY, data)
         icV <- ic_seq0 <- get(type)(fit0)
     } else {
@@ -306,16 +313,16 @@ selIC <- function(form, data, pFact = 0.3, type=c("AIC", "BIC", "CV"),
 
 otlse <- function(form, data, crit = c("ASY", "AIC", "BIC", "CV"),
                   pFact=0.3, splineMet=c("manual","bs"), HCtype="HC",
-                  mZeroProp=0.1, ...)
+                  mZeroProp=0.1, knots=NA, ...)
 {
     crit <- match.arg(crit)
     splineMet <- match.arg(splineMet)
     optBasis <- switch(crit,
                        ASY = selASY(form=form, data, pFact, splineMet, HCtype, mZeroProp,
-                                    ...),
-                       AIC = selIC(form, data, pFact, "AIC", splineMet, HCtype, mZeroProp),
-                       BIC = selIC(form, data, pFact, "BIC", splineMet, HCtype, mZeroProp),
-                       CV = selIC(form, data, pFact, "CV", splineMet, HCtype, mZeroProp))
+                                    knots, ...),
+                       AIC = selIC(form, data, pFact, "AIC", splineMet, HCtype, mZeroProp, knots),
+                       BIC = selIC(form, data, pFact, "BIC", splineMet, HCtype, mZeroProp, knots),
+                       CV = selIC(form, data, pFact, "CV", splineMet, HCtype, mZeroProp, knots))
     data2 <- data
     data2$Xf0 <- optBasis$Xf0
     data2$Xf1 <- optBasis$Xf1
@@ -392,8 +399,10 @@ otlse <- function(form, data, crit = c("ASY", "AIC", "BIC", "CV"),
                  crossprod(beta[idb0], crossprod(vcovXf0, beta[idb0])) / n0 + 
                  crossprod(beta[idb1], crossprod(vcovXf1, beta[idb1])) / n0 -
                  2 * beta[idb0] %*% vcovXf01 %*% beta[idb1] / n0)^.5)
-    names(knots0) <- names(attr(optBasis$Xf0, "colnames"))
-    names(knots1) <- names(attr(optBasis$Xf1, "colnames"))
+    if (!is.null(knots0))
+        names(knots0) <- names(attr(optBasis$Xf0, "colnames"))
+    if (!is.null(knots1))    
+        names(knots1) <- names(attr(optBasis$Xf1, "colnames"))
     ans <- list(beta = beta, se.beta = se.beta, 
                 lm.out = lm.out, ace = ace, se.ace = se.ace, 
                 act = act, se.act = se.act, acn = acn, se.acn = se.acn,

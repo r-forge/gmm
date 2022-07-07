@@ -10,7 +10,7 @@ optimal thresholding least squares method.
 \usage{
 otlse(form, data, crit = c("ASY", "AIC", "BIC", "CV"),
       pFact=0.3, splineMet=c("manual","bs"), HCtype="HC",
-      mZeroProp=0.1, ...)
+      mZeroProp=0.1, knots=NA, ...)
 }
 \arguments{
   \item{form}{A formula to identify the outcome, the treatment
@@ -29,6 +29,9 @@ otlse(form, data, crit = c("ASY", "AIC", "BIC", "CV"),
     value, the knots and spline matrices are based on the non-zero
     observations. This is particularly useful when binary variables are
     interacted with continuous variables.}
+  \item{knots}{The piecewise polynomial knots. If set to \code{NA}, the
+    knots are set to the \code{p} equally spaced quantiles of \code{X}. If
+    \code{NULL}, the function returns \code{X}.}  
   \item{...}{Other arguments to pass to the basis selection function.}
 }
 
