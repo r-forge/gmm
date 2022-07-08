@@ -9,11 +9,11 @@ This is a collection of methods to select the piecewise polynomials.
 }
 \usage{
 selASY(form, data, pFact = 0.3, splineMet = c("manual", "bs"),
-       HCtype="HC", mZeroProp=0.1, minPV=function(p) 1/(p*log(p)),
-       knots=NA)
+       HCtype="HC", mZeroProp=0.1, knots0=NA, knots1=NA,
+       minPV=function(p) 1/(p*log(p)))
 selIC(form, data, pFact = 0.3, type=c("AIC", "BIC", "CV"),
       splineMet = c("manual", "bs"), HCtype="HC",
-      mZeroProp=0.1, knots=NA) 
+      mZeroProp=0.1, knots0=NA, knots1=NA) 
 }
 \arguments{
   \item{form}{A formula to identify the outcome, the treatment
@@ -35,9 +35,14 @@ selIC(form, data, pFact = 0.3, type=c("AIC", "BIC", "CV"),
   \item{minPV}{A function to determine the cuttoff point for the
     significance. the argument of the function is the total number of
     basis.}
-  \item{knots}{The piecewise polynomial knots. If set to \code{NA}, the
-    knots are set to the \code{p} equally spaced quantiles of \code{X}. If
-    \code{NULL}, the function returns \code{X}.}  
+  \item{knots0}{The piecewise polynomial knots for the control group.
+    If set to \code{NA}, the knots are set to the \code{p} equally
+    spaced quantiles of \code{X}. If \code{NULL}, the function returns
+    \code{X}.}
+  \item{knots1}{The piecewise polynomial knots for the treated group.
+    If set to \code{NA}, the knots are set to the \code{p} equally
+    spaced quantiles of \code{X}. If \code{NULL}, the function returns
+    \code{X}.}    
 }
 
 \keyword{selection, polynomial}

@@ -104,7 +104,7 @@ ppSplines <- function(form, data, knots = NA, pFact = 0.3,
 }
 
 .getPval <- function (form,  data,  ppow, splineMet, HCtype="HC",
-                     mZeroProp=0.1, knots.) 
+                     mZeroProp=0.1, knots0., knots1.) 
 {
     tmp <- as.character(form)
     if (!grepl("\\|", tmp[3]))
@@ -125,9 +125,9 @@ ppSplines <- function(form, data, knots = NA, pFact = 0.3,
     n <- length(Z)    
     id0 <- Z == 0
 
-    data$Xf0 <- ppSplines(form=formX, data=data, pFact=ppow, knots=knots., 
+    data$Xf0 <- ppSplines(form=formX, data=data, pFact=ppow, knots=knots0., 
                           method=splineMet, subGroup=id0, minZeroProp=mZeroProp)
-    data$Xf1 <- ppSplines(form=formX, data=data, pFact=ppow, knots=knots.,
+    data$Xf1 <- ppSplines(form=formX, data=data, pFact=ppow, knots=knots1.,
                           method=splineMet, subGroup=!id0, minZeroProp=mZeroProp)
     fit <- lm(formY, data)
     naCoef <- is.na(coef(fit))
@@ -181,11 +181,12 @@ ppSplines <- function(form, data, knots = NA, pFact = 0.3,
 
 
 selASY <- function (form, data, pFact = 0.3, splineMet = c("manual", "bs"),
-                    HCtype="HC", mZeroProp=0.1, minPV=function(p) 1/(p*log(p)),
-                    knots=NA)
+                    HCtype="HC", mZeroProp=0.1, knots0=NA, knots1=NA,
+                    minPV=function(p) 1/(p*log(p)))
 {
     splineMet <- match.arg(splineMet)
-    res <- .getPval(form, data, pFact, splineMet, HCtype, mZeroProp, knots)
+    res <- .getPval(form, data, pFact, splineMet, HCtype, mZeroProp, knots0,
+                    knots1)
     pval <- c(do.call("c", res$pval0), do.call("c", res$pval1))
     n <- nrow(data)
     q <- length(pval)
@@ -244,11 +245,12 @@ selASY <- function (form, data, pFact = 0.3, splineMet = c("manual", "bs"),
 
 selIC <- function(form, data, pFact = 0.3, type=c("AIC", "BIC", "CV"),
                   splineMet = c("manual", "bs"), HCtype="HC",
-                  mZeroProp=0.1, knots=NA) 
+                  mZeroProp=0.1, knots0=NA, knots1=NA) 
 {
     type <- match.arg(type)
     splineMet <- match.arg(splineMet)
-    res <- .getPval(form, data, pFact, splineMet, HCtype, mZeroProp, knots)
+    res <- .getPval(form, data, pFact, splineMet, HCtype, mZeroProp, knots0,
+                    knots1)
     pval <- c(do.call("c", res$pval0), do.call("c", res$pval1))
     n <- nrow(data)
     q <- length(pval)
@@ -310,24 +312,59 @@ selIC <- function(form, data, pFact = 0.3, type=c("AIC", "BIC", "CV"),
          treatment=res$treatment)
 }
 
+.selNONE <- function(form, data, pFact = 0.3, type=c("AIC", "BIC", "CV"),
+                    splineMet = c("manual", "bs"), HCtype="HC",
+                    mZeroProp=0.1, knots0=NA, knots1=NA) 
+{
+    type <- match.arg(type)
+    splineMet <- match.arg(splineMet)    
+    tmp <- as.character(form)
+    if (!grepl("\\|", tmp[3]))
+        stop("form must be of the type y~z|~x")
+    tmp2 <- strsplit(tmp[3], "\\|")[[1]]
+    formX <- as.formula(tmp2[2], env=.GlobalEnv)
+    formY <- as.formula(paste(tmp[2], "~",tmp2[1],sep=""))
+    Z <- model.matrix(formY, data)
+    if (attr(terms(formY), "intercept") == 1)
+        Z <- Z[,-1,drop=FALSE]
+    id0 <- Z == 0   
+    formY <- as.formula(paste(tmp[2], "~factor(",tmp2[1],")+Xf0+Xf1-1"),
+                        env=.GlobalEnv)
+    Xf0 <- ppSplines(form = formX, data = data, knots = knots0,
+                     pFact = pFact, deg = 1, method = splineMet,
+                     subGroup=id0, minZeroProp=mZeroProp)
+    Xf1 <- ppSplines(form = formX, data = data, knots = knots1,
+                     pFact = pFact, deg = 1, method = splineMet,
+                     subGroup=!id0, minZeroProp=mZeroProp)
+    knots0 <- attr(Xf0, "knots")
+    knots1 <- attr(Xf1, "knots")
+    list(Xf1 = Xf1, Xf0 = Xf0, knots0 = knots0, knots1 = knots1, 
+         pval = NULL, id0=id0, formY=formY, formX=formX,
+         treatment=colnames(Z))
+}
 
-otlse <- function(form, data, crit = c("ASY", "AIC", "BIC", "CV"),
+
+otlse <- function(form, data, crit = c("ASY", "AIC", "BIC", "CV", "NONE"),
                   pFact=0.3, splineMet=c("manual","bs"), HCtype="HC",
-                  mZeroProp=0.1, knots=NA, ...)
+                  mZeroProp=0.1, knots0=NA, knots1=NA, ...)
 {
     crit <- match.arg(crit)
     splineMet <- match.arg(splineMet)
     optBasis <- switch(crit,
-                       ASY = selASY(form=form, data, pFact, splineMet, HCtype, mZeroProp,
-                                    knots, ...),
-                       AIC = selIC(form, data, pFact, "AIC", splineMet, HCtype, mZeroProp, knots),
-                       BIC = selIC(form, data, pFact, "BIC", splineMet, HCtype, mZeroProp, knots),
-                       CV = selIC(form, data, pFact, "CV", splineMet, HCtype, mZeroProp, knots))
+                       ASY = selASY(form, data, pFact, splineMet, HCtype, mZeroProp,
+                                    knots0, knots1, ...),
+                       AIC = selIC(form, data, pFact, "AIC", splineMet, HCtype, mZeroProp,
+                                   knots0, knots1),
+                       BIC = selIC(form, data, pFact, "BIC", splineMet, HCtype, mZeroProp,
+                                   knots0, knots1),
+                       CV = selIC(form, data, pFact, "CV", splineMet, HCtype, mZeroProp,
+                                  knots0, knots1),
+                       NONE = .selNONE(form, data, pFact, "CV", splineMet, HCtype, mZeroProp,
+                                      knots0, knots1)) 
     data2 <- data
     data2$Xf0 <- optBasis$Xf0
     data2$Xf1 <- optBasis$Xf1
     lm.out <- lm(optBasis$formY, data2, na.action="na.exclude")
-
     n <- nrow(data2)
     id0 <- optBasis$id0
     n0 <- sum(id0)
@@ -519,3 +556,50 @@ plot.otlse <- function(x, y, which=y, addInterval=FALSE, level=0.95,
            bty='n')
     invisible()
 }  
+
+
+extract.otlse <- function (model, include.nobs = TRUE, include.nknots = TRUE,
+                           include.numcov = TRUE,
+                           which=c("ALL","ACE","ACT","ACN","ACE-ACT","ACE-ACN","ACT-ACN"),
+                           ...) 
+{
+    which <- match.arg(which)
+    type <- c("ACE","ACT","ACN")
+    w <- if (which == "ALL") type else type[sapply(type, function(ti) grepl(ti, which))]
+    wl <- tolower(w)
+    co <- unlist(model[wl])
+    names(co) <- toupper(names(co))
+    se <- unlist(model[paste("se.",wl,sep="")])
+    names(se) <- toupper(names(se))
+    pval <- 2*pnorm(-abs(co/se))
+    names(pval) <- toupper(names(pval))
+    gof <- numeric()
+    gof.names <- character()
+    gof.decimal <- logical()
+    if (isTRUE(include.nknots)) {
+        rs1 <- length(unlist(model$knots0))
+        rs2 <- length(unlist(model$knots1))        
+        gof <- c(gof, rs1, rs2)
+        gof.names <- c(gof.names, "Num. knots (Control)", "Num. knots (Treated)")
+        gof.decimal <- c(gof.decimal, FALSE, FALSE)
+   }
+    if (isTRUE(include.numcov)) {
+        rs3 <- length(model$knots0)
+        gof <- c(gof, rs3)
+        gof.names <- c(gof.names, "Num. covariates")
+        gof.decimal <- c(gof.decimal, FALSE)
+    }
+    if (isTRUE(include.nobs)) {
+        n <- nrow(model$data)
+        gof <- c(gof, n)
+        gof.names <- c(gof.names, "Num. obs.")
+        gof.decimal <- c(gof.decimal, FALSE)
+    }
+    tr <- createTexreg(coef.names = names(co), coef = co, se = se, 
+        pvalues = pval, gof.names = gof.names, gof = gof, gof.decimal = gof.decimal)
+    return(tr)
+}
+
+setMethod("extract", signature = className("otlse", "causalOTLSE"),
+          definition = extract.otlse)
+

@@ -8,9 +8,9 @@ This is the main function to estimate the causal effects using the
 optimal thresholding least squares method.
 }
 \usage{
-otlse(form, data, crit = c("ASY", "AIC", "BIC", "CV"),
+otlse(form, data, crit = c("ASY", "AIC", "BIC", "CV", "NONE"),
       pFact=0.3, splineMet=c("manual","bs"), HCtype="HC",
-      mZeroProp=0.1, knots=NA, ...)
+      mZeroProp=0.1, knots0=NA, knots1=NA, ...)
 }
 \arguments{
   \item{form}{A formula to identify the outcome, the treatment
@@ -18,7 +18,9 @@ otlse(form, data, crit = c("ASY", "AIC", "BIC", "CV"),
     spline matrices. See the example below}
   \item{data}{A \code{data.frame} that contains all variables from the
     formula \code{form}}
-  \item{crit}{The method to select the piecewise polynomial knots.}  
+  \item{crit}{The method to select the piecewise polynomial knots. If
+    set to "NONE", the all bases are kept. It is included for
+    experimentation purpose.}  
   \item{pFact}{The maximum number of knots when the argument \code{knots} is set to
     \code{NA} if \code{n^pFact}, where n is the length of \code{X}.}    
   \item{splineMet}{Should the method be homemade (manual) of based on the
@@ -29,9 +31,14 @@ otlse(form, data, crit = c("ASY", "AIC", "BIC", "CV"),
     value, the knots and spline matrices are based on the non-zero
     observations. This is particularly useful when binary variables are
     interacted with continuous variables.}
-  \item{knots}{The piecewise polynomial knots. If set to \code{NA}, the
-    knots are set to the \code{p} equally spaced quantiles of \code{X}. If
-    \code{NULL}, the function returns \code{X}.}  
+  \item{knots0}{The piecewise polynomial knots for the control group.
+    If set to \code{NA}, the knots are set to the \code{p} equally
+    spaced quantiles of \code{X}. If \code{NULL}, the function returns
+    \code{X}.}
+  \item{knots1}{The piecewise polynomial knots for the treated group.
+    If set to \code{NA}, the knots are set to the \code{p} equally
+    spaced quantiles of \code{X}. If \code{NULL}, the function returns
+    \code{X}.}      
   \item{...}{Other arguments to pass to the basis selection function.}
 }
 
