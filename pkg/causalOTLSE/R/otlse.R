@@ -55,7 +55,7 @@ ppSplines <- function(form, data, knots = NA, pFact = 0.3,
     if (!is.list(knots))
     {
         if (length(knots) > 1)
-            warning("knots is either a list or a scalar. Only the first element is used")
+            warning("knots is either a list or a scalar. \nOnly the first element is used")
         knots <- lapply(1:ncol(X), function(i) knots[1])
     }
     isBinary <- apply(X, 2, function(x) all(x %in% c(1,0)))
@@ -132,7 +132,8 @@ ppSplines <- function(form, data, knots = NA, pFact = 0.3,
     fit <- lm(formY, data)
     naCoef <- is.na(coef(fit))
     if (any(naCoef))       
-        warning(paste("The coefficients of the following variables are NA's:\n", paste(names(coef(fit)[naCoef]), collapse="\n"), "\n", sep=""))
+        warning(paste("\nThe coefficients of the following variables are NA's:\n",
+                      paste(names(coef(fit)[naCoef]), collapse=", "), "\n", sep=""))
     knots0 <- attr(data$Xf0, "knots")
     knots1 <- attr(data$Xf1, "knots")
     p0 <- attr(data$Xf0, "p")
@@ -384,7 +385,7 @@ otlse <- function(form, data, crit = c("ASY", "AIC", "BIC", "CV", "NONE"),
     beta <- coef(lm.out)
     se.beta <- sqrt(diag(vcov))
     if (any(is.na(beta)))
-        warning(paste("The final regression is multicoliear. The result may not be valid:",
+        warning(paste("\nThe final regression is multicoliear. The result may not be valid:",
                       "\nThe following variables produced NA's\n",
                       paste(names(beta)[is.na(beta)], collapse=", ")), "\n", sep="")
     notNA0 <- !is.na(beta[idb0])
