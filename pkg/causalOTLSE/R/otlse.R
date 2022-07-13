@@ -216,7 +216,9 @@ selASY <- function (form, data, pFact = 0.3, splineMet = c("manual", "bs"),
     Xf0 <- ppSplines(res$formX, data, knots0, pFact, 1, splineMet,
                      subGroup=id0, minZeroProp=mZeroProp)
     Xf1 <- ppSplines(res$formX, data, knots1, pFact, 1, splineMet,
-                     subGroup=!id0, minZeroProp=mZeroProp)    
+                     subGroup=!id0, minZeroProp=mZeroProp)
+    names(knots0) <- names(attr(Xf0, "colnames"))
+    names(knots1) <- names(attr(Xf1, "colnames"))        
     list(Xf1 = Xf1, Xf0 = Xf0, knots0 = knots0, knots1 = knots1, 
          pval = pval, id0=id0, formY=res$formY, formX=res$formX,
          treatment=res$treatment)
@@ -272,8 +274,8 @@ selIC <- function(form, data, pFact = 0.3, type=c("AIC", "BIC", "CV"),
     }
     Xf0 <- data$Xf0
     Xf1 <- data$Xf1    
-    knots0 <- NULL
-    knots1 <- NULL
+    knots0 <- lapply(1:length(res$pval0), function(i) NULL)
+    knots1 <- lapply(1:length(res$pval1), function(i) NULL)
     for(i in 1 : q)
     {
         knots02 <- lapply(1:length(res$pval0), function(j) {
@@ -307,6 +309,8 @@ selIC <- function(form, data, pFact = 0.3, type=c("AIC", "BIC", "CV"),
             knots1 <- knots12
         } 
     }
+    names(knots0) <- names(attr(Xf0, "colnames"))
+    names(knots1) <- names(attr(Xf1, "colnames"))           
     list(Xf1 = Xf1, Xf0 = Xf0, knots0 = knots0, knots1 = knots1, 
          IC=icV, pval = pval, id0=id0, formY=res$formY, formX=res$formX,
          treatment=res$treatment)
@@ -379,6 +383,18 @@ otlse <- function(form, data, crit = c("ASY", "AIC", "BIC", "CV", "NONE"),
     idb1 <- (p00 + 3) : (p00 + p10 + 2)
     beta <- coef(lm.out)
     se.beta <- sqrt(diag(vcov))
+    if (any(is.na(beta)))
+        warning(paste("The final regression is multicoliear. The result may not be valid:",
+                      "\nThe following variables produced NA's\n",
+                      paste(names(beta)[is.na(beta)], collapse=", ")), "\n", sep="")
+    notNA0 <- !is.na(beta[idb0])
+    notNA1 <- !is.na(beta[idb1])
+    beta0 <- na.omit(beta[idb0])
+    beta1 <- na.omit(beta[idb1])
+    p00 <- length(beta0)
+    p10 <- length(beta1)
+    idb0 <- 3 : (p00 + 2)
+    idb1 <- (p00 + 3) : (p00 + p10 + 2)
     
     ## ACE
 
@@ -387,13 +403,13 @@ otlse <- function(form, data, crit = c("ASY", "AIC", "BIC", "CV", "NONE"),
     X1 <- ppSplines(optBasis$formX, data, knots1, pFact, 1, splineMet, mZeroProp,
                     NULL)    
 
-    Xbar0 <- apply(X0, 2, mean)
-    Xbar1 <- apply(X1, 2, mean)
-    vcovXf0 <- cov(X0)
-    vcovXf1 <- cov(X1)
-    vcovXf01 <- cov(X0, X1)
-    ace <- c(beta[2] - beta[1] + crossprod(beta[idb1], Xbar1) - 
-             crossprod(beta[idb0], Xbar0))
+    Xbar0 <- apply(X0, 2, mean)[notNA0]
+    Xbar1 <- apply(X1, 2, mean)[notNA1]
+    vcovXf0 <- cov(X0[,notNA0,drop=FALSE])
+    vcovXf1 <- cov(X1[,notNA1,drop=FALSE])
+    vcovXf01 <- cov(X0[,notNA0,drop=FALSE], X1[,notNA1,drop=FALSE])
+    ace <- c(beta[2] - beta[1] + crossprod(beta1, Xbar1) - 
+             crossprod(beta0, Xbar0))
     
     Dvec <- rep(0, p00 + p10 + 2)
     Dvec[1] <- - 1
@@ -401,45 +417,41 @@ otlse <- function(form, data, crit = c("ASY", "AIC", "BIC", "CV", "NONE"),
     Dvec[idb0] <- - Xbar0
     Dvec[idb1] <- Xbar1
     se.ace <- c((crossprod(Dvec, crossprod(vcov, Dvec)) + 
-                 crossprod(beta[idb0], crossprod(vcovXf0, beta[idb0])) / n + 
-                 crossprod(beta[idb1], crossprod(vcovXf1, beta[idb1])) / n -
-                 2 * beta[idb0] %*% vcovXf01 %*% beta[idb1] / n )^.5)
-    
+                 crossprod(beta0, crossprod(vcovXf0, beta0)) / n + 
+                 crossprod(beta1, crossprod(vcovXf1, beta1)) / n -
+                 2 * beta0 %*% vcovXf01 %*% beta1 / n )^.5)
+
     ## ACT
   
-    Xbar0 <- apply(X0[!id0, , drop = FALSE], 2, mean)
-    Xbar1 <- apply(X1[!id0, , drop = FALSE], 2, mean)
-    vcovXf0 <- cov(X0[!id0, , drop = FALSE])
-    vcovXf1 <- cov(X1[!id0, , drop = FALSE])
-    vcovXf01 <- cov(X0[!id0, , drop = FALSE], X1[!id0, , drop = FALSE])
-    act <- c(beta[2] - beta[1] + crossprod(beta[idb1], Xbar1) - 
-             crossprod(beta[idb0], Xbar0))
+    Xbar0 <- apply(X0[!id0, notNA0, drop = FALSE], 2, mean)
+    Xbar1 <- apply(X1[!id0, notNA1, drop = FALSE], 2, mean)
+    vcovXf0 <- cov(X0[!id0, notNA0, drop = FALSE])
+    vcovXf1 <- cov(X1[!id0, notNA1, drop = FALSE])
+    vcovXf01 <- cov(X0[!id0, notNA0, drop = FALSE], X1[!id0, notNA1, drop = FALSE])
+    act <- c(beta[2] - beta[1] + crossprod(beta1, Xbar1) - 
+             crossprod(beta0, Xbar0))
     Dvec[idb0] <- - Xbar0
     Dvec[idb1] <- Xbar1
     se.act <- c((crossprod(Dvec, crossprod(vcov, Dvec)) + 
-                 crossprod(beta[idb0], crossprod(vcovXf0, beta[idb0])) / n1 + 
-                 crossprod(beta[idb1], crossprod(vcovXf1, beta[idb1])) / n1 -
-                 2 * beta[idb0] %*% vcovXf01 %*% beta[idb1] / n1)^.5)
+                 crossprod(beta0, crossprod(vcovXf0, beta0)) / n1 + 
+                 crossprod(beta1, crossprod(vcovXf1, beta1)) / n1 -
+                 2 * beta0 %*% vcovXf01 %*% beta1 / n1)^.5)
    
     ## ACN
     
-    Xbar0 <- apply(X0[id0, , drop = FALSE], 2, mean)
-    Xbar1 <- apply(X1[id0, , drop = FALSE], 2, mean)
-    vcovXf0 <- cov(X0[id0, , drop = FALSE])
-    vcovXf1 <- cov(X1[id0, , drop = FALSE])
-    vcovXf01 <- cov(X0[id0, , drop = FALSE], X1[id0, , drop = FALSE])
-    acn <- c(beta[2] - beta[1] + crossprod(beta[idb1], Xbar1) - 
-             crossprod(beta[idb0], Xbar0))
+    Xbar0 <- apply(X0[id0, notNA0, drop = FALSE], 2, mean)
+    Xbar1 <- apply(X1[id0, notNA1, drop = FALSE], 2, mean)
+    vcovXf0 <- cov(X0[id0, notNA0, drop = FALSE])
+    vcovXf1 <- cov(X1[id0, notNA1, drop = FALSE])
+    vcovXf01 <- cov(X0[id0, notNA0, drop = FALSE], X1[id0, notNA1, drop = FALSE])
+    acn <- c(beta[2] - beta[1] + crossprod(beta1, Xbar1) - 
+             crossprod(beta0, Xbar0))
     Dvec[idb0] <- - Xbar0
     Dvec[idb1] <- Xbar1
     se.acn <- c((crossprod(Dvec, crossprod(vcov, Dvec)) + 
-                 crossprod(beta[idb0], crossprod(vcovXf0, beta[idb0])) / n0 + 
-                 crossprod(beta[idb1], crossprod(vcovXf1, beta[idb1])) / n0 -
-                 2 * beta[idb0] %*% vcovXf01 %*% beta[idb1] / n0)^.5)
-    if (!is.null(knots0))
-        names(knots0) <- names(attr(optBasis$Xf0, "colnames"))
-    if (!is.null(knots1))    
-        names(knots1) <- names(attr(optBasis$Xf1, "colnames"))
+                 crossprod(beta0, crossprod(vcovXf0, beta0)) / n0 + 
+                 crossprod(beta1, crossprod(vcovXf1, beta1)) / n0 -
+                 2 * beta0 %*% vcovXf01 %*% beta1 / n0)^.5)
     ans <- list(beta = beta, se.beta = se.beta, 
                 lm.out = lm.out, ace = ace, se.ace = se.ace, 
                 act = act, se.act = se.act, acn = acn, se.acn = se.acn,
