@@ -17,7 +17,9 @@ setClass("causalData", representation(momType="character",
 
 setClass("causalGelfit", contains="gelfit")
 
-setClass("causalfit", representation(estim="numeric", 
+setClass("causalfit", representation(estim="numeric",
+                                     se = "numeric",
+                                     coefNames = "character",
                                      type="character",
                                      method="character",
                                      form="list",
@@ -25,6 +27,15 @@ setClass("causalfit", representation(estim="numeric",
                                      info="list",
                                      data="data.frame",
                                      call="callORNULL"))
+
+setClass("causalGelfit", contains="gelfit")
+
+setClass("summaryCausalfit", representation(coef="matrix",
+                                            type="character",
+                                            method="character",
+                                            form="list",
+                                            details="list",
+                                            info="list"))
 
 ## converters
 

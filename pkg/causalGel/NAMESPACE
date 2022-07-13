@@ -1,9 +1,10 @@
 useDynLib(causalGel, .registration = TRUE, .fixes="F_")
 import("momentfit")
 
+importFrom("texreg", "extract", "createTexreg")
 importFrom("stats", "lm", "model.response", "terms", "model.frame",
            "reformulate", "as.formula", "binomial", "fitted", "glm",
-           "lm.wfit", "optim", "plogis")
+           "lm.wfit", "optim", "plogis", "pnorm", "printCoefmat")
 importFrom("utils", "head", "tail")
 importFrom("quadprog", "solve.QP")
 importFrom("methods", is, new, show, "slot<-", "slotNames", "validObject",
@@ -14,7 +15,7 @@ importFrom("methods", is, new, show, "slot<-", "slotNames", "validObject",
 exportClasses()
 
 exportClasses("causalData", "causalModel", "causalGelfit", "rcausalModel",
-              "causalfit")
+              "causalfit", "summaryCausalfit")
 
 exportMethods("causalMomFct", "checkConv")
 

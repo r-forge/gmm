@@ -14,8 +14,7 @@ the treated and the causal effect on the non-treated.
 \usage{
 
 matching(form,  balm, data, type=c("ACE","ACT","ACC"), M=4,
-         adjust=FALSE, matchPS=FALSE, psForm=NULL,
-         bcForm=NULL)
+         psForm=NULL, bcForm=NULL, vJ=4)
 
 LLmatching(form, psForm, data, type=c("ACE","ACT","ACC"),
            kern=c("Gaussian","Epanechnikov"),tol=1e-4,
@@ -41,11 +40,6 @@ ipw(form, psForm, data, type=c("ACE","ACT","ACC"),
 
   \item{M}{The minimum number of matches}
   
-  \item{adjust}{Should we apply a bias correction to the estimate.}
-
-  \item{matchPS}{Should we match the propensity scores instead of the
-    covariates.}
-
   \item{psForm}{It is the \code{formula} argument passed to
     \code{\link{glm}} to estimate the propensity scores by a logistic
     regression.}
@@ -77,6 +71,8 @@ ipw(form, psForm, data, type=c("ACE","ACT","ACC"),
   \item{normalized}{Should the weights be normalized. If set to
     \code{GPE}, the GPE method is used.}
 
+  \item{vJ}{The minimum number of matches for the standard error estimation}
+  
   \item{...}{Additional arguments to pass to \code{\link{optim}} when
     the \code{GPE} method is used.}
 	    
@@ -93,7 +89,7 @@ balm <- ~age+ed+black+hisp:married+nodeg+re75+I(re75^2)
 g <- re78~treat
 ps <- treat~age+ed+black+hisp:married+nodeg+re75+I(re75^2)
            
-fit1 <- matching(g, balm, nsw, "ACE", adjust=TRUE)
+fit1 <- matching(g, balm, nsw, "ACE")
 fit1
 
 fit2 <- LLmatching(g, ps, nsw, "ACE")

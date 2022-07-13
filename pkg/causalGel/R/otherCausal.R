@@ -11,34 +11,23 @@
 ##             list in indices for the match
 ##             E(y2 | z=1, x) (n1 x 1 vector of estimated missing Y(2))
 
-getNN <- function(x,y,z,fromTo, minn, tol=1e-7)    
-{
-    if (length(fromTo)!=2)
-        stop("fromTo must be a vector of 2 with 0s or 1s")
-    if (!all(fromTo %in% c(0,1)))
-        stop("fromTo must be a vector of 2 with 0s or 1s")
-    x <- as.matrix(x)
-    self <- z==fromTo[1]
-    selt <- z==fromTo[2]
-    x1 <- x[self,,drop=FALSE]
-    x2 <- x[selt,,drop=FALSE]
-    y2 <- y[selt]
-    n1 <- nrow(x1)
-    n2 <- nrow(x2)
-    k <- ncol(x1)
-    type <- paste("Nearest neighbour of the ",
-                  ifelse(fromTo[1]==1, "treated", "control"), " among the ",
-                  ifelse(fromTo[2]==1, "treated", "control"), sep="")
-    res <- .Fortran(F_findnn, as.double(x1), as.double(x2),as.double(y2),
-                    as.double(tol),
-                    as.integer(n1), as.integer(n2), as.integer(k),
-                    as.integer(minn), K=double(n2), nn=integer(n1),
-                    ind=integer(n1*n2), y2hat=double(n1))
-    nn <- res$nn
-    ind <- matrix(res$ind,nrow=n1)
-    list(matches=lapply(1:n1, function(i) ind[i,1:nn[i]]), K=res$K,
-         y2hat = res$y2hat, type=type)
-}
+getNN <- function(x1,x2,y2, minn, tol=1e-7)
+    {
+        x1 <- as.matrix(x1)
+        x2 <- as.matrix(x2)
+        n1 <- nrow(x1)
+        n2 <- nrow(x2)
+        k <- ncol(x1)
+        res <- .Fortran("findnn", as.double(x1), as.double(x2),as.double(y2),
+                        as.double(tol),
+                        as.integer(n1), as.integer(n2), as.integer(k),
+                        as.integer(minn), K=double(n2), nn=integer(n1),
+                        ind=integer(n1*n2), y2hat=double(n1))
+        nn <- res$nn
+        ind <- matrix(res$ind,nrow=n1)
+        list(matches=lapply(1:n1, function(i) ind[i,1:nn[i]]), K=res$K,
+             y2hat = res$y2hat)
+    }
 
 ## Function to get the missing counterfactual in y
 ## if which="y0", y[z==1] are replace by an estimate Y(0)|z=1
@@ -50,76 +39,93 @@ getNN <- function(x,y,z,fromTo, minn, tol=1e-7)
 ## regMat is the regression matrix for E(Y|X,Z=1) or  E(Y|X,Z=0)
 
 getMissingY <- function(y, z, x, which=c("y0", "y1"),
-                        type=c("match","bc_match","reg","all"), minn=4, tol=1e-7,
-                        regMat=cbind(1,x))
+                        type=c("match","bc_match","reg","all"), minn=4,
+                        tol=1e-7, regMat=x)
+    {
+        which <- match.arg(which)
+        type <- match.arg(type)
+        ## regMat should have an intercept included
+        x <- as.matrix(x)
+        if (which == "y0")
+            sel <- z==1
+        else
+            sel <- z==0
+        x1 <- x[sel,,drop=FALSE]
+        x2 <- x[!sel,,drop=FALSE]
+        y2 <- y[!sel]
+        res <- getNN(x1,x2,y2, minn, tol)
+        if (type != "match" | type == "all")
+            b <- lm.wfit(regMat[!sel,,drop=FALSE], y[!sel],
+                         res$K)$coefficients
+        if (type == "match")
+            {
+                y[sel] <- res$y2hat
+                y <- as.matrix(y)
+                colnames(y) <- "match"
+            } else if (type == "reg") {
+                y[sel] <- c(regMat[sel,,drop=FALSE]%*%b)
+                y <- as.matrix(y)
+                colnames(y) <- "reg"
+            } else if (type=="bc_match") {
+                fity <- c(regMat%*%b)
+                bc <- fity[sel] - sapply(res$matches,
+                                         function(l) mean(fity[!sel][l]))
+                y[sel] <- res$y2hat + bc
+                y <- as.matrix(y)
+                colnames(y) <- "bc"
+            } else {
+                ym <- y
+                ym[sel] <- res$y2hat
+                yreg <- y
+                yreg[sel] <- c(regMat[sel,,drop=FALSE]%*%b)
+                ybc <- y
+                fity <- c(regMat%*%b)
+                bc <- fity[sel] - sapply(res$matches,
+                                         function(l) mean(fity[!sel][l]))
+                ybc[sel] <- res$y2hat + bc
+                y <- cbind(ym, ybc, yreg)
+                colnames(y) <- c("match","bc","reg")
+            }
+        attr(y, "which") <- which
+        attr(y, "K") <- res$K
+        y
+    }
+
+### This function is use to compute sigma(X, Z) = Var(Y|X,Z)
+### It uses the Equatrion (14) of Abadie and Imbens (2006)
+
+.sigmaX <- function(y, z, x, minn=4, tol=1e-7)
 {
-    which <- match.arg(which)
-    type <- match.arg(type)
-    ## regMat should have an intercept included
     x <- as.matrix(x)
-    if (which == "y0")
-    {
-        sel <- z==1
-        fromTo <- c(1,0)
-    } else {
-        sel <- z==0
-        fromTo <- c(0,1)
-    }
-    res <- getNN(x,y, z, fromTo, minn, tol)
-    if (type != "match" | type == "all")
-        b <- lm.wfit(regMat[!sel,,drop=FALSE], y[!sel], res$K)$coefficients
-    if (type == "match")
-    {
-        y[sel] <- res$y2hat
-        y <- as.matrix(y)
-        colnames(y) <- "match"
-    } else if (type == "reg") {
-        y[sel] <- c(regMat[sel,,drop=FALSE]%*%b)
-        y <- as.matrix(y)
-        colnames(y) <- "reg"
-    } else if (type=="bc_match") {
-        fity <- c(regMat%*%b)
-        bc <- fity[sel] - sapply(res$matches, function(l) mean(fity[!sel][l]))
-        y[sel] <- res$y2hat + bc
-        y <- as.matrix(y)
-        colnames(y) <- "bc"
-    } else {
-        ym <- y
-        ym[sel] <- res$y2hat
-        yreg <- y
-        yreg[sel] <- c(regMat[sel,,drop=FALSE]%*%b)
-        ybc <- y
-        fity <- c(regMat%*%b)
-        bc <- fity[sel] - sapply(res$matches, function(l) mean(fity[!sel][l]))
-        ybc[sel] <- res$y2hat + bc
-        y <- cbind(ym, ybc, yreg)
-        colnames(y) <- c("match","bc","reg")
-    }
-    attr(y, "which") <- which
-    y
+    yhat <- numeric(length(y))
+    yhat[z==1] <- getNN(x[z==1,],x[z==1,],y[z==1], minn, tol)$y2hat
+    yhat[z==0] <- getNN(x[z==0,],x[z==0,],y[z==0], minn, tol)$y2hat
+    (y-yhat)^2*minn/(minn+1)
 }
 
 ## PSForm is the formula used to compute the propensity score.
 ## BCorForm is the bias correction regression model
 
 matching <- function(form,  balm, data, type=c("ACE","ACT","ACC"), M=4,
-                      adjust=FALSE, matchPS=FALSE, psForm=NULL,
-                      bcForm=NULL)
+                      psForm=NULL, bcForm=NULL, vJ=4)
 {
     ## If bcForm does not have an intercept it will be added.
     type <- match.arg(type)
     Call <- match.call()
+    matchPS <- inherits(psForm, "formula")
+    adjust <- inherits(bcForm, "formula")
     mf <- model.frame(form, data)
     Y <- c(mf[[1]])
     T <- c(mf[[2]])
-    if (is.null(bcForm) & adjust)        
-        bcForm <- balm
-    if (is.null(psForm) & matchPS)
+    ptype <- type
+    if (type == "ACC")
     {
-        psForm <- attr(terms(balm), "term.labels")
-        psForm <- reformulate(psForm, response=colnames(mf)[2])
+        T <- 1-T
+        type <- "ACT"
+        ptype <- "ACC"
     }
     BC <- NA
+    se.BC <- NA
     if (!matchPS)
     {
         balm <- attr(terms(balm), "term.labels")
@@ -128,8 +134,6 @@ matching <- function(form,  balm, data, type=c("ACE","ACT","ACC"), M=4,
     } else {
         res <- glm(psForm, data=data, family=binomial())
         X <- as.matrix(fitted(res))
-        data$PScore <- X
-        balm <- ~PScore-1
     }
     X <- scale(X)
     if (adjust)
@@ -140,49 +144,65 @@ matching <- function(form,  balm, data, type=c("ACE","ACT","ACC"), M=4,
         Z <- NULL
     }
     typeCor <- ifelse(adjust, "all", "match")
+    sig <- .sigmaX(Y, T, X, vJ)
     if (type == "ACT")
     {
+        N1 <- sum(T)
         Y0 <- getMissingY(Y, T, X, which="y0", type=typeCor, minn=M,
                           regMat=Z)
         NN <- mean(Y[T==1]-Y0[T==1,"match"])
+        if (ptype == "ACC") NN <- -NN
+        K <- attr(Y0, "K")*M
+        s2.NN <- sum((Y[T==1]-Y0[T==1,"match"] - NN)^2)/N1
+        s2.2 <- sum(K*(K-1)/M^2*sig[T==0])/N1
+        se.NN <- sqrt(s2.NN+s2.2)/sqrt(N1)
         if (adjust)
+        {
             BC <- mean(Y[T==1]-Y0[T==1,"bc"])
-    } else if (type == "ACC") {
-        Y1 <- getMissingY(Y, T, X, which="y1", type=typeCor, minn=M,
-                          regMat=Z)
-        NN <- mean(Y1[T==0,"match"] - Y[T==0])
-        if (adjust)                
-            BC <- mean(Y1[T==0,"bc"] - Y[T==0])
+            if (ptype == "ACC") BC <- -BC
+            s2.BC <- sum((Y[T==1]-Y0[T==1,"bc"] - BC)^2)/N1
+            se.BC <- sqrt(s2.BC+s2.2)/sqrt(N1)
+        }       
     } else {
+        N <- length(Y)
         Y0 <- getMissingY(Y, T, X, which="y0", type=typeCor, minn=M,
                           regMat=Z)
         Y1 <- getMissingY(Y, T, X, which="y1", type=typeCor, minn=M,
                           regMat=Z)
         NN <- mean(Y1[,"match"]-Y0[,"match"])
-        if (adjust)                
-            BC <- mean(Y1[,"bc"]-Y0[,"bc"])                           
+        K <- numeric(length(Y))        
+        K[T==0] <- attr(Y0, "K")
+        K[T==1] <- attr(Y1, "K")
+        s2.NN <- mean((Y1[,"match"]-Y0[,"match"] - NN)^2)
+        s2.2 <- mean((K^2+(2*M-1)*K/M)*sig)
+        se.NN <- sqrt(s2.NN+s2.2)/sqrt(N)
+        if (adjust)
+        {
+            BC <- mean(Y1[,"bc"]-Y0[,"bc"])
+            s2.BC <- mean((Y1[,"match"]-Y0[,"match"] - BC)^2)
+            se.BC <- sqrt(s2.BC+s2.2)/sqrt(N)
+        }
     }
-    estim <- c(NN=NN, NN.BiasCor=BC)
-    form <- list(balForm=balm, psForm=psForm, bcForm=bcForm)
-    info <- list()
-    method <- ifelse(matchPS, "PS Matching Method", "Covariate Matching Method")
+    coef <- c(NN, BC)
+    se <- c(se.NN, se.BC)
+    names(se) <- names(coef) <- c("NN","BC.NN")
+    method <- ifelse(matchPS, "Propensity Score Matching Method",
+                         "Covariate Matching Method")
     details <- list(ifelse(matchPS,
-                           paste("PS formula: ", deparse(psForm), sep=""), 
+                           paste("Propensity Score formula: ",
+                                 deparse(psForm), sep=""), 
                            paste("Covariate formula: ",
                                  deparse(balm), sep="")),
-                    paste("Min. number of matches: ", M, sep=""))
-    if (adjust)
-        details <- c(details, list(paste("Bias-cor. formula: ",
-                                         deparse(bcForm),sep="")))
-    shortm <- paste(c("","BiasCor_"),
-                    paste(ifelse(matchPS, "ps","cov"),
-                          "Matching", M, "_", type, sep=""),sep="")
-    names(shortm) <- c("NN","NN.BiasCor")
-    shortMet <- shortm
-    new("causalfit", estim=estim, type=type, method=method,
-        form=form, details=details, info=info, data=data, call=Call)
-}
+                    paste("Mininum number of matches: ", M, sep=""))
 
+    if (adjust)
+        details <- c(details, list(paste("Bias-correction formula: ",
+                                         deparse(bcForm),sep="")))
+    form <- list(balForm=balm, psForm=psForm, bcForm=bcForm)
+    new("causalfit", estim=coef, se=se, type=type, method=method,
+        form=form, details=details, info=list(), data=data, call=Call,
+        coefNames = c(type, paste(type,"_BC", sep="")))
+}
 
 
 ### ACE using local linear regression matching
@@ -195,9 +215,9 @@ matching <- function(form,  balm, data, type=c("ACE","ACT","ACC"), M=4,
 ### the method requires propensity score so PSForm must be provided
 
 LLmatching <- function(form, psForm, data, type=c("ACE","ACT","ACC"),
-                    kern=c("Gaussian","Epanechnikov"),tol=1e-4,
-                    h=NULL, from=.00001, to=5, ngrid=10, maxit=100,
-                    hMethod=c("Brent","Grid"))
+                       kern=c("Gaussian","Epanechnikov"),tol=1e-4,
+                       h=NULL, from=.00001, to=5, ngrid=10, maxit=100,
+                       hMethod=c("Brent","Grid"))
 {
     type <- match.arg(type)
     Call <- match.call()
@@ -206,6 +226,13 @@ LLmatching <- function(form, psForm, data, type=c("ACE","ACT","ACC"),
     mf <- model.frame(form, data)
     Y <- c(mf[[1]])
     T <- c(mf[[2]])
+    ptype <- type
+    if (type == "ACC")
+    {
+        T <- 1-T
+        ptype <- "ACC"
+        type <- "ACT"
+    }
     res <- glm(psForm, data=data, family=binomial())
     X <- as.matrix(fitted(res))
     if (type == "ACT")
@@ -213,12 +240,8 @@ LLmatching <- function(form, psForm, data, type=c("ACE","ACT","ACC"),
         Y0 <- getMissingY.LL(Y, T, X, "y0", h, kern,
                              from, to, ngrid, tol, maxit, hMethod)
         ACE <- mean(Y[T==1]-Y0[T==1], na.rm=TRUE)
+        if (ptype == "ACC") ACE <- -ACE
         info <- attr(Y0, "h")
-    } else if (type == "ACC") {
-        Y1 <- getMissingY.LL(Y, T, X, "y1", h, kern,
-                             from, to, ngrid, tol, maxit, hMethod)
-        info <- attr(Y1, "h")
-        ACE <- mean(Y1[T==0] - Y[T==0], na.rm=TRUE)
     } else {
         Y0 <- getMissingY.LL(Y, T, X, "y0", h, kern,
                              from, to, ngrid, tol, maxit, hMethod)
@@ -228,11 +251,11 @@ LLmatching <- function(form, psForm, data, type=c("ACE","ACT","ACC"),
         ACE <- mean(Y1-Y0, na.rm=TRUE)
     }
     estim <- c(LL=ACE)
-    info2 <- unlist(info)
     method <- "Local-Linear Regression Method"
     details <- list(paste("Kernel: ", kern, sep=""),
                     paste("PS formula: ", deparse(psForm), sep=""),
-                    ifelse(is.null(h), paste("Bandwidth select: ",hMethod,sep=""),
+                    ifelse(is.null(h),
+                           paste("Bandwidth select: ",hMethod,sep=""),
                            "Bandwidth select: Fixed"))
     if (type == "ACE")
     {
@@ -247,26 +270,24 @@ LLmatching <- function(form, psForm, data, type=c("ACE","ACT","ACC"),
     {
         if (type == "ACE")
         {
-            tmp <- paste("Conv. code for bandwidth (Y(0)): ",
+            tmp <- paste("Convergence code for bandwidth (Y(0)): ",
                          info[[1]][[2]], sep="")
-            tmp2 <- paste("Conv. code for bandwidth (Y(1)): ",
+            tmp2 <- paste("Convergence code for bandwidth (Y(1)): ",
                           info[[2]][[2]], sep="")
             details <- c(details, tmp, tmp2)
         } else {
             details <- c(details,
-                         list(paste("Conv. code for  bandwidth: ",
-                                    info[[2]],sep="")))
+                             list(paste("Convergence code for bandwidth: ",
+                                        info[[2]],sep="")))
         }
     }
     if (type == "ACE")
-        info2 <- list(meanh = mean(c(info[[1]][[1]], info[[2]][[1]])),
-                      convergence = max(info[[1]][[2]], info[[2]][[2]]))
-    shortm <- paste("LL", "_", strtrim(kern,3),"_",
-                    ifelse(is.null(h), "autoh", "fixedh"),"_", type, sep="")
-    shortMet <- shortm
-    new("causalfit", estim=estim, type=type, method=method,
-        form=list(psForm=psForm),data=data,
-        details=details, info=info2, call=Call)
+        info <- list(meanh = mean(c(info[[1]][[1]], info[[2]][[1]])),
+                     convergence = max(info[[1]][[2]], info[[2]][[2]]))
+    se <- as.numeric(NA)
+    new("causalfit", estim=estim, se=se, type=ptype, method=method,
+        form=list(psForm=psForm),data=data, coefNames=type,
+        details=details, info=info, call=Call)
 }
 
 ## p is the fitted propensity score
@@ -386,46 +407,46 @@ ipw <- function(form, psForm, data, type=c("ACE","ACT","ACC"),
     mf <- model.frame(form, data)
     Y <- c(mf[[1]])
     T <- c(mf[[2]])
+    n <- length(Y)
     mnorm <- normalized
     info <- list()
+    ptype <- type
     if (normalized == "GPE")
     {
         res <- getGPE.PS(form, psForm, data, ...)
         X <- res$phat
-        info <- list(res$info)
+        info <- res$info
         normalized <- TRUE
     } else {                        
         res <- glm(psForm, data=data, family=binomial())
         X <- as.matrix(fitted(res))
     }
-    if (type == "ACT")
+    Rx <- model.matrix(psForm, data)
+    if (type == "ACC")
     {
-        s1 <- sum(T)
-        w1 <- rep(1/s1, s1)
-        w0 <- X[T==0]/(1-X[T==0])/s1
-        if (normalized)
-            w0 <- w0/sum(w0)
-    } else if (type == "ACC") {
-        s0 <- sum(1-T)
-        w1 <- (1-X[T==1])/X[T==1]/s0
-        w0 <- rep(1/s0,s0)
-        if (normalized)
-            w1 <- w1/sum(w1)
-    } else {
-        n <- length(X)
-        w1 <- 1/(n*X[T==1])
-        w0 <- 1/(n*(1-X[T==0]))
-        if (normalized)
-        {
-            w1 <- w1/sum(w1)
-            w0 <- w0/sum(w0)
-        }
+        T <- 1-T
+        X <- 1-X
+        type <- "ACT"
+        ptype <- "ACC"
     }
-    ACE <- sum(w1*Y[T==1]) - sum(w0*Y[T==0])
+    w1 <- T/X
+    w0 <- (1-T)/(1-X)
+    gX <- if (type == "ACE") rep(1, n) else X
+    psi <- gX*(w1*Y-w0*Y)
+    if (normalized)
+        ACE <- sum(Y*((gX*w1)/sum(gX*w1)-(gX*w0)/sum(gX*w0)))
+    else
+        ACE <- sum(Y*gX*(w1-w0))/sum(gX)
+    
+    if (ptype == "ACC")
+            ACE <- -ACE    
+    b <- qr.solve(Rx,Y*(w1^2+w0^2))
+    alpha <- -gX*(T-X)*c(Rx%*%b)
+    V <- mean((psi-ACE*gX+alpha)^2)*n/sum(gX)^2
+    se <- c(IPW=sqrt(V))
     estim <- c(IPW=ACE)
-    form <- list(psForm=psForm)
     method <- "Inverse Probability Weight Method"
-    details <- list(paste("PS formula: ", deparse(psForm), sep=""))       
+    details <- list(paste("PS formula: ", deparse(psForm), sep=""))    
     if (mnorm == "GPE")
         details <- c(details,
                      list(paste("Method: normalized with GPE method")))
@@ -435,16 +456,11 @@ ipw <- function(form, psForm, data, type=c("ACE","ACT","ACC"),
                                                    "non-normalized"), sep="")))
     if (mnorm == "GPE")
         details <- c(details,
-                     paste("Convergence of optim for PS: ",
-                           info[[1]][2], sep=""))
-    shortm <- paste("IPW", "_",
-                    ifelse(mnorm=="GPE", "GPE",
-                    ifelse(mnorm, "normalized", "unnormalized")),
-                    "_", type, sep="")
-    shortMet <- shortm
-    new("causalfit", estim=estim, type=type, method=method,
-        form=list(psForm=psForm),
-        details=details, info=info, call=Call)
+                     paste("Convergence code of optim for GPE: ", info[2],
+                           sep=""))
+    new("causalfit", estim=estim, se=se, type=ptype, method=method,
+        form=list(psForm=psForm), details=details, data=data,
+        coefNames = type, info=info, call=Call)
 }
 
 
@@ -480,10 +496,12 @@ setMethod("print", "gmmfit",
               if (model)
                   print(x@model)
               ntype <- matrix(c("Two-Step GMM", "Iterated GMM", "CUE",
-                                "One-Step GMM with fixed weights","Two-Stage Least Squares",
+                                "One-Step GMM with fixed weights",
+                                "Two-Stage Least Squares",
                                 "Evaluated at a fixed Theta; No estimation",
                                 "One-Step Efficient M.D.E.",
-                                "twostep","iter","cue","onestep","tsls", "eval","mde"),
+                                "twostep","iter","cue","onestep","tsls",
+                                "eval","mde"),
                               ncol=2)
               type <- ntype[match(x@type, ntype[,2]),1]
               spec <- modelDims(x@model)
@@ -527,5 +545,60 @@ setMethod("print", "causalfit",
                       cat("\t", x@details[[i]], "\n")
               }
               invisible(x)
+          })
+
+setMethod("summary", "causalfit",
+          function(object, ...)
+          {
+              t <- object@estim/c(object@se) 
+              pv <- 2 * pnorm(-abs(t))
+              ace <- cbind(object@estim, object@se, t, pv)
+              dimnames(ace) <- list(object@coefNames,
+                                    c("Estimate", 
+                                      "Std. Error", "t value", "Pr(>|t|)"))
+              new("summaryCausalfit", coef=ace,
+                  type=object@type, method=object@method,
+                  form=object@form, details=object@details,
+                  info=object@info)
+          })
+
+
+setMethod("show","summaryCausalfit", function(object) print(object))
+
+setMethod("print", "summaryCausalfit",
+          function(x, digits=5,
+                   signif.stars = getOption("show.signif.stars"), ...)
+          {
+              cat(x@method, "\n", sep="")
+              cat(paste(rep("*", nchar(x@method)), collapse=""), "\n")
+              cat("Causal Effect type: ", x@type, "\n")
+              for (i in 1:length(x@details))
+                  cat(x@details[[i]], "\n")
+              cat("\n")
+              printCoefmat(x@coef, digits = digits,
+                           signif.stars = signif.stars, na.print = "NA", ...)
+          })
+
+setMethod("extract", signature = className("causalfit"),
+          definition = function (model, include.nobs = TRUE, ...) 
+          {
+              s <- summary(model)
+              co <- s@coef[,1]
+              se <- s@coef[,2]
+              pval <- s@coef[,4]
+              names(co) <- names(se) <- names(pval) <- rownames(s@coef)
+              gof <- numeric()
+              gof.names <- character()
+              gof.decimal <- logical()
+              if (isTRUE(include.nobs)) {
+                  n <- nrow(model@data)
+                  gof <- c(gof, n)
+                  gof.names <- c(gof.names, "Num. obs.")
+                  gof.decimal <- c(gof.decimal, FALSE)
+              }
+              tr <- createTexreg(coef.names = names(co), coef = co, se = se, 
+                                 pvalues = pval, gof.names = gof.names,
+                                 gof = gof, gof.decimal = gof.decimal)
+              return(tr)
           })
 

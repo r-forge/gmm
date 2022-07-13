@@ -14,6 +14,8 @@ or \code{\link{ipw}}.
 \section{Slots}{
   \describe{
     \item{\code{estim}:}{Object of class \code{"numeric"} ~~ }
+    \item{\code{se}:}{Object of class \code{"numeric"} ~~ }
+    \item{\code{coefNames}:}{Object of class \code{"character"} ~~ }        
     \item{\code{type}:}{Object of class \code{"character"} ~~ }
     \item{\code{method}:}{Object of class \code{"character"} ~~ }
     \item{\code{form}:}{Object of class \code{"list"} ~~ }
