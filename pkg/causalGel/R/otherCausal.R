@@ -484,7 +484,7 @@ getGPE.PS <- function(form, PSForm=z~kX, data, ...)
         fit <- c(X%*%b)
         phat <- plogis(fit)
         phat[phat>.999] <- .999
-        list(phat=phat, info=c(obj=res1$value, convergence=res1$convergence))
+        list(phat=phat, info=list(obj=res1$value, convergence=res1$convergence))
     }
 
 
