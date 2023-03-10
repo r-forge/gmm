@@ -6,15 +6,14 @@
     if (is.null(knots)) 
         return(as.matrix(X))
     if (any(is.na(knots))) {
-        p <- floor(n^pFact)
+        p <- if (pFact==0) max(floor(log(n)),2) else floor(n^pFact)
         prop.seq <- seq(from = 0, to = 1, length.out = p + 1)
         prop.seq <- prop.seq[-c(1, p + 1)]
         knots <- quantile(X, probs = prop.seq, type = 1)
     }
     if (method == "bs") {
         Xfi <- bs(x = X, knots = knots, degree = deg)
-    }
-    else {
+    } else {
         p <- length(knots) + 1
         Xfi <- matrix(nrow = n, ncol = p)
         Xfi[, 1] <- X * (X <= knots[1]) + knots[1] * (X > knots[1])
@@ -179,7 +178,6 @@ ppSplines <- function(form, data, knots = NA, pFact = 0.3,
     names(ans) <- NULL
     ans
 }
-
 
 selASY <- function (form, data, pFact = 0.3, splineMet = c("manual", "bs"),
                     HCtype="HC", mZeroProp=0.1, knots0=NA, knots1=NA,
@@ -347,7 +345,6 @@ selIC <- function(form, data, pFact = 0.3, type=c("AIC", "BIC", "CV"),
          pval = NULL, id0=id0, formY=formY, formX=formX,
          treatment=colnames(Z))
 }
-
 
 otlse <- function(form, data, crit = c("ASY", "AIC", "BIC", "CV", "NONE"),
                   pFact=0.3, splineMet=c("manual","bs"), HCtype="HC",
