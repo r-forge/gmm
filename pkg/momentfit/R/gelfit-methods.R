@@ -84,10 +84,10 @@
                                             theta0=coef(fit)[-which]))
         }
         test <- specTest(fit2, type=type, ...)@test[1] - test0
-         if (is.null(corr))
-            level - pchisq(test, 1)
-        else
-            level - pchisq(test/corr, 1)
+        crit <- qchisq(level, 1)
+        if (!is.null(corr))
+            crit <- crit/corr
+        crit - test        
     }
     res1 <- try(uniroot(fct, int1, which = which, type=type, level=level,
                         fit=object, test0=test0, corr=corr),
@@ -375,9 +375,19 @@ setMethod("confint", "gelfit",
 setMethod("confint", "numeric",
           function (object, parm, level = 0.95, gelType="EL", 
                     type = c("Wald", "invLR", "invLM", "invJ"),
-                    fact = 3, vcov="iid")
+                    fact = 3, vcov="iid", BartlettCorr = FALSE)
           {
               Call <- try(match.call(call=sys.call(sys.parent())), silent=TRUE)
+              corr <- NULL
+              if (BartlettCorr)
+              {
+                  m <- mean(object)
+                  mu2 <- mean((object-m)^2)
+                  mu3 <- mean((object-m)^3)
+                  mu4 <- mean((object-m)^4)
+                  a <- mu4/(mu2^2*2)-mu3^2/(mu2^3*3)
+                  corr <- (1-a/length(object))
+              }
               if (inherits(Call,"try-error"))
                   Call <- NULL
               type <- match.arg(type)
@@ -391,7 +401,8 @@ setMethod("confint", "numeric",
               mod <- momentModel(g, ~1, vcov=vcov, data=object)
               fit <- gelFit(model=mod, gelType=gelType,
                             tControl=list(method="Brent",lower=m-s,upper=m+s))
-              ans <- confint(fit, parm=1, level=level, type=type, fact=fact)
+              ans <- confint(fit, parm=1, level=level, type=type,
+                             fact=fact, corr=corr)
               rownames(ans@interval) <- names(object)
               ans
           })
@@ -399,7 +410,7 @@ setMethod("confint", "numeric",
 setMethod("confint", "data.frame",
           function (object, parm, level = 0.95, gelType="EL", 
                     type = c("Wald", "invLR", "invLM", "invJ"),
-                    fact = 3, vcov="iid", 
+                    fact = 3, corr=NULL, vcov="iid", 
                     npoints=10, cores=4) 
           {
               type <- match.arg(type)
@@ -427,19 +438,19 @@ setMethod("confint", "data.frame",
                                  theta0=theta0)
               fit <- gelFit(mod, gelType=gelType)
               confint(fit, parm=1:2, level=level, lambda=FALSE,
-                      type=type, fact=fact, corr=NULL, vcov=NULL, area=TRUE,
+                      type=type, fact=fact, corr=corr, vcov=NULL, area=TRUE,
                       npoints=npoints, cores=cores)
           })
 
 setMethod("confint", "matrix",
           function(object, parm, level = 0.95, gelType="EL", 
                     type = c("Wald", "invLR", "invLM", "invJ"),
-                    fact = 3, vcov="iid", 
+                    fact = 3, corr = NULL, vcov="iid", 
                     npoints=10, cores=4)
           {
               object <- as.data.frame(object)
               type <- match.arg(type)
-              confint(object, parm, level, gelType, type, fact, vcov,
+              confint(object, parm, level, gelType, type, fact, corr, vcov,
                       npoints, cores)
           })
                    
