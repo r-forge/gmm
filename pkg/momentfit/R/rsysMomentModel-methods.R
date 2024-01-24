@@ -162,7 +162,7 @@ setMethod("restModel", signature("snonlinearModel"),
                       R2 <- list()
                       R <- gsub("=", "~", R, fixed=TRUE)
                       for (r in R)
-                          R2 <- c(R2, as.formula(r, .GlobalEnv))
+                          R2 <- c(R2, as.formula(r))
                       R <- R2
                   } else {
                       if (!is.list(R))
@@ -342,7 +342,7 @@ setMethod("getRestrict", "rslinearModel",
 
 setMethod("getRestrict", "rsnonlinearModel",
           function(object, theta) {
-              theta <- setCoef(as(object, "snonlinearModel"), theta)              
+              theta <- setCoef(as(object, "snonlinearModel"), theta)             
               names(theta) <- NULL
               theta <- do.call("c", theta)
               dR <-numeric()
@@ -363,7 +363,8 @@ setMethod("getRestrict", "rsnonlinearModel",
                   stop("Some values in R or dR at theta are either infinite or NAN")
               if (qr(dR)$rank < length(R))
                   stop("The matrix of derivatives of the constraints is not full rank")
-              hypo <- sapply(object@R, function(r) capture.output(print(r)))
+              hypo <- sapply(object@R,
+                             function(r) capture.output(print(r, FALSE)))
               list(dR=dR, R=R, q=rep(0, nrow(dR)), hypo=hypo,
                    orig.R=object@R, orig.rhs=NULL)
           })

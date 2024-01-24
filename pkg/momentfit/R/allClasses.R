@@ -160,7 +160,6 @@ setClass("summaryGmm", representation(coef="matrix", specTest = "specTest",
                                       convIter="numericORNULL", wSpec="list",niter="integer",
                                       df.adj="logical", breadOnly="logical"))
 
-
 ## hypothesisTest
 
 setClass("hypothesisTest", representation(test="numeric", hypothesis="character",
@@ -216,6 +215,20 @@ setClass("summaryGel", representation(coef="matrix", specTest = "specTest",
                                       convergence="numeric",lconvergence="numeric",
                                       impProb="list", gelType="list",
                                       restrictedLam="integer"))
+
+## lsefit classes
+
+setClass("lsefit", slots=list(model="linearModel"), contains="lm")
+
+## K-Class related classes
+
+setClass("kclassfit", slots = list(kappa = "numeric",
+                                   method = "character", origModel='linearModel'),
+         contains="gmmfit")
+
+setClass("summaryKclass", slots = list(kappa = "numeric",
+                                       method = "character", origModel='linearModel'),
+         contains="summaryGmm")
 
 
 ## class converted
@@ -292,31 +305,24 @@ setAs("slinearModel", "linearModel",
           neqn <- length(eqnNames)
           datX <- lapply(1:neqn,
                          function(i) {
-                             v <- from@varNames[[i]]
-                             chk <- "(Intercept)" %in% v
-                             v <- v[v!="(Intercept)"]
-                             X <- from@data[,v, drop=FALSE]
-                             colnames(X) <- paste(eqnNames[[i]],".", v, sep="")
+                             X <- model.matrix(from@modelT[[i]], from@data)
+                             chk <- attr(from@modelT[[i]], "intercept")==1
                              if (chk)
-                                 {
-                                  X <- cbind(1, X)
-                                  colnames(X)[1]<-paste(eqnNames[[i]], ".Intercept", sep="")
-                                 }
+                                 colnames(X)[1] <- "Intercept"
+                             colnames(X) <- paste(eqnNames[[i]],".", colnames(X), sep="")
                              X})
           datZ <- lapply(1:neqn,
                          function(i) {
-                             v <- all.vars(from@instT[[i]])
+                             Z <- model.matrix(from@instT[[i]], from@data)
                              chk <- attr(from@instT[[i]], "intercept")==1
-                             Z <- from@data[,v, drop=FALSE]
-                             colnames(Z) <- paste(eqnNames[[i]],".", v, sep="")
                              if (chk)
-                                 {
-                                  Z <- cbind(1, Z)
-                                  colnames(Z)[1]<-paste(eqnNames[[i]], ".Intercept", sep="")
-                                 }
+                                 colnames(Z)[1] <- "Intercept"
+                             colnames(Z) <- paste(eqnNames[[i]],".", colnames(Z), sep="")
                              Z})
           nZ <- do.call("c", lapply(datZ, colnames))
+          nZ <- gsub(":", ".", nZ)
           nX <- do.call("c", lapply(datX, colnames))
+          nX <- gsub(":", ".", nX)          
           datZ <- .GListToMat(datZ)
           datX <- .GListToMat(datX)
           Y <- do.call("c", modelResponse(from))
@@ -326,9 +332,9 @@ setAs("slinearModel", "linearModel",
           dat <- dat[,unique(colnames(dat))]
           dat <- data.frame(dat, row.names=1:nrow(datZ))
           g <- paste("Y~", paste(nX, collapse="+"), "-1")
-          g <- formula(g, .GlobalEnv)
+          g <- formula(g, environment(from@instT[[1]]))
           h <- paste("~", paste(nZ, collapse="+"), "-1")
-          h <- formula(h, .GlobalEnv)
+          h <- formula(h, environment(from@instT[[1]]))
           res <- momentModel(g, h, vcov=from@vcov, vcovOptions=from@vcovOptions,
                           centeredVcov=from@centeredVcov, data=dat)
       })

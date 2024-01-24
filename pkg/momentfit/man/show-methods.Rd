@@ -16,7 +16,7 @@
 \alias{show,momentWeights-method}
 \alias{show,sysMomentWeights-method}
 \alias{show,sSpec-method}
-\alias{show,hypothesisTest-method}  
+\alias{show,hypothesisTest-method}
 \title{ ~~ Methods for Function \code{show} in Package \pkg{methods} ~~}
 \description{
 Display method for all objects.   

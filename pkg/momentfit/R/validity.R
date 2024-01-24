@@ -353,6 +353,43 @@ setValidity("formulaModel", .checkForm)
 
 setValidity("functionModel", .checkFunc)
 
+.checkAllNLRest <- function(object)
+{
+    error <- character()
+    R <- object@R
+    tR <- sapply(R, function(ri) inherits(ri, "formula"))
+    if (!all(tR))
+    {
+        error <- c(error,
+                   "R must be a list of formulas")
+    } else {
+        chk <- sapply(R, function(ri) {
+            chk1 <- length(ri) == 3
+            if (!chk1) return(FALSE)
+            ri <- as.character(ri[[2]])
+            if (length(ri) != 1) return(FALSE)
+            ri %in% object@parNames})
+        if (!all(chk))
+        {
+            msg <- paste("Something is wrong with restriction",
+                         ifelse(sum(!chk)>1, "s ", " "),
+                         paste(which(!chk), collapse=", ", sep=""), ". ",
+                         "They must expressed as a formula with one coefficient",
+                         " as a function of the others",
+                         " and all coefficients in the restriction must be in ",
+                         "the nonrestricted model", sep="")
+            error <- c(error, msg)
+        }
+    }
+    if (length(error)==0)
+        TRUE
+    else
+        error
+}
+
+setValidity("rfunctionModel", .checkAllNLRest)
+setValidity("rnonlinearModel", .checkAllNLRest)
+setValidity("rformulaModel", .checkAllNLRest)
 
 .checkMomentWeights <- function(object)
 {

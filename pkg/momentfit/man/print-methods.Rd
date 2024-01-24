@@ -26,7 +26,7 @@
 
 \title{ Methods for Function \code{print} in Package \pkg{base}}
 \description{
-Print method for all \code{"momentModel"}, \code{"gmmfit"},
+Print methods for all \code{"momentModel"}, \code{"gmmfit"},
 \code{"summaryGmm"} \code{"hypothesisTest"} and \code{"specTest"}  objects. 
 }
 \section{Methods}{

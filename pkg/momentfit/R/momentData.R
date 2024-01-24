@@ -38,7 +38,7 @@
                 instF <- model.frame(formula, h, na.action="na.pass",
                                      drop.unused.levels=TRUE)
         }
-    h <- lapply(1:ncol(Y), function(i) formula(attr(instF, "terms"), .GlobalEnv))
+    h <- lapply(1:ncol(Y), function(i) formula(attr(instF, "terms")))
     data <- cbind(modelF, instF)
     data <- data[,!duplicated(colnames(data))]
     return(.slModelData(g,h,data,survOptions, vcovOptions,na.action))

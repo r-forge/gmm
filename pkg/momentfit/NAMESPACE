@@ -32,7 +32,7 @@ exportClasses("nonlinearModel", "linearModel", "functionModel", "momentModel",
               "rsysModel", "formulaModel","rfunctionModel", "sSpec",
               "summaryGmm", "specTest", "confint", "mconfint",
               "hypothesisTest", "stsls", "sgmmfit", "gelfit", "summaryGel",
-              "tsls")
+              "tsls", "lsefit", "kclassfit", "summaryKclass")
 
 exportMethods(print, show, kernapply, coef,  model.matrix, bread, summary,
               residuals, "[", vcovHAC, subset, update, vcov, plot, confint, merge)
@@ -43,7 +43,7 @@ export(momentModel, modelResponse, evalMoment, Dresiduals, modelDims, evalDMomen
        printRestrict, restModel, getRestrict, gmm4, sysMomentModel, ThreeSLS,
        rhoET, rhoEL, rhoEEL, rhoHD, Wu_lam, EEL_lam, REEL_lam, getLambda, 
        solveGel, rhoETEL, rhoETHD, ETXX_lam, gelFit, evalGel, getImpProb,
-       evalGelObj, momFct, gel4, setCoef)
+       evalGelObj, momFct, gel4, setCoef, lse, getK, kclassfit)
  
 ###  S3 methods ###
 

@@ -154,7 +154,6 @@ setMethod("[", c("sysModel", "missing", "list"),
                               } else {
                                   f <- reformulate(momNames, NULL, FALSE)
                                   }
-                          attr(f, ".Environment")<- .GlobalEnv
                           x@q[s] <- length(momNames)
                           x@instT[[s]] <- attr(f, "terms")
                           x@momNames[[s]] <- momNames                              

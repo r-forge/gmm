@@ -1,0 +1,297 @@
+---
+title: "Instrumental Variables Tools for the Case of Weak or Many Instruments"
+author: "Pierre Chausse^[University of Waterloo, pchausse@uwaterloo.ca]"
+date: ""
+bibliography: empir.bib 
+output:
+ pdf_document:
+  number_sections: true
+abstract: "This vignette explains the different tools included in the package to deal with the weak or the many instruments problem. For example, it presents estimation methods like the LIML or the Fuller method and some improved inference methods for TSLS and GMM. It is in early stage of development, so comments and recommendations are welcomed."
+vignette: >
+  %\VignetteIndexEntry{Instrumental Variables Tools for the Case of Weak or Many Instruments}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteDepends{momentfit}
+  %\VignettePackage{momentfit}
+  %\VignetteEncoding{UTF-8}
+header-includes:
+- \newcommand{\E}{\mathrm{E}}
+- \newcommand{\diag}{\mathrm{diag}}
+- \newcommand{\Prob}{\mathrm{Pr}}
+- \newcommand{\Var}{\mathrm{Var}}
+- \newcommand{\Vect}{\mathrm{Vec}}
+- \newcommand{\Cov}{\mathrm{Cov}}
+- \newcommand{\Cor}{\mathrm{Cor}}
+- \newcommand{\conP}{\overset{p}{\to}}
+- \newcommand{\conD}{\overset{d}{\to}}
+- \newcommand\R{ \mathbb{R} }
+- \newcommand\N{ \mathbb{N} }
+- \newcommand\C{ \mathbb{C} }
+- \newcommand\rv{{\cal R}}
+- \newcommand\Q{\mathbb{Q}}
+- \newcommand\PR{{\cal R}}
+- \newcommand\T{{\cal T}}
+- \newcommand\Hi{{\cal H}}
+- \newcommand\La{{\cal L}}
+- \newcommand\plim{plim}
+- \renewcommand{\epsilon}{\varepsilon}
+---
+
+```{r, echo=FALSE}
+library(knitr)
+opts_chunk$set(size='footnotesize')
+```
+
+This document is incomplete. It will improve as we add more
+functionalities to the package.
+
+
+# Weak Instruments (For later use)
+
+The following function is used to generate dataset with $k$
+instruments and different level of strength. The DGP is
+
+\[
+y_1 = \beta y_2 + u
+\]
+\[
+y_2 = \pi'Z + e\,,
+\]
+
+where $Z\in\R^k$, $\Var(u)=\Var(e)=1$, $\Cor(e,u)=\rho$, $\pi_i=\eta$
+for all $i=1,...,k$ and $Z\sim N(0,I)$. The $R^2$ of the first stage
+regression is therefore equal to
+
+\[
+R^2 = \frac{k\eta^2}{k\eta^2+1}\,,
+\]
+
+which implies
+
+\[
+\eta = \sqrt{\frac{R^2}{k(1-R^2)}}
+\]
+
+We can therefore set $R^2$ and $k$ and let the function get $\eta$. 
+
+```{r}
+getIVDat <- function(n, R2, k, rho, b0=0)
+{
+    eta <- sqrt(R2/(k*(1-R2)))
+    Z <- sapply(1:k, function(i) rnorm(n))
+    sigma <- chol(matrix(c(1,rho,rho,1),2,2))
+    err <- cbind(rnorm(n), rnorm(n))%*%sigma
+    y2 <- rowSums(Z)*eta+err[,2]
+    y1 <- b0*y2 + err[,1]
+    dat <- data.frame(y1=y1, y2=y2, u=err[,1], e=err[,2])
+    for (i in 1:k) dat[[paste("Z",i,sep="")]] <- Z[,i]
+    dat
+}
+```
+
+```{r}
+library(momentfit)
+set.seed(112233)
+k <- 10
+rho <- .3
+R2 <- .001
+g <- y1~y2
+n <- 500
+h <- reformulate(paste("Z", 1:k, sep=""))
+dat <- getIVDat(n, R2, k, rho)
+m <- momentModel(g, h, data=dat, vcov="MDS")
+``` 
+
+# K-class Estimator and LIML
+
+The package `ivmodel` implements many useful methods including the
+K-class estimators. Let's see if we can borrow some of their codes. 
+
+
+## Computing $\hat\kappa$
+
+
+```{r}
+library(ivmodel)
+data(card.data)
+## from the ivmodel examples
+Z <- card.data[,c("nearc4","nearc2")]
+Y <- card.data[,"lwage"]
+D <- card.data[,"educ"]
+Xname <- c("exper", "expersq", "black", "south", "smsa", "reg661",
+           "reg662", "reg663", "reg664", "reg665", "reg666", "reg667",
+           "reg668", "smsa66")
+X <- card.data[,Xname]
+mod <- ivmodel(Y=Y,D=D,Z=Z,X=X)
+```
+
+To get $\hat\kappa$ for LIML and the modified LIML of Fuller (1977),
+the package only provides an option for the case of one endogenous
+regressor. We can easily extend it to more general models using
+`linearModel` objects from the `momentfit` package. The above model
+replicated as follows:
+
+```{r}
+g <- reformulate(c("educ", Xname), "lwage")
+h <- reformulate(c(c("nearc4","nearc2"), Xname))
+mod2 <- momentModel(g, h, data=card.data)
+```
+
+I use the default `vcov="iid"` for now. We'll discuss inference
+later. The `getK` function generates $\hat\kappa$ for the original
+LIML and the modified one. No effort is done to make it efficient for
+now. The modified LIML is $\hat\kappa - \alpha/(n-k)$, where $k$ is
+the number of exogenous variables (included and excluded).
+
+We can compare the values with the ones computed by `ivmodel`. They
+are identical:
+
+```{r}
+getK(mod2)
+mod$Fuller$k
+mod$LIML$k
+```
+
+We can also have more than one endogenous regressor. For this model,
+we can interact `educ` with, say, `exper`, which is like having a
+second endogenous variable. The package can recognize that
+`educ:exper` is endogenous because it is not part of the set of
+instruments.
+
+```{r}
+g2 <- reformulate(c("educ", "educ:exper", Xname), "lwage")
+h2 <- reformulate(c(c("nearc4","nearc2", "nearc2:exper", "nearc4:exper"), Xname))
+mod3 <- momentModel(g2, h2, data=card.data)
+getK(mod3)
+```
+
+For just-identified models, $\hat\kappa=1$. The `getK` function does
+check the number of overidentifying restrictions before computing
+$\hat\kappa$. What happens in `ivmodel` (it works)?
+
+```{r}
+Z <- card.data[,c("nearc2")]
+mod4 <- ivmodel(Y=Y,D=D,Z=Z,X=X)
+mod4$LIML$k
+```
+
+## Computing the K-Class estimators
+
+A K-Class estimator is the solution to 
+
+\[
+X'(I-kM_w)(y-X\beta)=0\,,
+\]
+
+where $M_w=I-P_w$, $P_w$ is the projection matrix for $W$, the matrix
+of exogenous variables (included and excluded). It is therefore a
+just-identified IV with the instrument $Z=(I-kM_w)X$ (because $M_w$ is
+symmetric). Note that if $X=\{X_1, X_2\}$ with $X_1$ being the matrix
+of included exogenous variables, $M_wX_1=0$, so that
+
+\[
+Z = \begin{pmatrix}
+(I-kM_w)X_1 & (I-kM_w)X_2
+\end{pmatrix} = 
+\begin{pmatrix}
+X_1 & (I-kM_w)X_2
+\end{pmatrix}
+\]
+
+We can easily compute the instruments since $M_wX_2$ is the matrix of
+residuals from the first stage regression. Let $U_2=M_wX_2$, then the instruments are:
+
+\[
+Z =\begin{pmatrix}
+X_1 & (X_2-kU_2)
+\end{pmatrix}
+\]
+
+We can compute the standard errors using the asymptotic properties of
+just identified IV. In the case of iid errors (no heteroskedasticity),
+the variance can be estimated as:
+
+\[
+\hat\Sigma_{iid} = \hat{\sigma}^2(Z'X)^{-1} Z'Z (X'Z)^{-1}\,,
+\]
+
+where $\hat{\sigma}^2$ is the estimated variance of the
+residuals. Since $\hat\kappa$ converges to 1 as $n$ goes to infinity,
+$Z'Z\approx Z'X\equiv X'Z$, the latter being true only for this
+specific matrix of instruments, for large enough `n`, so we could
+estimate it as
+
+\[
+\hat\Sigma_{iid} = \hat{\sigma}^2(Z'X)^{-1}\,.
+\]
+
+However, I choose to keep the first version and treat the method as a
+general just-identified estimation. This allows me to use the tools
+included in the package for inference. In the case of `MDS`, the
+standard errors are based on the following expression:
+
+\[
+\hat\Sigma_{HC} = (Z'X)^{-1} \hat\Omega_{HC} (X'Z)^{-1}\,,
+\]
+
+where $\hat\Omega_{HC}$ is an HCCM estimator of the variance of
+$Z'u$. The K-Class estimators have two special cases. It is OLS when
+$\kappa=0$ and two-stage least squares (TSLS) when $\kappa=1$. The
+main `kclassfit` function uses the `tsls` method when `k=1` and `lm`
+if `k=0` (should we use `all.equal` instead? what if it is almost 1 or
+0?). For the latter, we need a method that returns LS estimates and
+that can be directly applied to `linearModel` objects. The `lse`
+method returns an `lsefit` object that contains the `lm` object from
+the estimation:
+
+```{r}
+lse(mod2)
+```
+
+The function 'kclassfit' computes the K-Class estimator. For now, it
+is a function that can only be applied to linear models.  The function
+returns an object of class `kclassfit`, which contains a `gmmfit`
+class object. The additional slots are used to store the method,
+$\kappa$ and the original model. The function generates the matrix of
+instruments $Z=(I-kM_w)X$, use it to create a just-identified linear
+model and estimate the new model using `gmmFit`. If `k` is missing, it
+is computed for either the LIML or Fuller method.
+
+```{r}
+(liml <- kclassfit(mod2))
+(fuller <- kclassfit(mod2, type="Fuller"))
+```
+
+We see that the LIML and Fuller estimates I get are identical to the ones from the
+`ivmodel` package.
+
+```{r}
+print(mod$LIML$point.est,digits=10)
+print(coef(liml)[2], digits=10)
+```
+
+```{r}
+print(mod$Fuller$point.est,digits=10)
+print(coef(fuller)[2], digits=10)
+```
+
+## Inference
+
+Since the `kclassfit` object contains a just-identified `gmmfit`
+object, we can do inference as if it was an IV. The `summary` method
+for `kclassfit` objects is in fact the same as for `gmmfit` objects,
+but it contains additional information about the original model and
+the method. It returns an object of class `summaryKclass`.
+
+```{r}
+summary(liml)
+```
+
+Note that the specification test is based on Anderson and Rubin. It is
+a likelihood ration test equal to $n\log(\hat\kappa)$ and is
+distributed as a chi-square with the degrees of freedom equal to the
+number of over-identifying restrictions. It calls the `specTest`
+method for `kclassfit` objects:
+
+```{r}
+specTest(liml)
+```
