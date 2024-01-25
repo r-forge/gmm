@@ -28,11 +28,12 @@ setMethod("show","lsefit", function(object) print(object))
 ## K-Class functions
 
 
-getK <- function(object, alpha=1)
+getK <- function(object, alpha=1, returnRes=FALSE)
 {
     if (!inherits(object, "linearModel"))
         stop("object must be a model of class linearModel")
     spec <- modelDims(object)
+    Res <- NULL    
     if (spec$k == spec$q)
     {
         k1 <- 1
@@ -41,29 +42,52 @@ getK <- function(object, alpha=1)
         endo <- cbind(model.response(object@modelF),
                       X[,object@isEndo])
         X <- X[,!object@isEndo, drop=FALSE]
-        W <- model.matrix(object, "instruments")
+        Z <- model.matrix(object, "instruments")
         e1 <- lm.fit(X, endo)$residuals
-        e2 <- lm.fit(W, endo)$residuals
+        e2 <- lm.fit(Z, endo)$residuals
+        if (returnRes) Res <- e2[,-1,drop=FALSE]        
         e1 <- crossprod(e1)
         e2 <- crossprod(e2)                      
         k1 <- min(eigen(solve(e2,e1))$val)
     }
     k2 <- k1 - alpha/(spec$n-spec$q)
-    c(LIML=k1, Fuller=k2)
+    if (!returnRes)
+    {
+        c(LIML=k1, Fuller=k2)
+    } else {
+        ans <- list(k=c(LIML=k1, Fuller=k2), Res=Res)
+        class(ans) <- "kappa"
+        ans
+    }
 }
 
 
-kclassfit <- function(object, k, type=c("LIML", "Fuller"))
+kclassfit <- function(object, k, type=c("LIML", "Fuller"), alpha = 1)
 {
     if (!inherits(object, "linearModel"))
         stop("object must be a model of class linearModel")    
     type <- match.arg(type)
     if (missing(k))
     {
-        k <- getK(object)[type]
+        Kres <- getK(object, alpha, TRUE)
+        k <- Kres$k[type]
         method <- type
     } else {
         method="K-Class"
+        if (is.list(k))
+        {
+            if (!inherits(k, "kappa"))
+                stop("when k is a list, it must have been generared by getK")
+            Kres <- k
+            k <- Kres$k[type]
+            method <- type
+        } else {
+            if (!is.numeric(k))
+                stop("k must be a numeric vector")
+            if (length(k)>1)
+                stop("The length of k must be 1")
+            Kres <- list()
+        }
     }
     if (k==1)
         return(tsls(object))
@@ -79,8 +103,13 @@ kclassfit <- function(object, k, type=c("LIML", "Fuller"))
     }
     g. <- formula(object@modelF)        
     X <- model.matrix(object)
-    Z <- model.matrix(object, "instrument")
-    Z <- X[, EndoVars, drop=FALSE] - as.matrix(k*lm.fit(Z, X[,EndoVars])$residuals)
+    if (is.null(Kres$Res))
+    {
+        Z <- model.matrix(object, "instrument")
+        Z <- X[, EndoVars, drop=FALSE] - as.matrix(k*lm.fit(Z, X[,EndoVars])$residuals)
+    } else {
+        Z <- X[, EndoVars, drop=FALSE] - as.matrix(k*Kres$Res)
+    }
     colnames(Z) <- paste("KClass.", colnames(Z), sep="")
     parNames <- spec$parNames        
     parNames[EndoVars] <- colnames(Z)

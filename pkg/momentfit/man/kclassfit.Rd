@@ -9,9 +9,9 @@ It estimates \code{linearModel} objects using the K-Class method. It
 includes LIML, Fuller, TSLS and OLS.
 }
 \usage{
-kclassfit(object, k, type = c("LIML", "Fuller"))
+kclassfit(object, k, type = c("LIML", "Fuller"), alpha = 1)
 
-getK(object, alpha = 1)
+getK(object, alpha = 1, returnRes = FALSE)
 }
 
 \arguments{
@@ -27,6 +27,9 @@ getK(object, alpha = 1)
     \code{k} is missing.
   }
   \item{alpha}{A parameter for the Fuller method}
+
+  \item{returnRes}{Should the function return the matrix of residuals
+    from the first stage regression?}
 }
 
 \details{
