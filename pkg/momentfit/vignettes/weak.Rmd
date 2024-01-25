@@ -326,7 +326,7 @@ but it contains additional information about the original model and
 the method. It returns an object of class `summaryKclass`.
 
 ```{r}
-summary(liml)
+(s <- summary(liml))
 ```
 
 Note that the specification test is based on Anderson and Rubin. It is
@@ -338,6 +338,44 @@ method for `kclassfit` objects:
 ```{r}
 specTest(liml)
 ```
+
+We can compare the standard error we get here and the one we get from
+the `ivmodel` package. Note that only inference about the coefficient
+of the endogenous variable is provided by `ivmodel`.
+
+```{r}
+s@coef["educ",]
+mod$LIML$std.err
+```
+
+The result is quite different. But we can see why. In the following I
+recompute the standard error using the formula
+$\hat{\sigma}^2(W_\kappa'X)^{-1}$. We now get the same result. As mentioned
+before, this expression is only valid for $\kappa=1$.
+
+```{r}
+spec <- modelDims(mod2)
+u <- residuals(liml)
+sig <- sum(u^2)/(spec$n-spec$k)
+W <- model.matrix(liml@model, "instruments")
+myX <- model.matrix(liml@model)
+sqrt(diag(sig*solve(t(W)%*%myX)))[2]
+```
+
+For Heteroskedastic errors. We have to redefine the models. 
+
+```{r, eval=FALSE}
+mod <- ivmodel(Y=Y,D=D,Z=Z,X=X,heteroSE=TRUE)
+mod2 <- momentModel(g, h, data=card.data, vcov="MDS")
+liml <- kclassfit(mod2, resK)
+summary(liml)@coef["educ",]
+c(mod$LIML$point.est, mod$LIML$std.err)
+```
+
+The above code is not run because the `ivmodel` is very inefficient to
+compute the meat matrix. It is done using a loop. It you run the code
+you should get identical point estimate and both standard errors are
+equal to 0.0576098.
 
 # Weak Instruments (For later use)
 
