@@ -5,7 +5,7 @@ Title: Methods of Moments
 Author: Pierre Chausse <pchausse@uwaterloo.ca>
 Maintainer: Pierre Chausse <pchausse@uwaterloo.ca>
 Description: Several classes for moment-based models are defined. The classes are defined for moment conditions derived from a single equation or a system of equations. The conditions can also be expressed as functions or formulas. Several methods are also offered to facilitate the development of different estimation techniques. The methods that are currently provided are the Generalized method of moments (Hansen 1982; <doi:10.2307/1912775>), for single equations and systems of equation, and  the Generalized Empirical Likelihood (Smith 1997; <doi:10.1111/j.0013-0133.1997.174.x>, Kitamura 1997; <doi:10.1214/aos/1069362388>, Newey and Smith 2004; <doi:10.1111/j.1468-0262.2004.00482.x>, and Anatolyev 2005 <doi:10.1111/j.1468-0262.2005.00601.x>).Some work is being done to add tools to deal with weak and/or many instruments. This include K-Class estimators (LIML and Fuller), Anderson and Rubin statistics test, etc. 
-Depends: R (>= 3.0.0), sandwich
+Depends: R (>= 3.5), sandwich
 Imports: stats, methods, parallel
 Suggests: lmtest, knitr, texreg, rmarkdown, ivmodel
 Collate: 'allClasses.R' 'validity.R' 'momentData.R' 'momentModel-methods.R'

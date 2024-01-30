@@ -9,7 +9,7 @@ It estimates \code{linearModel} objects using the K-Class method. It
 includes LIML, Fuller, TSLS and OLS.
 }
 \usage{
-kclassfit(object, k, type = c("LIML", "Fuller"), alpha = 1)
+kclassfit(object, k, type = c("LIML", "Fuller", "BTSLS"), alpha = 1)
 
 getK(object, alpha = 1, returnRes = FALSE)
 }
@@ -24,7 +24,7 @@ getK(object, alpha = 1, returnRes = FALSE)
   }
   \item{type}{
     Which value of \code{k} should we use to fit the model? Only used if
-    \code{k} is missing.
+    \code{k} is missing. 
   }
   \item{alpha}{A parameter for the Fuller method}
 
@@ -36,7 +36,9 @@ getK(object, alpha = 1, returnRes = FALSE)
   Let the model be \eqn{Y=X\beta+U}{Y=XB+U} and the matrix of instruments
   be \eqn{Z}{Z}. The K-Class estimator is
   \eqn{(X'(I-kM_z)X)^{-1}(X'(I-kM_z)Y)}. The function \code{getK} can be
-  used to compute the value of \code{k} for both LIML and Fuller.
+  used to compute the value of \code{k} for both LIML and Fuller. When
+  \code{type="BTSLS"}, the bias-adjusted TSLS of Nagar (1959) is
+  computed. 
 }
 
 \value{

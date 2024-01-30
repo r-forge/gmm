@@ -62,15 +62,23 @@ getK <- function(object, alpha=1, returnRes=FALSE)
 }
 
 
-kclassfit <- function(object, k, type=c("LIML", "Fuller"), alpha = 1)
+kclassfit <- function(object, k, type=c("LIML", "Fuller", "BTSLS"), alpha = 1)
 {
     if (!inherits(object, "linearModel"))
         stop("object must be a model of class linearModel")    
     type <- match.arg(type)
+    spec <- modelDims(object)    
     if (missing(k))
     {
-        Kres <- getK(object, alpha, TRUE)
-        k <- Kres$k[type]
+        if (type == "BTSLS")
+        {
+            Kres <- list()
+            k2 <- spec$q-sum(!spec$isEndo)
+            k <- spec$n/(spec$n-k2+2)
+        } else {
+            Kres <- getK(object, alpha, TRUE)
+            k <- Kres$k[type]
+        }
         method <- type
     } else {
         method="K-Class"
@@ -93,7 +101,6 @@ kclassfit <- function(object, k, type=c("LIML", "Fuller"), alpha = 1)
         return(tsls(object))
     if (k==0)
         return(lse(object))
-    spec <- modelDims(object)
     EndoVars <- !(spec$parNames %in% spec$momNames)
     exoInst <- spec$momNames %in% spec$parNames
     if (all(!EndoVars))
@@ -182,3 +189,91 @@ setMethod("print", "summaryKclass",
               invisible()
           })
 setMethod("show","summaryKclass", function(object) print(object))
+
+
+## Stock and Yogo (2005)
+
+CDtest <- function(object, print=TRUE, ...)
+{
+    if (!inherits(object, "linearModel"))
+        stop("object must be of class linearModel")
+    spec <- modelDims(object)
+    Z <- model.matrix(object, "instrument")
+    X <- model.matrix(object)
+    z2n <- !(colnames(Z) %in% colnames(X))
+    X1 <- X[,!spec$isEndo, drop=FALSE]
+    X2 <- X[,spec$isEndo, drop=FALSE]
+    secS <- lm.fit(Z, X2)        
+    Z2 <- Z[,z2n,drop=FALSE]
+    tmp <- if (ncol(X2)>1)
+               Z[,z2n,drop=FALSE]%*%secS$coef[z2n,,drop=FALSE]
+           else
+               Z[,z2n,drop=FALSE]%*%secS$coef[z2n]
+    e <- secS$residuals
+    e2 <- lm.fit(X1, X2)$residuals
+    e <- crossprod(e)/(spec$n-spec$q)
+    e2 <- crossprod(e2, tmp)/ncol(Z2)
+    test <- min(eigen(solve(e,e2))$val)
+    if (!print)
+        return(test)
+    cat("Cragg and Donald Test for Weak Instruments\n",
+        "******************************************\n", sep="")
+    cat("Number of included Endogenous: ", ncol(X2), "\n", sep="")
+    cat("Number of excluded Exogenous: ", ncol(Z2), "\n", sep="")
+    cat("Statistics: ", formatC(test, ...), "\n\n", sep="")
+    SYTables(object)
+}
+
+SYTables <- function(object, print=TRUE)
+{
+    if (!inherits(object, "linearModel"))
+        stop("object must be of class linearModel")
+    s <- modelDims(object)
+    l <- sum(s$isEndo)
+    k <- s$q - (s$k - l)       
+    t <- sizeTSLS
+    sizeTSLS <- t[attr(t, "excExo") == k, attr(t, "incEndo") == l]
+    names(sizeTSLS) <- paste("size=",
+                             attr(t, "size")[attr(t, "incEndo") == l], sep="")
+    t <- biasFuller
+    biasFuller <- t[attr(t, "excExo") == k, attr(t, "incEndo") == l]
+    names(biasFuller) <- paste("bias=",
+                               attr(t, "bias")[attr(t, "incEndo") == l], sep="")
+    t <- sizeLIML
+    sizeLIML <- t[attr(t, "excExo") == k, attr(t, "incEndo") == l]
+    names(sizeLIML) <- paste("size=",
+                             attr(t, "size")[attr(t, "incEndo") == l], sep="")
+    if ((k-l)>=2)
+    {
+        t <- biasTSLS
+        biasTSLS <- t[attr(t, "excExo") == k, attr(t, "incEndo") == l]
+        names(biasTSLS) <- paste("bias=",
+                                 attr(t, "bias")[attr(t, "incEndo") == l], sep="")        
+    } else {
+        biasTSLS <- NULL
+    }
+
+    crit <- list(biasTSLS=biasTSLS,
+                 sizeTSLS=sizeTSLS,
+                 biasFuller=biasFuller,
+                 sizeLIML=sizeLIML)
+    if (!print)
+        return(crit)
+    nCrit <- c("Target relative bias for TSLS:\n",
+               "Target size for TSLS:\n",
+               "Target relative bias for Fuller-K:\n",
+               "Target size for LIML:\n")
+    
+    cat("Stock and Yogo (2005) critical values\n")
+    cat("*************************************\n")
+    for (i in 1:4)
+    {
+        if (!is.null(crit[[i]]))
+        {
+            cat(nCrit[i])
+            print.default(format(crit[[i]]), print.gap = 2L, quote = FALSE)
+            cat("\n")
+        }
+    }
+    invisible()
+}
