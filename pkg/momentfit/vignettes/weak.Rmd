@@ -64,10 +64,11 @@ Z_2]$, a $n\times q$ matrix with $q=k_1+l_2$. The reduced form for
 $X_2$, or the first stage regression, is therefore:
 
 \[
-X_2 = Z\Pi + e\,,
+X_2 = X_1\Pi_1 + Z_2\Pi_2 + e \equiv Z\Pi + e\,,
 \]
 
-where $\Pi$ is $q\times k_2$ and $e$ is $n\times k_2$. 
+where $\Pi_1$ is $k_1\times k_2$, $\Pi_2$ is $l_2\times k_2$, $\Pi$ is
+$q \times k_2$ and $e$ is $n\times k_2$.
 
 
 # K-class Estimator and LIML
@@ -269,13 +270,13 @@ getK(mod4)
 The function that computes the K-Class estimator is `kclassfit`. The
 arguments are: `object`, the model object, `k`, the value of $\kappa$,
 `type`, the type of $\kappa$ to compute when `k` is missing (`"LIML"`,
-`"Fuller"` or `"BTSLS"` for the biased corrected TSLE) and `alpha`,
-the parameter of the Fuller method (the default is 1). Note first that
-the estimator is a TSLS estimator when `k=1` and a LSE when it is
-equal to 0. The package already has a `tsls` method for `linearModel`
-objects, which is what `kclassfit` calls when `k=1`. For the LSE, a
-new method was created to facilitate the estimation of model objects
-by least squares. The method is `lse`:
+`"Fuller"` or `"BTSLS"` for the biased corrected TSLE of @nagar59) and
+`alpha`, the parameter of the Fuller method (the default is 1). Note
+first that the estimator is a TSLS estimator when `k=1` and a LSE when
+it is equal to 0. The package already has a `tsls` method for
+`linearModel` objects, which is what `kclassfit` calls when `k=1`. For
+the LSE, a new method was created to facilitate the estimation of
+model objects by least squares. The method is `lse`:
 
 ```{r}
 lse(mod2)
@@ -385,34 +386,71 @@ equal to 0.0576098.
 
 # Weak Instruments 
 
-## Testing for weak instrument: Stock-Yogo (2005)
+## Testing for weak instrument: @stock-yogo05
 
 This test and the critical values are for model with homoskedastic
-errors. The test is the smallest eigenvalue of the following:
+errors. The test is the smallest eigenvalue of the following
+expression (@cragg-donald93):
 
 \[
 \hat\Sigma_e^{-1/2}
 \Big[
 X_2'M_1Z_2(Z_2'M_1Z_2)^{-1}Z_2'M_1X_2 
 \Big]
-\hat\Sigma_e^{-1/2} = [M_1 X_2]'[Z_2\hat\Pi_2]
+\hat\Sigma_e^{-1/2} = \hat\Sigma_e^{-1/2}[M_1 X_2]'[Z_2\hat\Pi_2]\hat\Sigma_e^{-1/2}
 \]
 
-where $\hat\Sigma_e = \hat{e}'\hat{e}/(n-l_2-k_1)$. The function
-`CDtest`, which stands for Cragg and Donald test, computes this
-statistic. We can see that it returns the F-statistics when the number
-of endogenous variables is equal to 1:
+where $\hat\Sigma_e = \hat{e}'\hat{e}/(n-l_2-k_1)$. If the number of
+included endogenous variables $k_2$ is equal to 1, this is just the F
+statistic for the null hypothesis $H_0:\Pi_2=0$. For $k_2>1$, it is a
+test of rank reduction. Under the null the rank of $\Pi_2$ is $k_2-1$
+and under the alternative it is equal to $k_2$. The function `CDtest`,
+which stands for Cragg and Donald test, computes this statistic. By
+using the `momentStrength` method, which computes the first stage F
+statistics for each included endogenous variable, we can see they are
+both the same when $k_2=1$:
 
 ```{r}
-CDtest(mod2, print=FALSE)
+(CD2 <- CDtest(mod2, print=FALSE))
 momentStrength(mod2)
 ```
 
-Here is what we obtain for `mod3`
+However, it does not return a p-value like the F-test computed by
+`momentStrength`. Instead, it comes with the critical values computed
+by @stock-yogo05. If we let the function `CDtest` print the result
+(the default), we see the statistics and the critical values that are
+relevant to our model (they depend on the number of included
+endogenous and excluded exogenous variables). 
 
 ```{r}
-CDtest(mod3)
+CDtest(mod2)
 ```
+	
+We reject the null hypothesis that the instruments are weak if the
+statistic is greater than the critical value of interest. To
+understand the critical values, let's first consider the ones under
+"Target size for TSLS". If are willing to accept a wrong size of at
+most 10\% for hypothesis tests on coefficients at 5\%, the statistic
+must exceed 19.93 for the instruments to be considered strong
+enough. Since the statistic for `mod2` does not, we should expect a
+higher size distortion. In fact, our statistic is equal to `r round(CD2,4)`, 
+so we can expect the size to be as high as 25\% since
+the statistic is greater than 7.25. Under "Target size for LIML", we
+have the same critical values but for models estimated by LIML. We see
+that the size distortion is not as severe for LIML. Since the
+statistic is between the first and the second critical value, the size
+should be between 10\% and 15\%.
+
+We also have critical values that are based on the worst bias relative
+ to the OLS bias. For example, if the model is estimated by the Fuller
+ method and we are willing to accept a relative bias of at most 5\%,
+ we need the statistic to exceed 15.60. Since the statistic of `mod2`
+ is only greater than 6.62 (the last critical value), the relative
+ bias may be as large as 30\%. Note that the critical values based on
+ the relative bias are only available for TSLS when the number of
+ over-identifying restrictions are greater or equal to 2. For the
+ following model, all critical values are available. In this case, the
+ instruments are very strong. But are they valid?
 
 ```{r}
 g <- reformulate(c("educ", Xname), "lwage")
@@ -421,7 +459,79 @@ mod5 <- momentModel(g, h, data=card.data, vcov="iid")
 CDtest(mod5)
 ```
 
+## Testing for weak instrument: @sanderson-windmeijer16
 
+This test was derived for models with at least 2 endogenous variables
+($k_2>2$ in our model). Let $X_{2,j}$ be the j$^\mathrm{th}$ included
+endogenous variable and and $X_{2,-j}$ be the $k_2-1$ remaining
+included endogenous variables, then the procedure is :
+
+- Estimate the model $$X_{2,j} = X_{2,-j}\delta_1 + X_1 \delta_2 + v$$
+  by TSLS using the instruments $Z$ and save the residuals $\hat{v}$.
+
+- Estimate the model $$\hat{v} = X_1\kappa_1+Z_2\kappa_2 + \xi$$ by
+  OLS
+
+- Compute the F-test for $H_0: \kappa_2=0$. Let $\tilde{F}$ be the
+  value of the statistics.
+
+- Compute the @sanderson-windmeijer16 statistics
+  $F_{j|-j}=\tilde{F}[l_2/(l_2-k_2+1)]$.
+
+
+To illustrate the procedure, we consider the following model based on
+the simulated dataset `simData`:
+
+\[ 
+y = \beta_0 + \beta_1 y_1 + \beta_2 y_2 + \beta_3 y_3 + \beta_4
+x_1 + \beta_5 x_2 + u\,, 
+\]
+
+where `y1`, `y2` and `y3` are assumed to be endogenous. We want to
+estimate the model using the 5 excluded exogenous variables `z1` to
+`z5`. To use our notation, we have $X_1=\{$`x1`, `x2`$\}$,
+$X_2=\{$`y1`, `y2`, `y3`$\}$ and $Z_2=\{$`z1`, `z2`, `z3`, `z4`,
+`z5`$\}$. Following the above procedure the statistic using `j=1` is:
+
+```{r, message=FALSE}
+data(simData)
+## Step 1
+m <- tsls(y1~y2+y3+x1+x2, ~z1+z2+z3+z4+z5+x1+x2, data=simData)
+e <- residuals(m)
+## Step 2
+fit <- lm(e~z1+z2+z3+z4+z5+x1+x2, simData)
+fitr <- lm(e~x1+x2, simData)
+F <- anova(fit, fitr)$F[2]
+## Step 4
+(sw1 <- F*5/(5-2))
+```
+
+The function `SWtest` computes this test and returns the 
+
+```{r}
+smod <- momentModel(y~y1+y2+y3+x1+x2, ~z1+z2+z3+z4+z5+x1+x2, data=simData)
+SWtest(smod,1,FALSE)
+```
+
+Following @sanderson-windmeijer16, for models with $k_2$ endogenous
+variables and $l_2$ excluded exogenous, we compare the statistic with
+the @stock-yogo05 critical values for models with $l_2-1$ endogeous
+variables and $k_2-l_2+1$ excluded exogenous. This allows us to test
+the intruments for models with 3 endogenous variables without
+generating new tables. This is how the critical values are selected in
+`SWtest`:
+
+```{r}
+SWtest(smod)
+```
+
+These critical values are obtained by running the function `SYTables`
+with the argument `SWcrit` set to `TRUE`. Note that the authors show
+also that the same critical values can be used if we multiply the
+Cragg and Donald statistic by $k_2/(k_2-l_2+1)$.
+
+
+## Testing for weak instrument: @montiel-olea-pflueger13
 
 
 ## Data Generating Process (for later use)

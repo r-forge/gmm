@@ -193,7 +193,7 @@ setMethod("show","summaryKclass", function(object) print(object))
 
 ## Stock and Yogo (2005)
 
-CDtest <- function(object, print=TRUE, ...)
+CDtest <- function(object, print=TRUE, SWcrit=FALSE, ...)
 {
     if (!inherits(object, "linearModel"))
         stop("object must be of class linearModel")
@@ -205,6 +205,14 @@ CDtest <- function(object, print=TRUE, ...)
     X2 <- X[,spec$isEndo, drop=FALSE]
     secS <- lm.fit(Z, X2)        
     Z2 <- Z[,z2n,drop=FALSE]
+    df <- ncol(Z2)    
+    if (ncol(Z2)==1 & SWcrit)
+    {
+        warning("The Sanderson and Windmeijer modification of CD-test and rejection rule only applies to models with more than 1 endogenous variables")
+        SWcrit <- FALSE
+    } else if (SWcrit) {       
+        df <- ncol(Z2)-ncol(X2)+1
+    }
     tmp <- if (ncol(X2)>1)
                Z[,z2n,drop=FALSE]%*%secS$coef[z2n,,drop=FALSE]
            else
@@ -212,26 +220,46 @@ CDtest <- function(object, print=TRUE, ...)
     e <- secS$residuals
     e2 <- lm.fit(X1, X2)$residuals
     e <- crossprod(e)/(spec$n-spec$q)
-    e2 <- crossprod(e2, tmp)/ncol(Z2)
-    test <- min(eigen(solve(e,e2))$val)
+    e2 <- crossprod(e2, tmp)
+    test <- min(eigen(solve(e,e2))$val)/df
     if (!print)
         return(test)
     cat("Cragg and Donald Test for Weak Instruments\n",
         "******************************************\n", sep="")
-    cat("Number of included Endogenous: ", ncol(X2), "\n", sep="")
-    cat("Number of excluded Exogenous: ", ncol(Z2), "\n", sep="")
+    if (SWcrit)
+    {
+        cat("Sanderson and Windmeijer specification\n")
+        add1 <- "(-1 for the SW critical value)"
+        add2 <- paste("(-", ncol(X2)-1, ")", sep="")
+    } else {
+        add1 <- add2 <- ""
+    }
+    cat("Number of included Endogenous: ", ncol(X2), add1, "\n", sep="")
+    cat("Number of excluded Exogenous: ", ncol(Z2), add2, "\n", sep="")
     cat("Statistics: ", formatC(test, ...), "\n\n", sep="")
-    SYTables(object)
+    SYTables(object, TRUE, SWcrit)
 }
 
-SYTables <- function(object, print=TRUE)
+SYTables <- function(object, print=TRUE, SWcrit=FALSE)
 {
     if (!inherits(object, "linearModel"))
         stop("object must be of class linearModel")
     s <- modelDims(object)
     l <- sum(s$isEndo)
-    k <- s$q - (s$k - l)       
+    k <- s$q - (s$k - l)
+    if (l==1 & SWcrit)
+        SWcrit <- FALSE
+    if (SWcrit)
+    {
+        k <- k-l+1        
+        l <- l-1
+    }
     t <- sizeTSLS
+    if (l>2)
+    {
+        cat("No critical values for models with more than 2 endogenous variables\n")
+        return(invisible())
+    }
     sizeTSLS <- t[attr(t, "excExo") == k, attr(t, "incEndo") == l]
     names(sizeTSLS) <- paste("size=",
                              attr(t, "size")[attr(t, "incEndo") == l], sep="")
@@ -266,6 +294,8 @@ SYTables <- function(object, print=TRUE)
     
     cat("Stock and Yogo (2005) critical values\n")
     cat("*************************************\n")
+    if (SWcrit)
+        cat("Critical value adjusted to Sanderson and Windmeijer (2016) specification\n\n")
     for (i in 1:4)
     {
         if (!is.null(crit[[i]]))
@@ -276,4 +306,54 @@ SYTables <- function(object, print=TRUE)
         }
     }
     invisible()
+}
+
+## Sanderson and Windmeijer (2016)
+
+SWtest <- function(object, j=1, print=TRUE, ...)
+{
+    if (!inherits(object, "linearModel"))
+        stop("object must be of class linearModel")
+    spec <- modelDims(object)
+    if (sum(spec$isEndo)<1)
+    {
+        warning("The model does not contain an endogenous variable")
+        return(NA)
+    }
+    if (sum(spec$isEndo)==1)
+    {
+        warning(paste("The number of endgenous variables is equal to 1\n",
+                      "Returning the F-test", sep=""))
+        return(CDtest(object, print))
+    }
+    Z <- model.matrix(object, "instrument")
+    X <- model.matrix(object)
+    X2 <- X[, spec$isEndo, drop=FALSE]
+    X1 <- X[, !spec$isEndo, drop=FALSE]
+    if (ncol(X1))
+    {
+        z2n <- !(colnames(Z) %in% colnames(X1))
+        fitX1 <- lm.fit(X1, Z[,z2n])
+        Z <- as.matrix(fitX1$residuals)
+        X2 <- qr.resid(fitX1$qr, X2)
+    }
+    Xj <- X2[,j]
+    Xjm <- X2[,-j,drop=FALSE]
+    fsReg <- lm.fit(Z, Xjm)
+    Xjmhat <- as.matrix(fsReg$fitted)
+    fit <- lm.fit(Xjmhat, Xj)
+    e <- Xj-c(Xjm%*%fit$coefficients)
+    ehat <- qr.fitted(fsReg$qr, e)
+    sig <- sum((e-ehat)^2)/(spec$n-spec$q)
+    test <- sum(ehat^2)/sig/(ncol(Z)-ncol(Xjm))
+    if (!print)
+        return(test)
+    cat("Sanderson and Windmeijer Test for Weak Instruments\n")
+    cat("***************************************************\n", sep="")
+    add1 <- "(-1 for the critical values)"
+    add2 <- paste("(-", ncol(X2)-1, " for the critical values)", sep="")
+    cat("Number of included Endogenous: ", ncol(X2), add1, "\n", sep="")
+    cat("Number of excluded Exogenous: ", sum(z2n), add2, "\n", sep="")
+    cat("Statistics: ", formatC(test, ...), "\n\n", sep="")
+    SYTables(object, TRUE, TRUE)
 }
