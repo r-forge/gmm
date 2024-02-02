@@ -236,6 +236,7 @@ CDtest <- function(object, print=TRUE, SWcrit=FALSE, ...)
     }
     cat("Number of included Endogenous: ", ncol(X2), add1, "\n", sep="")
     cat("Number of excluded Exogenous: ", ncol(Z2), add2, "\n", sep="")
+    cat("The test is not robust to heteroskedasticity\n")
     cat("Statistics: ", formatC(test, ...), "\n\n", sep="")
     SYTables(object, TRUE, SWcrit)
 }
@@ -317,7 +318,7 @@ SWtest <- function(object, j=1, print=TRUE, ...)
     spec <- modelDims(object)
     if (sum(spec$isEndo)<1)
     {
-        warning("The model does not contain an endogenous variable")
+        warning("The model does not contain endogenous variables")
         return(NA)
     }
     if (sum(spec$isEndo)==1)
@@ -354,6 +355,66 @@ SWtest <- function(object, j=1, print=TRUE, ...)
     add2 <- paste("(-", ncol(X2)-1, " for the critical values)", sep="")
     cat("Number of included Endogenous: ", ncol(X2), add1, "\n", sep="")
     cat("Number of excluded Exogenous: ", sum(z2n), add2, "\n", sep="")
+    cat("The test is not robust to heteroskedasticity\n")    
     cat("Statistics: ", formatC(test, ...), "\n\n", sep="")
     SYTables(object, TRUE, TRUE)
+}
+
+
+## Montiel Olea and Pflueger (2013)
+
+MOPtest <- function(object, tau=0.10, print=TRUE, ...)
+{
+    if (!inherits(object, "linearModel"))
+        stop("object must be of class linearModel")
+    spec <- modelDims(object)
+    if (sum(spec$isEndo)<1)
+    {
+        warning("The model does not contain endogenous variables")
+        return(NA)
+    }    
+    if (sum(spec$isEndo)>1)
+    {
+        warning("The MOP test is defined for models with only one endogenous variable")
+        return(NA)
+    }
+    Z <- model.matrix(object, "instrument")
+    X <- model.matrix(object)
+    X2 <- X[, spec$isEndo, drop=FALSE]
+    X1 <- X[, !spec$isEndo, drop=FALSE]
+    if (ncol(X1))
+    {
+        z2n <- !(colnames(Z) %in% colnames(X1))
+        fitX1 <- lm.fit(X1, Z[,z2n])
+        Z <- as.matrix(fitX1$residuals)
+        X2 <- qr.resid(fitX1$qr, X2)
+    }
+    Z <- qr.Q(qr(Z))
+    colnames(Z) <- paste("Z", 1:ncol(Z), sep="")
+    g <- reformulate(colnames(Z), colnames(X2), FALSE)
+    h <- reformulate(colnames(Z), NULL, FALSE)
+    dat <- data.frame(cbind(X2, Z))
+    m <- momentModel(g, h, data=dat, vcov=object@vcov,
+                     vcovOptions=object@vcovOptions)
+    v <- vcov(gmmFit(m), !(vcov=object@vcov=="iid"))
+    ev <- eigen(v)$val
+    se <- sum(ev)
+    se2 <- sum(ev^2)
+    me <- max(ev)
+    Feff <- sum(crossprod(X2, Z)^2)/se
+    x <- 1/tau
+    Keff <- se^2*(1+2*x)/(se2+2*x*se*me)
+    vcov <- object@vcov
+    if (vcov=="MDS")
+        vcov <- "HCCM"
+    if (!print)
+        return(c(Feff=Feff, Keff=Keff, x=x))
+    cat("Montiel Olea and Pflueger Test for Weak Instruments\n")
+    cat("****************************************************\n", sep="")
+    cat("Type of LS covariance matrix: ", vcov, "\n", sep="")
+    cat("Number of included Endogenous: ", ncol(X2), "\n", sep="")
+    cat("Effective degrees of freedom: ", Keff, "\n", sep="")
+    cat("x: ", x, "\n", sep="")
+    cat("Statistics: ", formatC(Feff, ...), "\n\n", sep="")
+    invisible()
 }

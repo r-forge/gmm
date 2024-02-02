@@ -1,14 +1,16 @@
 \name{weakTest}
 \alias{CDtest}
 \alias{SWtest}
+\alias{MOPtest}
 \alias{SYTables}
 \title{
 Tests for weak Instruments
 }
 \description{
 This is a collection of tests for weak instruments. It includes the
-Cragg and Donald test for the reduced rank hypothesis and the conditional
-F-test of Sanderson and Windmeijer (2016). The critical values of Stock
+Cragg and Donald test for the reduced rank hypothesis, the conditional
+F-test of Sanderson and Windmeijer (2016) and the robust effective F
+test of Montiel Olea and Pflueger (2013). The critical values of Stock
 and Yogo (2005) for the null hypothesis of weak instruments are also
 provided.  
 }
@@ -17,6 +19,8 @@ provided.
 SWtest(object, j=1, print=TRUE, ...)
 
 CDtest(object, print=TRUE, SWcrit=FALSE, ...)
+
+MOPtest(object, tau=0.10, print=TRUE, ...)
 
 SYTables(object, print=TRUE, SWcrit=FALSE)
 
@@ -32,7 +36,9 @@ SYTables(object, print=TRUE, SWcrit=FALSE)
   is the jth included endogenous variable and \eqn{y_{-j}} is the vector
   of the other included endogenous variables.
   }
-    
+
+  \item{tau}{The desired bias.}
+  
   \item{print}{
     If code{TRUE}, the result is printed and nothing is returned. See
     below for details on what the functions return when it is set to

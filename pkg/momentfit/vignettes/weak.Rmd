@@ -518,8 +518,10 @@ variables and $l_2$ excluded exogenous, we compare the statistic with
 the @stock-yogo05 critical values for models with $l_2-1$ endogeous
 variables and $k_2-l_2+1$ excluded exogenous. This allows us to test
 the intruments for models with 3 endogenous variables without
-generating new tables. This is how the critical values are selected in
-`SWtest`:
+generating new tables. In the following, we can see that the critical
+values are obtained by reducing the number of endogenous variables by
+1 and the number of excluded exogenous variables by 2. Clearly, the
+instruments are weak in this simulated model.
 
 ```{r}
 SWtest(smod)
@@ -528,10 +530,56 @@ SWtest(smod)
 These critical values are obtained by running the function `SYTables`
 with the argument `SWcrit` set to `TRUE`. Note that the authors show
 also that the same critical values can be used if we multiply the
-Cragg and Donald statistic by $k_2/(k_2-l_2+1)$.
+Cragg and Donald statistic by $k_2/(k_2-l_2+1)$. It is therefore
+possible to test for weak instruments in a model with 3 endogenous
+variables using the `CDtest` function, if we set the argument `SWcrit`
+to `TRUE`.
 
 
 ## Testing for weak instrument: @montiel-olea-pflueger13
+
+In most applied economic studies, it is unrealistic to assume that the
+errors are conditionally homoskedastic. When the errors are
+conditionally heteroskedastic, it is recommended by
+@andrews-stock-sun19 to use the effective F-test of
+@montiel-olea-pflueger13 (MOP). Assuming that $k_2=1$, which is the
+only option for this test, the procedure is:
+
+- Replace y by $M_1y$, $X_2$ by $M_1X_2$ and $Z_2$ by $M_1Z_2$ and
+  normalize the matrix $Z_2$ so that all vectors are
+  orthonormal. Then, the model become $$y=X_2\beta_2 + u$$ and $$X_2 =
+  Z_2\Pi_2+e\,.$$
+  
+- Obtain the robust covariance matrix estimate of $\hat\Pi_2$, $\hat{W}_2$.
+
+- The test is $F_{eff} = (X_2'Z_2Z_2'X_2)/[n^2tr(\hat{W}_2)]$
+
+This is computed by the function `MOPtest`. For now, no critical
+values are reported. Will be added soon.
+
+```{r}
+MOPtest(mod2)
+```
+
+We can see that it is close to the non-robust F test:
+
+```{r}
+CDtest(mod2, FALSE)
+```
+
+This is because the model `mod2` is defined with
+`vcov="iid"`. Therefore, $\hat{W}_2$ is a non-robust covariance
+matrix. If we want an HCCM estimator, we need to define the model with
+`vcov="MDS"`. It is also possible to compute the test using HAC
+estimator if needed. We use the `update` method to change `vcov` and
+rerun the test. We see that the robust test is a little higher than
+the non-robust. 
+
+```{r}
+mod2 <- update(mod2, vcov="MDS")
+MOPtest(mod2)
+```
+
 
 
 ## Data Generating Process (for later use)
