@@ -122,16 +122,45 @@ setMethod("modelResponse", signature("linearModel"),
 
 setGeneric("model.matrix")
 setMethod("model.matrix", signature("linearModel"),
-          function(object, type=c("regressors","instruments"))
+          function(object, type=c("regressors","instruments","excludedExo",
+                                  "includedExo", "includedEndo"))
           {
               type <- match.arg(type)
               if (type == "regressors")
               {
                   ti <- attr(object@modelF, "terms")
                   mat <- as.matrix(model.matrix(ti, object@modelF)[,])
-              } else {
+              } else if (type == "instruments"){
                   ti <- attr(object@instF, "terms")
                   mat <- as.matrix(model.matrix(ti, object@instF)[,])
+              } else {
+                  X <- model.matrix(object)
+                  Z <- model.matrix(object, "instruments")
+                  z1 <- colnames(Z) %in% colnames(X)
+                  endo <- modelDims(object)$isEndo 
+                  if (type == "excludedExo")
+                  {
+                      if (all(!z1))
+                      {
+                          warning("No excluded Exogenous Variables")
+                          return(NULL)
+                      }
+                      mat <- Z[,!z1,drop=FALSE]
+                  } else if (type == "includedExo") {
+                      if (all(endo))
+                      {
+                          warning("No included Exogenous Variables")
+                          return(NULL)
+                      }
+                      mat <- X[,!endo,drop=FALSE]
+                  } else {
+                      if (all(!endo))
+                      {
+                          warning("No included endogenous variables")
+                          return(NULL)
+                      }
+                      mat <- X[,endo,drop=FALSE]
+                  }
               }
               mat
           })

@@ -20,7 +20,7 @@ SWtest(object, j=1, print=TRUE, ...)
 
 CDtest(object, print=TRUE, SWcrit=FALSE, ...)
 
-MOPtest(object, tau=0.10, print=TRUE, ...)
+MOPtest(object, tau=0.10, size = 0.05, print=TRUE, ...)
 
 SYTables(object, print=TRUE, SWcrit=FALSE)
 
@@ -38,6 +38,8 @@ SYTables(object, print=TRUE, SWcrit=FALSE)
   }
 
   \item{tau}{The desired bias.}
+
+  \item{size}{The size of the test for the critical value.}
   
   \item{print}{
     If code{TRUE}, the result is printed and nothing is returned. See

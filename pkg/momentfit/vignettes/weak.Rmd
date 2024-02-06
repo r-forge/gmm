@@ -546,9 +546,9 @@ conditionally heteroskedastic, it is recommended by
 only option for this test, the procedure is:
 
 - Replace y by $M_1y$, $X_2$ by $M_1X_2$ and $Z_2$ by $M_1Z_2$ and
-  normalize the matrix $Z_2$ so that all vectors are
-  orthonormal. Then, the model become $$y=X_2\beta_2 + u$$ and $$X_2 =
-  Z_2\Pi_2+e\,.$$
+  normalize the matrix $Z_2$ so that all vectors are orthonormal (we
+  replace $Z$ by $Q$ from its QR decomposition). Then, the model becomes
+  $$y=X_2\beta_2 + u$$ and $$X_2 = Z_2\Pi_2+e\,.$$
   
 - Obtain the robust covariance matrix estimate of $\hat\Pi_2$, $\hat{W}_2$.
 
@@ -580,6 +580,127 @@ mod2 <- update(mod2, vcov="MDS")
 MOPtest(mod2)
 ```
 
+The above procedure is the simplified version of the test. We start
+exploring the generalized test. First, we need an estimate of the
+matrix $W$. Given the structure of $Z$, the robust covariance matrix
+of the OLS estimators is the covariance matrix of the moment
+conditions, because when $Z'Z=I$, the OLS estimator of $y=Z\beta+u$ is
+$\hat\beta = Z'y=\beta+Z'u$. Therefore, the variance of $\hat\beta$ is
+the variance of the moment condition function $Z'u$. The reduced form
+for our model is:
+
+\begin{eqnarray*}
+y &=& X_2\beta_2 + u = Z_2[\Pi_2\beta_2] + v\\
+X_2 &=& Z_2 \Pi_2 + e
+\end{eqnarray*}
+
+
+For example, we can compute $W_2$ above
+as follows for `mod2`.
+
+- We extract $Z_2$, $X_1$, $X_2$ and $y$,
+
+```{r}
+## get Z
+spec <- modelDims(mod2)
+Z2 <- model.matrix(mod2, "excludedExo")
+X1 <- model.matrix(mod2, "includedExo")
+X2 <- model.matrix(mod2, "includedEndo")
+y <- modelResponse(mod2)
+```
+
+- We project $X_1$ off $Z_2$, $X_2$ and $y$ and normalize $Z$ using
+  its QR decomposition:
+
+```{r}
+fitX1  <- lm.fit(X1, Z2)
+Z2 <- fitX1$residuals
+X2 <- qr.resid(fitX1$qr, X2)
+y <- qr.resid(fitX1$qr, y)
+Z2 <- qr.Q(qr(Z2))
+```
+
+To compute $\hat{W}_2$, we can use the tools already included in the
+package. We just need to create a linear model. We set the argument
+`vcov` to `"MDS"` to obtain a robust to heteroskedasticity
+$\hat{W}_2$:
+
+```{r}
+colnames(Z2) = paste("Z", 1:ncol(Z2), sep="")
+dat <- as.data.frame(cbind(X2,Z2))
+g <- reformulate(colnames(Z2), colnames(X2), FALSE)
+h <- reformulate(colnames(Z2), NULL, FALSE)
+m2 <- momentModel(g,h,data=dat,vcov="MDS")
+```
+
+We need to compute the OLS estimator and then use the `vcov` method
+for `linearModel` objects to estimate the asymptotic variance of
+$Z_2'e/\sqrt{n}$:
+
+```{r}
+b <- lm.fit(Z2,X2)$coef
+w2 <- vcov(m2, b)
+```
+
+This is the only part of $W$ we need to estimate for the simplified
+version of the test. For the general test, we also need to estimate
+$W_{1}$, which is the asymptotic variance of $Z'v/\sqrt{n}$, and
+$W_{12}$ which is the asymptotic covariance between $Z_2'e/\sqrt{n}$
+and $Z_2'n/\sqrt{n}$. This can be done by writing the model as:
+
+\[
+\begin{pmatrix}
+y\\X_2
+\end{pmatrix} = 
+\begin{pmatrix}
+Z_2 & 0\\
+0 & Z_2
+\end{pmatrix}\begin{pmatrix} 
+\Pi_2\beta_2\\\Pi_2
+\end{pmatrix}+\begin{pmatrix}v\\ e
+\end{pmatrix}
+\]
+
+We can obtain $\hat{W}$ in one line:
+
+```{r}
+Z <- rbind(cbind(Z2, matrix(0, nrow(Z2), ncol(Z2))),
+           cbind(matrix(0, nrow(Z2), ncol(Z2)), Z2))
+colnames(Z) = paste("Z", 1:ncol(Z), sep="")
+dat <- as.data.frame(cbind(y=c(y,X2),Z))
+g <- reformulate(colnames(Z), "y", FALSE)
+h <- reformulate(colnames(Z), NULL, FALSE)
+m <- momentModel(g,h,data=dat,vcov="MDS")
+```
+
+We can then compute $\hat{W}$ the same way we computed $W_2$:
+
+
+```{r}
+b <- lm.fit(Z,dat$y)$coef
+w <- vcov(m, b)*2
+w
+```
+
+Note that we need to adjust the sample size. The way `m` is defined,
+the sample is multiplied by 2. Since we divide by twice the sample
+size to compute the estimator, we need to multiply the estimated W by
+2. We can see that $\hat{W}_2$ is the $2\times 2$ bottom left block of
+   $\hat W$:
+
+```{r}
+w2
+```
+	
+This is what te function `getW` computes. For now, it is not exported,
+	so we need to run it using `momentfit:::`.  The function returns
+	the different $\hat{W}$'s separately for convenience.
+
+
+```{r}
+res <- momentfit:::getMOPW(mod2)
+res
+```
 
 
 ## Data Generating Process (for later use)

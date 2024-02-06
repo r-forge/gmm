@@ -363,7 +363,7 @@ SWtest <- function(object, j=1, print=TRUE, ...)
 
 ## Montiel Olea and Pflueger (2013)
 
-MOPtest <- function(object, tau=0.10, print=TRUE, ...)
+MOPtest <- function(object, tau=0.10, size=0.05, print=TRUE, ...)
 {
     if (!inherits(object, "linearModel"))
         stop("object must be of class linearModel")
@@ -396,25 +396,69 @@ MOPtest <- function(object, tau=0.10, print=TRUE, ...)
     dat <- data.frame(cbind(X2, Z))
     m <- momentModel(g, h, data=dat, vcov=object@vcov,
                      vcovOptions=object@vcovOptions)
-    v <- vcov(gmmFit(m), !(vcov=object@vcov=="iid"))
+    Pi <- lm.fit(Z, X2)$coefficients
+    v <- vcov(m, Pi)
     ev <- eigen(v)$val
     se <- sum(ev)
     se2 <- sum(ev^2)
     me <- max(ev)
-    Feff <- sum(crossprod(X2, Z)^2)/se
+    Feff <- sum(crossprod(X2, Z)^2)/se/spec$n
     x <- 1/tau
     Keff <- se^2*(1+2*x)/(se2+2*x*se*me)
+    crit <- qchisq(1-size, Keff, Keff*x)/Keff
+    pv <- 1-pchisq(Feff*Keff, Keff, Keff*x)
     vcov <- object@vcov
     if (vcov=="MDS")
         vcov <- "HCCM"
     if (!print)
-        return(c(Feff=Feff, Keff=Keff, x=x))
+        return(c(Feff=Feff, Keff=Keff, x=x, critValue=crit, pvalue=pv))
     cat("Montiel Olea and Pflueger Test for Weak Instruments\n")
     cat("****************************************************\n", sep="")
     cat("Type of LS covariance matrix: ", vcov, "\n", sep="")
     cat("Number of included Endogenous: ", ncol(X2), "\n", sep="")
     cat("Effective degrees of freedom: ", Keff, "\n", sep="")
     cat("x: ", x, "\n", sep="")
-    cat("Statistics: ", formatC(Feff, ...), "\n\n", sep="")
+    cat("Statistics: ", formatC(Feff, ...), "\n", sep="")
+    cat(paste("Critical Value (size=",size,"): ", formatC(crit, ...), "\n", sep=""))
+    cat(paste("P-Value: ", formatC(pv, ...), "\n\n", sep=""))    
     invisible()
+}
+
+getMOPW <- function(object)
+{
+    spec <- modelDims(object)
+    if (sum(spec$isEndo)<1)
+    {
+        warning("The model does not contain endogenous variables")
+        return(NA)
+    }    
+    if (sum(spec$isEndo)>1)
+    {
+        warning("The MOP test is defined for models with only one endogenous variable")
+        return(NA)
+    }
+    spec <- modelDims(object)
+    Z2 <- model.matrix(object, "excludedExo")
+    X1 <- model.matrix(object, "includedExo")
+    X2 <- model.matrix(object, "includedEndo")
+    y <- modelResponse(object)
+    fitX1  <- lm.fit(X1, Z2)
+    Z2 <- fitX1$residuals
+    X2 <- qr.resid(fitX1$qr, X2)
+    y <- qr.resid(fitX1$qr, y)
+    Z2 <- qr.Q(qr(Z2))
+    Z <- rbind(cbind(Z2, matrix(0, nrow(Z2), ncol(Z2))),
+               cbind(matrix(0, nrow(Z2), ncol(Z2)), Z2))
+    colnames(Z) = paste("Z", 1:ncol(Z), sep="")
+    dat <- as.data.frame(cbind(y=c(y,X2),Z))
+    g <- reformulate(colnames(Z), "y", FALSE)
+    h <- reformulate(colnames(Z), NULL, FALSE)
+    m <- momentModel(g, h, data = dat, vcov=object@vcov,
+                     vcovOptions = object@vcovOptions)
+    b <- lm.fit(Z,dat$y)$coefficients    
+    w <- vcov(m, b)*2
+    w11 <- w[1:ncol(Z2), 1:ncol(Z2)]
+    w22 <- w[(ncol(Z2)+1):ncol(w), (ncol(Z2)+1):ncol(w)]
+    w21 <- w[(ncol(Z2)+1):ncol(w), 1:ncol(Z2)]
+    list(w11=w11,w22=w22,w21=w21)
 }
