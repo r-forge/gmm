@@ -499,8 +499,9 @@ setMethod("model.matrix", "snonlinearModel",
 ### The following multiplies each block matrix of ZZ, when the dimensions
 ### are defined by dimr and dimc (dim row and dim column) by each element
 ### of Sigma. Sigma must be length(dimr) by length(dimc)
+### Just set the lowerTri to TRUE by default. The cost is negligible. 
 
-.SigmaZZ <- function(ZZ, Sigma, dimr, dimc=NULL, lowerTri=FALSE, isSym=TRUE)
+.SigmaZZ <- function(ZZ, Sigma, dimr, dimc=NULL, lowerTri=TRUE, isSym=TRUE)
     {
         r1 <- 1        
         c1 <- 1
@@ -723,6 +724,47 @@ setMethod("solveGmm", signature("sfunctionModel", "sysMomentWeights"),
               met(object, wObj, theta0, ...)
     })
 
+## vcovHAC
+
+setMethod("vcovHAC", "sysModel",
+          function (x, theta) { 
+              if (x@vcov != "HAC")
+              {
+                  warning("Model set as ", x@vcov, ". The default HAC options are used")
+                  x@vcov <- "HAC"
+                  x@sSpec <- new("sSpec")
+                  x@smooth <- FALSE
+                  x@vcovOptions <- .getVcovOptions("HAC")
+              }
+              gmat <- evalMoment(x, theta)
+              gmat <- do.call(cbind, gmat)
+              if (x@centeredVcov) 
+                  gmat <- scale(gmat, scale = FALSE)
+              class(gmat) <- "momentFct"
+              options <- x@vcovOptions
+              if (is.character(options$bw))
+              {
+                  if (options$bw == "Wilhelm")
+                      warning("bw = Wilhelm is not available for system GMM")
+                  obj <- gmat
+                  bwFct  <- get(paste("bw",options$bw,sep=""))
+                  bwArgs <- options
+                  bwArgs$bw <- NULL
+                  bwArgs$tol <- NULL
+                  bwArgs$x <- obj
+                  bw <- do.call(bwFct, bwArgs)
+              } else {
+                  bw <- options$bw
+              }
+              weights <- weightsAndrews(x = gmat, bw = bw, kernel = options$kernel, 
+                                        prewhite = options$prewhite, tol = options$tol)
+              w <- vcovHAC(x = gmat, order.by = NULL, weights = weights, 
+                           prewhite = options$prewhite, sandwich = FALSE,
+                           ar.method = options$ar.method)
+              attr(w, "Spec") <- list(weights = weights, bw = bw, kernel = options$kernel)
+              w
+          })
+
 ## vcov
 
 setMethod("vcov", signature("sysModel"),
@@ -730,26 +772,33 @@ setMethod("vcov", signature("sysModel"),
               spec <- modelDims(object)
               q <- spec$q
               if (object@vcov == "MDS")
+              {
+                  gt <- evalMoment(object, theta)
+                  gt <- do.call(cbind, gt)
+                  if (object@centeredVcov)
+                      gt <- scale(gt, scale=FALSE)
+                  w <- crossprod(gt)/nrow(gt)
+              } else if (object@vcov == "iid") {
+                  e <- residuals(object, theta)
+                  Sigma <- crossprod(e)/nrow(e)
+                  Z <- model.matrix(object, "instrument")
+                  if (object@sameMom)
                   {
-                      gt <- evalMoment(object, theta)
-                      gt <- do.call(cbind, gt)
-                      if (object@centeredVcov)
-                          gt <- scale(gt, scale=FALSE)
-                      w <- crossprod(gt)/nrow(gt)
-                  } else if (object@vcov == "iid") {
-                      e <- residuals(object, theta)
-                      Sigma <- crossprod(e)/nrow(e)
-                      Z <- model.matrix(object, "instrument")
-                      if (object@sameMom)
-                          {
-                              w <- kronecker(Sigma, crossprod(Z[[1]])/nrow(e))
-                          } else {
-                              Z <- crossprod(do.call(cbind,Z))/nrow(e)
-                              w <- .SigmaZZ(Z, Sigma, q)
-                          }
+                      w <- kronecker(Sigma, crossprod(Z[[1]])/nrow(e))
                   } else {
-                      stop("not yet implemented for HAC")
+                      Z <- crossprod(do.call(cbind,Z))/nrow(e)
+                      w <- .SigmaZZ(Z, Sigma, q)
                   }
+              } else if (object@vcov == "CL") {
+                  gt <- evalMoment(object, theta)
+                  gt <- do.call(cbind, gt)
+                  class(gt) <- "momentFct"
+                  opt <- object@vcovOptions
+                  opt$x <- gt
+                  w <- do.call(meatCL, opt)                                            
+              } else {
+                  w <- vcovHAC(object, theta)
+              }
               wn <- paste(rep(spec$eqnNames, q), ".", do.call("c", spec$momNames), 
                           sep = "")
               dimnames(w) <- list(wn,wn)

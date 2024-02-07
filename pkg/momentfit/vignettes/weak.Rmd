@@ -15,12 +15,14 @@ vignette: >
   %\VignetteEncoding{UTF-8}
 header-includes:
 - \newcommand{\E}{\mathrm{E}}
+- \newcommand{\eval}{\mathrm{eval}}
 - \newcommand{\diag}{\mathrm{diag}}
 - \newcommand{\Prob}{\mathrm{Pr}}
 - \newcommand{\Var}{\mathrm{Var}}
 - \newcommand{\Vect}{\mathrm{Vec}}
 - \newcommand{\Cov}{\mathrm{Cov}}
 - \newcommand{\Cor}{\mathrm{Cor}}
+- \newcommand{\tr}{\mathrm{tr}}
 - \newcommand{\conP}{\overset{p}{\to}}
 - \newcommand{\conD}{\overset{d}{\to}}
 - \newcommand\R{ \mathbb{R} }
@@ -546,13 +548,16 @@ conditionally heteroskedastic, it is recommended by
 only option for this test, the procedure is:
 
 - Replace y by $M_1y$, $X_2$ by $M_1X_2$ and $Z_2$ by $M_1Z_2$ and
-  normalize the matrix $Z_2$ so that all vectors are orthonormal (we
-  replace $Z$ by $Q$ from its QR decomposition). Then, the model becomes
-  $$y=X_2\beta_2 + u$$ and $$X_2 = Z_2\Pi_2+e\,.$$
+  normalize the matrix $Z_2$ so that $Z_2'Z_2/n=I$ (we replace $Z$ by
+  $Q$ from its QR decomposition times $\sqrt{n}$) . Then, the model
+  becomes $$y=X_2\beta_2 + u$$ and $$X_2 = Z_2\Pi_2+e\,.$$
   
 - Obtain the robust covariance matrix estimate of $\hat\Pi_2$, $\hat{W}_2$.
 
-- The test is $F_{eff} = (X_2'Z_2Z_2'X_2)/[n^2tr(\hat{W}_2)]$
+- The test is $F_{eff} = (X_2'Z_2Z_2'X_2)/[n\tr(\hat{W}_2)]$, where
+  $\tr(A)$ is the trace of $A$. Since
+  $\hat{\Pi}_2=(Z_2'Z_2)^{-1}Z_2'X_2=Z_2'X_2/n$, we can write the
+  test as $F_{eff} = n\hat{\Pi}_2'\hat{\Pi}_2/\tr(\hat{W}_2)$.
 
 This is computed by the function `MOPtest`. For now, no critical
 values are reported. Will be added soon.
@@ -595,8 +600,7 @@ X_2 &=& Z_2 \Pi_2 + e
 \end{eqnarray*}
 
 
-For example, we can compute $W_2$ above
-as follows for `mod2`.
+For example, we can compute $W_2$ above as follows for `mod2`.
 
 - We extract $Z_2$, $X_1$, $X_2$ and $y$,
 
@@ -610,20 +614,22 @@ y <- modelResponse(mod2)
 ```
 
 - We project $X_1$ off $Z_2$, $X_2$ and $y$ and normalize $Z$ using
-  its QR decomposition:
+  its QR decomposition times $\sqrt{n}$:
 
 ```{r}
 fitX1  <- lm.fit(X1, Z2)
 Z2 <- fitX1$residuals
 X2 <- qr.resid(fitX1$qr, X2)
 y <- qr.resid(fitX1$qr, y)
-Z2 <- qr.Q(qr(Z2))
+Z2 <- qr.Q(qr(Z2))*sqrt(nrow(Z2))
 ```
 
 To compute $\hat{W}_2$, we can use the tools already included in the
-package. We just need to create a linear model. We set the argument
-`vcov` to `"MDS"` to obtain a robust to heteroskedasticity
-$\hat{W}_2$:
+package. We just need to create a `linearModel` object with no
+endogenous variables. For $\hat{W}_2$, we regress $X_2$ on $Z_2$ and
+use $Z_2$ as instruments. We can set the argument `vcov` to `"MDS"` to
+obtain a robust to heteroskedasticity $\hat{W}_2$ (or to `"CL"` for
+clustered or `"HAC"` for serially correlated errors).
 
 ```{r}
 colnames(Z2) = paste("Z", 1:ncol(Z2), sep="")
@@ -638,69 +644,95 @@ for `linearModel` objects to estimate the asymptotic variance of
 $Z_2'e/\sqrt{n}$:
 
 ```{r}
-b <- lm.fit(Z2,X2)$coef
+b <- crossprod(Z2,X2)/nrow(Z2)
 w2 <- vcov(m2, b)
 ```
 
 This is the only part of $W$ we need to estimate for the simplified
 version of the test. For the general test, we also need to estimate
-$W_{1}$, which is the asymptotic variance of $Z'v/\sqrt{n}$, and
+$W_{1}$, which is the asymptotic variance of $Z_2'v/\sqrt{n}$, and
 $W_{12}$ which is the asymptotic covariance between $Z_2'e/\sqrt{n}$
-and $Z_2'n/\sqrt{n}$. This can be done by writing the model as:
-
-\[
-\begin{pmatrix}
-y\\X_2
-\end{pmatrix} = 
-\begin{pmatrix}
-Z_2 & 0\\
-0 & Z_2
-\end{pmatrix}\begin{pmatrix} 
-\Pi_2\beta_2\\\Pi_2
-\end{pmatrix}+\begin{pmatrix}v\\ e
-\end{pmatrix}
-\]
-
-We can obtain $\hat{W}$ in one line:
+and $Z_2'v/\sqrt{n}$. This can be done by writing the model as a
+system of equations with the same regressors and instruments. The
+above `g` is the second equation, so we need to add the first in a
+list and repeat `h` twice in the list of instruments:
 
 ```{r}
-Z <- rbind(cbind(Z2, matrix(0, nrow(Z2), ncol(Z2))),
-           cbind(matrix(0, nrow(Z2), ncol(Z2)), Z2))
-colnames(Z) = paste("Z", 1:ncol(Z), sep="")
-dat <- as.data.frame(cbind(y=c(y,X2),Z))
-g <- reformulate(colnames(Z), "y", FALSE)
-h <- reformulate(colnames(Z), NULL, FALSE)
-m <- momentModel(g,h,data=dat,vcov="MDS")
-```
-
-We can then compute $\hat{W}$ the same way we computed $W_2$:
-
-
-```{r}
-b <- lm.fit(Z,dat$y)$coef
-w <- vcov(m, b)*2
+dat <- as.data.frame(cbind(y=y,X2,Z2))
+g <- list(reformulate(colnames(Z2), "y", FALSE),
+          g)
+h <- list(h,h)
+m <- sysMomentModel(g,h,data=dat,vcov="MDS")
+b <- list(c(crossprod(Z2,y)/nrow(Z2)),
+          c(crossprod(Z2,X2)/nrow(Z2)))
+w <- vcov(m, b)
 w
 ```
 
-Note that we need to adjust the sample size. The way `m` is defined,
-the sample is multiplied by 2. Since we divide by twice the sample
-size to compute the estimator, we need to multiply the estimated W by
-2. We can see that $\hat{W}_2$ is the $2\times 2$ bottom left block of
-   $\hat W$:
+Note that we need to adjust the sample size. The way the model `m` is
+defined, the sample is multiplied by 2. Since we divide by twice the
+sample size to compute the estimator, we need to multiply the
+estimated W by 2. We can see that $\hat{W}_2$ is the $2\times 2$
+bottom left block of $\hat W$:
 
 ```{r}
 w2
 ```
 	
-This is what te function `getW` computes. For now, it is not exported,
-	so we need to run it using `momentfit:::`.  The function returns
-	the different $\hat{W}$'s separately for convenience.
-
+This is what the function `getMOPW` computes. For now, it is not
+exported, so we need to run it using `momentfit:::`.  The function
+returns the different $\hat{W}$'s separately for convenience. Here we
+see $\hat{W}_2$:
 
 ```{r}
 res <- momentfit:::getMOPW(mod2)
-res
+res$w2
 ```
+
+The function also returns the elements `w1`, `w12` and `omega`. The
+latter is $\hat\Omega=[\hat v, \hat e]'[\hat v, \hat e]/n$. The
+matrices $\hat W_1$ and $\hat W_{12}$ are needed to compute the
+effective degrees of freedom:
+
+\[
+K_{eff} = \frac{[\tr(\hat W_2)]^2(1+2x)}{\tr(\hat{W}_2'\hat{W}_2)\max\eval(\hat W_2)}
+\]
+
+In the simplified version, the parameter $x$ is simply set to
+$1/\tau$, where $\tau$ is the worst bias relative to the
+benchmark. For the generalized test, $x$ depends on
+$B_e(\hat{W},\hat{\omega})$ for $e$ = LIML or TSLS, which needs to be
+computed using a one dimentional optimizer.
+
+```{r}
+f <- function(beta, w, type)
+{
+    s1 <- w$w1-2*beta*w$w12+beta^2*w$w2
+    s2 <- w$w2
+    s12 <- w$w12-beta*w$w2
+    ts1 <- sum(diag(s1))
+    ts2 <- sum(diag(s2))
+    ts12 <- sum(diag(s12))
+    omega <- w$omega
+    if (type == "LIML")
+    {
+        lam <- eigen(2*s12-omega[1,2]*s1/omega[1,1])$value
+        num <- ts12 - ts1*omega[1,2]/omega[1,1] - lam
+        ne <- num/ts2
+    } else {
+        lam <- eigen(s12)$value
+        num <- 1-2*lam/ts12
+        ne <- num*ts12/ts2
+    }
+    ne <- max(abs(ne))
+    BM <- sqrt(ts1/ts2)
+    ne/BM
+}    
+w <- momentfit:::getMOPW(mod2)
+f(1,w,"LIML")
+```
+
+
 
 
 ## Data Generating Process (for later use)

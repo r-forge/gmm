@@ -27,7 +27,6 @@ setMethod("show","lsefit", function(object) print(object))
 
 ## K-Class functions
 
-
 getK <- function(object, alpha=1, returnRes=FALSE)
 {
     if (!inherits(object, "linearModel"))
@@ -38,12 +37,16 @@ getK <- function(object, alpha=1, returnRes=FALSE)
     {
         k1 <- 1
     } else {
-        X <- model.matrix(object)
-        endo <- cbind(model.response(object@modelF),
-                      X[,object@isEndo])
-        X <- X[,!object@isEndo, drop=FALSE]
+        X2 <- model.matrix(object, "includedEndo")
+        endo <- cbind(modelResponse(object), X2)
+        X <-  model.matrix(object, "includedExo")
         Z <- model.matrix(object, "instruments")
-        e1 <- lm.fit(X, endo)$residuals
+        if (!is.null(X))
+        {
+            e1 <- lm.fit(X, endo)$residuals
+        } else {
+            e1 <- endo
+        }
         e2 <- lm.fit(Z, endo)$residuals
         if (returnRes) Res <- e2[,-1,drop=FALSE]        
         e1 <- crossprod(e1)
@@ -199,12 +202,11 @@ CDtest <- function(object, print=TRUE, SWcrit=FALSE, ...)
         stop("object must be of class linearModel")
     spec <- modelDims(object)
     Z <- model.matrix(object, "instrument")
-    X <- model.matrix(object)
-    z2n <- !(colnames(Z) %in% colnames(X))
-    X1 <- X[,!spec$isEndo, drop=FALSE]
-    X2 <- X[,spec$isEndo, drop=FALSE]
+    Z2 <- model.matrix(object, "excludedExo")
+    X1 <- model.matrix(object, "includedExo")
+    X2 <- model.matrix(object, "includedEndo")
+    z2n <- colnames(Z) %in% colnames(Z2)
     secS <- lm.fit(Z, X2)        
-    Z2 <- Z[,z2n,drop=FALSE]
     df <- ncol(Z2)    
     if (ncol(Z2)==1 & SWcrit)
     {
@@ -218,7 +220,7 @@ CDtest <- function(object, print=TRUE, SWcrit=FALSE, ...)
            else
                Z[,z2n,drop=FALSE]%*%secS$coef[z2n]
     e <- secS$residuals
-    e2 <- lm.fit(X1, X2)$residuals
+    e2 <- if (!is.null(X1)) lm.fit(X1, X2)$residuals else X2
     e <- crossprod(e)/(spec$n-spec$q)
     e2 <- crossprod(e2, tmp)
     test <- min(eigen(solve(e,e2))$val)/df
@@ -327,26 +329,24 @@ SWtest <- function(object, j=1, print=TRUE, ...)
                       "Returning the F-test", sep=""))
         return(CDtest(object, print))
     }
-    Z <- model.matrix(object, "instrument")
-    X <- model.matrix(object)
-    X2 <- X[, spec$isEndo, drop=FALSE]
-    X1 <- X[, !spec$isEndo, drop=FALSE]
-    if (ncol(X1))
+    Z2 <- model.matrix(object, "excludedExo")
+    X1 <- model.matrix(object, "includedExo")
+    X2 <- model.matrix(object, "includedEndo")
+    if (!is.null(X1))
     {
-        z2n <- !(colnames(Z) %in% colnames(X1))
-        fitX1 <- lm.fit(X1, Z[,z2n])
-        Z <- as.matrix(fitX1$residuals)
+        fitX1  <- lm.fit(X1, Z2)
+        Z2 <- fitX1$residuals
         X2 <- qr.resid(fitX1$qr, X2)
     }
     Xj <- X2[,j]
     Xjm <- X2[,-j,drop=FALSE]
-    fsReg <- lm.fit(Z, Xjm)
+    fsReg <- lm.fit(Z2, Xjm)
     Xjmhat <- as.matrix(fsReg$fitted)
     fit <- lm.fit(Xjmhat, Xj)
     e <- Xj-c(Xjm%*%fit$coefficients)
     ehat <- qr.fitted(fsReg$qr, e)
     sig <- sum((e-ehat)^2)/(spec$n-spec$q)
-    test <- sum(ehat^2)/sig/(ncol(Z)-ncol(Xjm))
+    test <- sum(ehat^2)/sig/(ncol(Z2)-ncol(Xjm))
     if (!print)
         return(test)
     cat("Sanderson and Windmeijer Test for Weak Instruments\n")
@@ -354,7 +354,7 @@ SWtest <- function(object, j=1, print=TRUE, ...)
     add1 <- "(-1 for the critical values)"
     add2 <- paste("(-", ncol(X2)-1, " for the critical values)", sep="")
     cat("Number of included Endogenous: ", ncol(X2), add1, "\n", sep="")
-    cat("Number of excluded Exogenous: ", sum(z2n), add2, "\n", sep="")
+    cat("Number of excluded Exogenous: ", ncol(Z2), add2, "\n", sep="")
     cat("The test is not robust to heteroskedasticity\n")    
     cat("Statistics: ", formatC(test, ...), "\n\n", sep="")
     SYTables(object, TRUE, TRUE)
@@ -367,7 +367,7 @@ MOPtest <- function(object, tau=0.10, size=0.05, print=TRUE, ...)
 {
     if (!inherits(object, "linearModel"))
         stop("object must be of class linearModel")
-    spec <- modelDims(object)
+    spec <- modelDims(object)    
     if (sum(spec$isEndo)<1)
     {
         warning("The model does not contain endogenous variables")
@@ -378,31 +378,33 @@ MOPtest <- function(object, tau=0.10, size=0.05, print=TRUE, ...)
         warning("The MOP test is defined for models with only one endogenous variable")
         return(NA)
     }
-    Z <- model.matrix(object, "instrument")
-    X <- model.matrix(object)
-    X2 <- X[, spec$isEndo, drop=FALSE]
-    X1 <- X[, !spec$isEndo, drop=FALSE]
-    if (ncol(X1))
+    Z2 <- model.matrix(object, "excludedExo")
+    X1 <- model.matrix(object, "includedExo")
+    X2 <- model.matrix(object, "includedEndo")
+    y <- modelResponse(object)
+    if (!is.null(X1))
     {
-        z2n <- !(colnames(Z) %in% colnames(X1))
-        fitX1 <- lm.fit(X1, Z[,z2n])
-        Z <- as.matrix(fitX1$residuals)
+        fitX1  <- lm.fit(X1, Z2)
+        Z2 <- fitX1$residuals
         X2 <- qr.resid(fitX1$qr, X2)
+        y <- qr.resid(fitX1$qr, y)
     }
-    Z <- qr.Q(qr(Z))
-    colnames(Z) <- paste("Z", 1:ncol(Z), sep="")
-    g <- reformulate(colnames(Z), colnames(X2), FALSE)
-    h <- reformulate(colnames(Z), NULL, FALSE)
-    dat <- data.frame(cbind(X2, Z))
+    Z2 <- qr.Q(qr(Z2))*sqrt(nrow(Z2))
+    colnames(Z2) <- paste("Z", 1:ncol(Z2), sep="")
+    g <- reformulate(colnames(Z2), colnames(X2), FALSE)
+    h <- reformulate(colnames(Z2), NULL, FALSE)
+    dat <- data.frame(cbind(X2, Z2))
     m <- momentModel(g, h, data=dat, vcov=object@vcov,
                      vcovOptions=object@vcovOptions)
-    Pi <- lm.fit(Z, X2)$coefficients
+    Pi <- c(crossprod(Z2,X2))/nrow(Z2)
     v <- vcov(m, Pi)
     ev <- eigen(v)$val
     se <- sum(ev)
     se2 <- sum(ev^2)
     me <- max(ev)
-    Feff <- sum(crossprod(X2, Z)^2)/se/spec$n
+    ## Z'Y = Pi x n, so Y'Z'ZY = sum(Pi^2)*n^2
+    ## there for Y'Z'ZY/se/n = sim(Pi^2)*n/se
+    Feff <- sum(Pi^2)/se*spec$n
     x <- 1/tau
     Keff <- se^2*(1+2*x)/(se2+2*x*se*me)
     crit <- qchisq(1-size, Keff, Keff*x)/Keff
@@ -437,28 +439,32 @@ getMOPW <- function(object)
         warning("The MOP test is defined for models with only one endogenous variable")
         return(NA)
     }
-    spec <- modelDims(object)
     Z2 <- model.matrix(object, "excludedExo")
     X1 <- model.matrix(object, "includedExo")
     X2 <- model.matrix(object, "includedEndo")
     y <- modelResponse(object)
-    fitX1  <- lm.fit(X1, Z2)
-    Z2 <- fitX1$residuals
-    X2 <- qr.resid(fitX1$qr, X2)
-    y <- qr.resid(fitX1$qr, y)
-    Z2 <- qr.Q(qr(Z2))
-    Z <- rbind(cbind(Z2, matrix(0, nrow(Z2), ncol(Z2))),
-               cbind(matrix(0, nrow(Z2), ncol(Z2)), Z2))
-    colnames(Z) = paste("Z", 1:ncol(Z), sep="")
-    dat <- as.data.frame(cbind(y=c(y,X2),Z))
-    g <- reformulate(colnames(Z), "y", FALSE)
-    h <- reformulate(colnames(Z), NULL, FALSE)
-    m <- momentModel(g, h, data = dat, vcov=object@vcov,
-                     vcovOptions = object@vcovOptions)
-    b <- lm.fit(Z,dat$y)$coefficients    
-    w <- vcov(m, b)*2
-    w11 <- w[1:ncol(Z2), 1:ncol(Z2)]
-    w22 <- w[(ncol(Z2)+1):ncol(w), (ncol(Z2)+1):ncol(w)]
-    w21 <- w[(ncol(Z2)+1):ncol(w), 1:ncol(Z2)]
-    list(w11=w11,w22=w22,w21=w21)
+    if (!is.null(X1))
+    {
+        fitX1  <- lm.fit(X1, Z2)
+        Z2 <- fitX1$residuals
+        X2 <- qr.resid(fitX1$qr, X2)
+        y <- qr.resid(fitX1$qr, y)
+    }
+    Z2 <- qr.Q(qr(Z2))*sqrt(nrow(Z2))
+    colnames(Z2) = paste("Z", 1:ncol(Z2), sep="")    
+    b <- c(b1 <- crossprod(Z2,y)/spec$n,
+           b2 <- crossprod(Z2,X2)/spec$n)
+    g <- list(reformulate(colnames(Z2), "y", FALSE),
+              reformulate(colnames(Z2), colnames(X2), FALSE))
+    h <- reformulate(colnames(Z2), NULL, FALSE)
+    dat <- as.data.frame(cbind(y=y,X2,Z2))
+    m <- sysMomentModel(g=g, list(h), data = dat, vcov=object@vcov,
+                        vcovOptions = object@vcovOptions)
+    v <- cbind(y-Z2%*%b1, X2-Z2%*%b2)
+    omega <- crossprod(v)/nrow(v)
+    w <- vcov(m, list(b1,b2))
+    w1 <- w[1:ncol(Z2), 1:ncol(Z2)]
+    w2 <- w[(ncol(Z2)+1):ncol(w), (ncol(Z2)+1):ncol(w)]
+    w12 <- w[(ncol(Z2)+1):ncol(w), 1:ncol(Z2)]
+    list(w1=w1,w2=w2,w12=w12,omega=omega)
 }

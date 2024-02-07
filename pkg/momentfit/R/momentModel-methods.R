@@ -129,34 +129,31 @@ setMethod("model.matrix", signature("linearModel"),
               if (type == "regressors")
               {
                   ti <- attr(object@modelF, "terms")
-                  mat <- as.matrix(model.matrix(ti, object@modelF)[,])
+                  mat <- as.matrix(model.matrix(ti, object@modelF)[,,drop=FALSE])
               } else if (type == "instruments"){
                   ti <- attr(object@instF, "terms")
-                  mat <- as.matrix(model.matrix(ti, object@instF)[,])
+                  mat <- as.matrix(model.matrix(ti, object@instF)[,,drop=FALSE])
               } else {
                   X <- model.matrix(object)
                   Z <- model.matrix(object, "instruments")
-                  z1 <- colnames(Z) %in% colnames(X)
+                  x1n <- colnames(Z) %in% colnames(X)
                   endo <- modelDims(object)$isEndo 
                   if (type == "excludedExo")
                   {
-                      if (all(!z1))
+                      if (all(x1n))
                       {
-                          warning("No excluded Exogenous Variables")
                           return(NULL)
                       }
-                      mat <- Z[,!z1,drop=FALSE]
+                      mat <- Z[,!x1n,drop=FALSE]
                   } else if (type == "includedExo") {
                       if (all(endo))
                       {
-                          warning("No included Exogenous Variables")
                           return(NULL)
                       }
                       mat <- X[,!endo,drop=FALSE]
                   } else {
                       if (all(!endo))
                       {
-                          warning("No included endogenous variables")
                           return(NULL)
                       }
                       mat <- X[,endo,drop=FALSE]
