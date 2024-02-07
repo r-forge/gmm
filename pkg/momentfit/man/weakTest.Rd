@@ -20,7 +20,8 @@ SWtest(object, j=1, print=TRUE, ...)
 
 CDtest(object, print=TRUE, SWcrit=FALSE, ...)
 
-MOPtest(object, tau=0.10, size = 0.05, print=TRUE, ...)
+MOPtest(object, tau=0.10, size=0.05, print=TRUE,
+        estMethod = c("TSLS", "LIML"), simplified = TRUE, ...)
 
 SYTables(object, print=TRUE, SWcrit=FALSE)
 
@@ -40,6 +41,14 @@ SYTables(object, print=TRUE, SWcrit=FALSE)
   \item{tau}{The desired bias.}
 
   \item{size}{The size of the test for the critical value.}
+
+  \item{estMethod}{Which method we want to test the weak instruments
+  for? The method determined the critical value associated with a given
+  relative bias.}
+
+\item{simplified}{Should we perform the simplified test? The test
+  produce more conservative critical values. The generalized test is
+  computationally more demanding.}
   
   \item{print}{
     If code{TRUE}, the result is printed and nothing is returned. See

@@ -599,7 +599,6 @@ y &=& X_2\beta_2 + u = Z_2[\Pi_2\beta_2] + v\\
 X_2 &=& Z_2 \Pi_2 + e
 \end{eqnarray*}
 
-
 For example, we can compute $W_2$ above as follows for `mod2`.
 
 - We extract $Z_2$, $X_1$, $X_2$ and $y$,
@@ -655,13 +654,12 @@ $W_{12}$ which is the asymptotic covariance between $Z_2'e/\sqrt{n}$
 and $Z_2'v/\sqrt{n}$. This can be done by writing the model as a
 system of equations with the same regressors and instruments. The
 above `g` is the second equation, so we need to add the first in a
-list and repeat `h` twice in the list of instruments:
+list and put `h` in a list:
 
 ```{r}
 dat <- as.data.frame(cbind(y=y,X2,Z2))
-g <- list(reformulate(colnames(Z2), "y", FALSE),
-          g)
-h <- list(h,h)
+g <- list(reformulate(colnames(Z2), "y", FALSE),  g)
+h <- list(h)
 m <- sysMomentModel(g,h,data=dat,vcov="MDS")
 b <- list(c(crossprod(Z2,y)/nrow(Z2)),
           c(crossprod(Z2,X2)/nrow(Z2)))
@@ -685,7 +683,7 @@ returns the different $\hat{W}$'s separately for convenience. Here we
 see $\hat{W}_2$:
 
 ```{r}
-res <- momentfit:::getMOPW(mod2)
+res <- momentfit:::getMOPw(mod2)
 res$w2
 ```
 
@@ -698,42 +696,41 @@ effective degrees of freedom:
 K_{eff} = \frac{[\tr(\hat W_2)]^2(1+2x)}{\tr(\hat{W}_2'\hat{W}_2)\max\eval(\hat W_2)}
 \]
 
-In the simplified version, the parameter $x$ is simply set to
-$1/\tau$, where $\tau$ is the worst bias relative to the
-benchmark. For the generalized test, $x$ depends on
-$B_e(\hat{W},\hat{\omega})$ for $e$ = LIML or TSLS, which needs to be
-computed using a one dimentional optimizer.
+where $x=B_e(\hat{W},\hat{\Omega})/\tau$, where $\tau$ is the worst
+bias relative to the benchmark and $B_e(\hat{W},\hat{\omega})$ is some
+function. In the simplified version, the parameter $x$ is equal to
+$1/\tau$, so only $\hat W_2$ is needed. For the generalized test, $x$
+depends on $B_e(\hat{W},\hat{\omega})$ for $e$ = LIML or TSLS, which
+needs to be computed using a one dimentional optimizer. The function
+`getMOPx` returns the value of `x`. The main arguments are `w`, which
+is the output from `getMOPw`, `tau` that we explained above and the
+type of estimation we want to test the instruments for. As usual, LIML
+is less biased so it requires a smaller $F_{eff}$ to get the same
+relative bias as TSLS.
 
 ```{r}
-f <- function(beta, w, type)
-{
-    s1 <- w$w1-2*beta*w$w12+beta^2*w$w2
-    s2 <- w$w2
-    s12 <- w$w12-beta*w$w2
-    ts1 <- sum(diag(s1))
-    ts2 <- sum(diag(s2))
-    ts12 <- sum(diag(s12))
-    omega <- w$omega
-    if (type == "LIML")
-    {
-        lam <- eigen(2*s12-omega[1,2]*s1/omega[1,1])$value
-        num <- ts12 - ts1*omega[1,2]/omega[1,1] - lam
-        ne <- num/ts2
-    } else {
-        lam <- eigen(s12)$value
-        num <- 1-2*lam/ts12
-        ne <- num*ts12/ts2
-    }
-    ne <- max(abs(ne))
-    BM <- sqrt(ts1/ts2)
-    ne/BM
-}    
-w <- momentfit:::getMOPW(mod2)
-f(1,w,"LIML")
+momentfit:::getMOPx(w=res, tau=0.10, type="LIML")
 ```
 
+By default, the `MOPtest` function computes the simplified test, which
+is the one obtained above. For the generalized test, we set the
+argument `simplified` to `FALSE`.
 
+```{r}
+MOPtest(mod2, simplified=FALSE, estMethod="LIML")
+```
 
+The test is the same as above, but the critical value is smaller,
+which is expected since the simplify test tends to have higher
+critical value, especially when the number of excluded instruments is
+small. We can compare the test with the one for TSLS:
+
+```{r}
+MOPtest(mod2, simplified=FALSE, estMethod="TSLS")
+```
+
+It seems that we are rejecting the weak instrument hypothesis for TSLS
+and not for LIML. This is surprising. We'll need to investigate.
 
 ## Data Generating Process (for later use)
 

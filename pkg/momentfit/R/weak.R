@@ -363,8 +363,66 @@ SWtest <- function(object, j=1, print=TRUE, ...)
 
 ## Montiel Olea and Pflueger (2013)
 
-MOPtest <- function(object, tau=0.10, size=0.05, print=TRUE, ...)
+# computing x for the generalized test
+
+getMOPx <- function(w, tau, type = c("TSLS", "LIML"), e=0.0001, nP = 10000,
+                    maxi = 1000)
 {
+    type <- match.arg(type)
+    fb <- function(beta, w, type)
+    {
+        s1 <- w$w1-2*beta*w$w12+beta^2*w$w2
+        sig1 <- w$omega[1,1]-2*beta*w$omega[1,2]+beta^2*w$omega[2,2]
+        s2 <- w$w2
+        sig2 <- w$omega[2,2]
+        s12 <- w$w12-beta*w$w2
+        sig12 <- w$omega[1,2]-beta*w$omega[2,2]
+        ts1 <- sum(diag(s1))
+        ts2 <- sum(diag(s2))
+        ts12 <- sum(diag(s12))
+        if (type == "LIML")
+        {
+            tmp <-  2*s12-sig12*s1/sig1
+            tmp <- 0.5*tmp + 0.5*t(tmp)
+            lam <- eigen(tmp)$value[c(1,nrow(tmp))]
+            num <- ts12 - ts1*sig12/sig1 - lam
+            ne <- num/ts2
+        } else {
+            lam <- eigen(0.5*s12+0.5*t(s12))$value[c(1,nrow(s12))]
+            num <- 1-2*lam/ts12
+            ne <- num*ts12/ts2
+        }
+        BM <- sqrt(ts1/ts2)
+        max(abs(ne))/BM
+    }
+    ew2 <- eigen(w$w2)$value
+    maxf <- if (type == "LIML") max(ew2)/sum(ew2) else 1-2*min(ew2)/sum(ew2)
+    b <- 1
+    i <- 1
+    while (TRUE)
+    {
+        crit <- min(abs(fb(b, w, type)/maxf - 1),
+                    abs(fb(-b, w, type)/maxf - 1))
+        if (crit <= e)
+            break
+        i <- i+1
+        b <- b*2
+        if (i>maxi)
+        {
+            warning("max iteration to find Brange reached")
+            break
+        }
+    }
+    res <- optimize(fb, c(-b,b), w=w, type=type, maximum=TRUE)
+    Be <- res$objective
+    Be/tau
+}
+
+
+MOPtest <- function(object, tau=0.10, size=0.05, print=TRUE,
+                    estMethod = c("TSLS", "LIML"), simplified = TRUE, ...)
+{
+    estMethod <- match.arg(estMethod)
     if (!inherits(object, "linearModel"))
         stop("object must be of class linearModel")
     spec <- modelDims(object)    
@@ -391,21 +449,46 @@ MOPtest <- function(object, tau=0.10, size=0.05, print=TRUE, ...)
     }
     Z2 <- qr.Q(qr(Z2))*sqrt(nrow(Z2))
     colnames(Z2) <- paste("Z", 1:ncol(Z2), sep="")
-    g <- reformulate(colnames(Z2), colnames(X2), FALSE)
-    h <- reformulate(colnames(Z2), NULL, FALSE)
-    dat <- data.frame(cbind(X2, Z2))
-    m <- momentModel(g, h, data=dat, vcov=object@vcov,
-                     vcovOptions=object@vcovOptions)
-    Pi <- c(crossprod(Z2,X2))/nrow(Z2)
-    v <- vcov(m, Pi)
-    ev <- eigen(v)$val
+    if (simplified)
+    {
+        if (estMethod == "LIML")
+        {
+            warning("The simplified test is not defined for LIML")
+            return(invisible())
+        }
+        g <- reformulate(colnames(Z2), colnames(X2), FALSE)
+        h <- reformulate(colnames(Z2), NULL, FALSE)
+        dat <- data.frame(cbind(X2, Z2))
+        m <- momentModel(g, h, data=dat, vcov=object@vcov,
+                         vcovOptions=object@vcovOptions)
+        b2 <- c(crossprod(Z2,X2))/nrow(Z2)
+        w <- list(w2=vcov(m, b2))
+        x <- 1/tau
+    } else {
+        b1 <- crossprod(Z2,y)/spec$n
+        b2 <- crossprod(Z2,X2)/spec$n
+        g <- list(reformulate(colnames(Z2), "y", FALSE),
+                  reformulate(colnames(Z2), colnames(X2), FALSE))
+        h <- reformulate(colnames(Z2), NULL, FALSE)
+        dat <- as.data.frame(cbind(y=y,X2,Z2))
+        m <- sysMomentModel(g=g, list(h), data = dat, vcov=object@vcov,
+                            vcovOptions = object@vcovOptions)
+        v <- cbind(y-Z2%*%b1, X2-Z2%*%b2)
+        omega <- crossprod(v)/nrow(v)
+        w <- list(w1 = w[1:ncol(Z2), 1:ncol(Z2)],
+                  w2 = w[(ncol(Z2)+1):ncol(w), (ncol(Z2)+1):ncol(w)],
+                  w12 = w[(ncol(Z2)+1):ncol(w), 1:ncol(Z2)],
+                  omega = crossprod(v)/nrow(v))
+        x <- getMOPx(w, tau, estMethod, ...)
+    }
+    ev <- eigen(w$w2)$val
     se <- sum(ev)
     se2 <- sum(ev^2)
     me <- max(ev)
+
     ## Z'Y = Pi x n, so Y'Z'ZY = sum(Pi^2)*n^2
     ## there for Y'Z'ZY/se/n = sim(Pi^2)*n/se
-    Feff <- sum(Pi^2)/se*spec$n
-    x <- 1/tau
+    Feff <- sum(b2^2)/se*spec$n
     Keff <- se^2*(1+2*x)/(se2+2*x*se*me)
     crit <- qchisq(1-size, Keff, Keff*x)/Keff
     pv <- 1-pchisq(Feff*Keff, Keff, Keff*x)
@@ -416,6 +499,7 @@ MOPtest <- function(object, tau=0.10, size=0.05, print=TRUE, ...)
         return(c(Feff=Feff, Keff=Keff, x=x, critValue=crit, pvalue=pv))
     cat("Montiel Olea and Pflueger Test for Weak Instruments\n")
     cat("****************************************************\n", sep="")
+    cat(ifelse(simplified, "Simplified Test", "Generalized Test\n"))
     cat("Type of LS covariance matrix: ", vcov, "\n", sep="")
     cat("Number of included Endogenous: ", ncol(X2), "\n", sep="")
     cat("Effective degrees of freedom: ", Keff, "\n", sep="")
@@ -426,7 +510,7 @@ MOPtest <- function(object, tau=0.10, size=0.05, print=TRUE, ...)
     invisible()
 }
 
-getMOPW <- function(object)
+getMOPw <- function(object)
 {
     spec <- modelDims(object)
     if (sum(spec$isEndo)<1)
