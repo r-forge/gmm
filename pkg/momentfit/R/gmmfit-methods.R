@@ -182,13 +182,8 @@ setMethod("summary", "gmmfit",
                                                      lower.tail = FALSE))
               df.adj <- attr(v, "type")$df.adj
               stest <- specTest(object, df.adj=df.adj)
-              vcovType <- switch(object@model@vcov,
-                                 HAC="HAC",
-                                 iid="OLS",
-                                 MDS="HC",
-                                 CL="CL")
               strength <-  if (testStrength){
-                               momentStrength(object@model, coef(object), vcovType)
+                               momentStrength(object@model, coef(object))
                            } else { list(strength=NULL, mess=NULL) }
               dimnames(coef) <- list(names(par), 
                                      c("Estimate", "Std. Error", "t value", "Pr(>|t|)"))

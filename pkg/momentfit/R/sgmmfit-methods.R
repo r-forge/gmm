@@ -199,11 +199,9 @@ setMethod("summary","sgmmfit",
               names(coef) <- eqnNames
               df.adj <- attr(v, "type")$df.adj
               stest <- specTest(object, df.adj = df.adj)
-              vcovType <- switch(object@model@vcov, HAC = "HAC", iid = "OLS", 
-                                 MDS = "HC")
               strength <- lapply(1:neqn, function(i) {
                   if (inherits(object@model, "slinearModel") & testStrength)
-                      momentStrength(object@model[i], par[[i]], vcovType)
+                      momentStrength(object@model[i], par[[i]])
                   else
                       list(strength=NULL, mess=NULL)})             
               wSpec <- object@wObj@wSpec

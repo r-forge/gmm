@@ -742,14 +742,15 @@ setMethod("momentStrength", signature("formulaModel"),
           })
 
 setMethod("momentStrength", signature("linearModel"), 
-          function(object, theta, vcovType=c("OLS","HC","HAC","CL")){
+          function(object, theta){
               spec <- modelDims(object)
+              vcovType <- object@vcov
               getF <- function(i)
               {
                   resu <- lm(X[, i] ~ Z - 1)
-                  v <- switch(vcovType, OLS = vcov(resu),
-                              HC = vcovHC(resu, "HC1"),
-                              HAC = vcovHAC(resu),
+                  v <- switch(vcovType, iid = vcov(resu),
+                              MDS = do.call(vcovHC, c(object@vcovOptions, list(x = resu))),
+                              HAC = do.call(vcovHC, c(object@vcovOptions, list(x = resu))),
                               CL = do.call(vcovCL, c(object@vcovOptions, list(x = resu))))
                   v <- v[!exoInst, !exoInst]
                   b <- coef(resu)[!exoInst]
@@ -759,7 +760,6 @@ setMethod("momentStrength", signature("linearModel"),
               }
               EndoVars <- !(spec$parNames %in% spec$momNames)
               exoInst <- spec$momNames %in% spec$parNames
-              vcovType <- match.arg(vcovType)
               if (all(!EndoVars)) {
                   fstats <- NULL
                   mess <- "No endogenous variables: no strength measure"
@@ -1154,8 +1154,12 @@ setMethod("update", "momentModel",
                       }
                   }
               }
+              newVcov <- FALSE
               if (!is.null(arg[["vcov"]]) && !object@smooth)
+              {
+                  newVcov <- arg[["vcov"]] != object@vcov
                   object@vcov <- arg[["vcov"]]
+              }
               if (object@vcov == "HAC" || object@smooth)
               {                  
                   if (is.null(arg$vcovOptions))
@@ -1169,6 +1173,19 @@ setMethod("update", "momentModel",
                                                      object@smooth)              
                   if (object@smooth && !identical(arg$vcovOptions, object@vcovOptions))
                       chk <- TRUE
+                  object@vcovOptions <- arg$vcovOptions
+              } else {
+                  if (is.null(arg$vcovOptions))
+                      arg$vcovOptions <- list()
+                  if (newVcov)
+                      object@vcovOptions <- list()
+                  if (length(object@vcovOptions))
+                  {
+                      tmp <- c(arg$vcovOptions, list(object=object@vcovOptions))
+                      arg$vcovOptions <- do.call(update, tmp)
+                  }
+                  arg$vcovOptions <- .getVcovOptions(object@vcov, NULL, arg$vcovOptions,
+                                                     FALSE)
                   object@vcovOptions <- arg$vcovOptions
               }
               if (is.null(arg$survOptions))

@@ -396,7 +396,7 @@ getMOPx <- function(w, tau, type = c("TSLS", "LIML"), e=0.0001, nP = 10000,
         max(abs(ne))/BM
     }
     ew2 <- eigen(w$w2)$value
-    maxf <- if (type == "LIML") max(ew2)/sum(ew2) else 1-2*min(ew2)/sum(ew2)
+    maxf <- if (type == "LIML") max(ew2)/sum(ew2) else abs(1-2*min(ew2)/sum(ew2))
     b <- 1
     i <- 1
     while (TRUE)
@@ -418,9 +418,9 @@ getMOPx <- function(w, tau, type = c("TSLS", "LIML"), e=0.0001, nP = 10000,
     Be/tau
 }
 
-
 MOPtest <- function(object, tau=0.10, size=0.05, print=TRUE,
-                    estMethod = c("TSLS", "LIML"), simplified = TRUE, ...)
+                    estMethod = c("TSLS", "LIML"), simplified = TRUE,
+                    digits = max(3L, getOption("digits") - 3L), ...)
 {
     estMethod <- match.arg(estMethod)
     if (!inherits(object, "linearModel"))
@@ -443,18 +443,27 @@ MOPtest <- function(object, tau=0.10, size=0.05, print=TRUE,
     if (!is.null(X1))
     {
         fitX1  <- lm.fit(X1, Z2)
-        Z2 <- fitX1$residuals
+        Z2 <- as.matrix(fitX1$residuals)
         X2 <- qr.resid(fitX1$qr, X2)
         y <- qr.resid(fitX1$qr, y)
     }
     Z2 <- qr.Q(qr(Z2))*sqrt(nrow(Z2))
     colnames(Z2) <- paste("Z", 1:ncol(Z2), sep="")
+    if ((ncol(Z2)-ncol(X2))<2)
+        if (!simplified)
+        {
+            warning(paste("The generalized test is for models with 2 ",
+                          "and more over-identifying restrictions:\n",
+                          " simplified is changed to TRUE", sep=""))
+            simplified <- TRUE
+        }
     if (simplified)
     {
         if (estMethod == "LIML")
         {
-            warning("The simplified test is not defined for LIML")
-            return(invisible())
+            warning(paste("The simplified test is not defined for LIML\n",
+                          "estMethod changed to TSLS", sep=""))
+            estMethod <- "TSLS"
         }
         g <- reformulate(colnames(Z2), colnames(X2), FALSE)
         h <- reformulate(colnames(Z2), NULL, FALSE)
@@ -475,9 +484,10 @@ MOPtest <- function(object, tau=0.10, size=0.05, print=TRUE,
                             vcovOptions = object@vcovOptions)
         v <- cbind(y-Z2%*%b1, X2-Z2%*%b2)
         omega <- crossprod(v)/nrow(v)
-        w <- list(w1 = w[1:ncol(Z2), 1:ncol(Z2)],
-                  w2 = w[(ncol(Z2)+1):ncol(w), (ncol(Z2)+1):ncol(w)],
-                  w12 = w[(ncol(Z2)+1):ncol(w), 1:ncol(Z2)],
+        w <- vcov(m, list(b1,b2))
+        w <- list(w1 = w[1:ncol(Z2), 1:ncol(Z2), drop=FALSE],
+                  w2 = w[(ncol(Z2)+1):ncol(w), (ncol(Z2)+1):ncol(w), drop=FALSE],
+                  w12 = w[1:ncol(Z2), (ncol(Z2)+1):ncol(w), drop=FALSE],
                   omega = crossprod(v)/nrow(v))
         x <- getMOPx(w, tau, estMethod, ...)
     }
@@ -485,7 +495,6 @@ MOPtest <- function(object, tau=0.10, size=0.05, print=TRUE,
     se <- sum(ev)
     se2 <- sum(ev^2)
     me <- max(ev)
-
     ## Z'Y = Pi x n, so Y'Z'ZY = sum(Pi^2)*n^2
     ## there for Y'Z'ZY/se/n = sim(Pi^2)*n/se
     Feff <- sum(b2^2)/se*spec$n
@@ -499,14 +508,16 @@ MOPtest <- function(object, tau=0.10, size=0.05, print=TRUE,
         return(c(Feff=Feff, Keff=Keff, x=x, critValue=crit, pvalue=pv))
     cat("Montiel Olea and Pflueger Test for Weak Instruments\n")
     cat("****************************************************\n", sep="")
-    cat(ifelse(simplified, "Simplified Test", "Generalized Test\n"))
+    cat(ifelse(simplified, "Simplified Test", "Generalized Test"),
+        " for ", estMethod, "\n", sep="")
     cat("Type of LS covariance matrix: ", vcov, "\n", sep="")
     cat("Number of included Endogenous: ", ncol(X2), "\n", sep="")
     cat("Effective degrees of freedom: ", Keff, "\n", sep="")
     cat("x: ", x, "\n", sep="")
     cat("Statistics: ", formatC(Feff, ...), "\n", sep="")
-    cat(paste("Critical Value (size=",size,"): ", formatC(crit, ...), "\n", sep=""))
-    cat(paste("P-Value: ", formatC(pv, ...), "\n\n", sep=""))    
+    cat(paste("Critical Value (size=",size,"): ", formatC(crit, digits=digits),
+              "\n", sep=""))
+    cat(paste("P-Value: ", formatC(pv, digits=digits), "\n\n", sep=""))    
     invisible()
 }
 
@@ -530,7 +541,7 @@ getMOPw <- function(object)
     if (!is.null(X1))
     {
         fitX1  <- lm.fit(X1, Z2)
-        Z2 <- fitX1$residuals
+        Z2 <- as.matrix(fitX1$residuals)
         X2 <- qr.resid(fitX1$qr, X2)
         y <- qr.resid(fitX1$qr, y)
     }
@@ -547,8 +558,8 @@ getMOPw <- function(object)
     v <- cbind(y-Z2%*%b1, X2-Z2%*%b2)
     omega <- crossprod(v)/nrow(v)
     w <- vcov(m, list(b1,b2))
-    w1 <- w[1:ncol(Z2), 1:ncol(Z2)]
-    w2 <- w[(ncol(Z2)+1):ncol(w), (ncol(Z2)+1):ncol(w)]
-    w12 <- w[(ncol(Z2)+1):ncol(w), 1:ncol(Z2)]
+    w1 <- w[1:ncol(Z2), 1:ncol(Z2), drop=FALSE]
+    w2 <- w[(ncol(Z2)+1):ncol(w), (ncol(Z2)+1):ncol(w), drop=FALSE]
+    w12 <- w[(ncol(Z2)+1):ncol(w), 1:ncol(Z2), drop=FALSE]
     list(w1=w1,w2=w2,w12=w12,omega=omega)
 }

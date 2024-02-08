@@ -21,7 +21,8 @@ SWtest(object, j=1, print=TRUE, ...)
 CDtest(object, print=TRUE, SWcrit=FALSE, ...)
 
 MOPtest(object, tau=0.10, size=0.05, print=TRUE,
-        estMethod = c("TSLS", "LIML"), simplified = TRUE, ...)
+        estMethod = c("TSLS", "LIML"), simplified = TRUE,
+        digits = max(3L, getOption("digits") - 3L), ...)
 
 SYTables(object, print=TRUE, SWcrit=FALSE)
 
@@ -56,10 +57,14 @@ SYTables(object, print=TRUE, SWcrit=FALSE)
     \code{FALSE}
   }
 
+  \item{digits}{The number of digits to print when \code{print} is set
+  to \code{TRUE}.}
+
   \item{SWcrit}{If true, the critical values and the test are ajusted to
   Sanderson and Windmeijer (2016). See details.}
   
-  \item{...}{Arguments passed to \code{\link{formatC}} to print the statistic.
+  \item{...}{Arguments passed to \code{\link{formatC}} to print the
+  statistic. For \code{MOPtest}, they are passed to \code{momentfit:::getMOPx}.
   }
 }
 

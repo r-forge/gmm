@@ -56,6 +56,14 @@
                     }
                 if (option$type != "HC0")
                     stop("Only meatCL with type HC0 is allowed")
+            } else if (type=="MDS") {
+                option <- list(type="HC3")
+                if (length(addO) > 0)
+                {
+                    if (!all(names(addO) %in% names(option)))
+                        stop(paste("Wrong options for vcov of type", type))
+                    option[names(addO)] <- addO
+                }
             } else {
                 option <- list()
             }

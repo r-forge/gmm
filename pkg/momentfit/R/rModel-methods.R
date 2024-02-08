@@ -790,7 +790,7 @@ setMethod("gmmFit", signature("rformulaModel"), valueClass="gmmfit",
 ### the model has been modified.
 
 setMethod("momentStrength", "rlinearModel",
-          function(object, theta, vcovType = c("OLS", "HC", "HAC"))  {
+          function(object, theta)  {
               fstats <- NULL
               mess <- "No strength measure available for restricted models"  
               list(strength=fstats, mess=mess)

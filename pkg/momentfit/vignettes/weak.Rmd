@@ -732,6 +732,25 @@ MOPtest(mod2, simplified=FALSE, estMethod="TSLS")
 It seems that we are rejecting the weak instrument hypothesis for TSLS
 and not for LIML. This is surprising. We'll need to investigate.
 
+As mentioned by the authors, the efficient F is the robust F when the
+model is just identified. The model `mod4` created above is
+just-identified, but we need to change the argument `vcov` to `"MDS"`:
+
+```{r}
+mod4 <- update(mod4, vcov="MDS")
+MOPtest(mod4, estMethod="TSLS", print=FALSE)["Feff"]
+```
+
+We can compare with the first stage F computed by `momentStrength`. As
+we can see, it is the same as long as we choose the HC0 type.
+
+```{r}
+momentStrength(update(mod4, vcovOptions=list(type="HC0")))$strength
+```
+
+## Testing for weak instruments: @lewis-mertens22
+
+
 ## Data Generating Process (for later use)
 
 The following function is used to generate dataset with $k$
