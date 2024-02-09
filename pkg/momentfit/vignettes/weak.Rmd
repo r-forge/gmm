@@ -19,7 +19,7 @@ header-includes:
 - \newcommand{\diag}{\mathrm{diag}}
 - \newcommand{\Prob}{\mathrm{Pr}}
 - \newcommand{\Var}{\mathrm{Var}}
-- \newcommand{\Vect}{\mathrm{Vec}}
+- \newcommand{\vect}{\mathrm{vec}}
 - \newcommand{\Cov}{\mathrm{Cov}}
 - \newcommand{\Cor}{\mathrm{Cor}}
 - \newcommand{\tr}{\mathrm{tr}}
@@ -749,6 +749,115 @@ momentStrength(update(mod4, vcovOptions=list(type="HC0")))$strength
 ```
 
 ## Testing for weak instruments: @lewis-mertens22
+
+The authors generalize the MOP test for models with multiple
+endogenous variables. We first need to compute the matrix $\Phi =
+(I_{k_2}\otimes \vect(I_{l_2}))'[W_2\otimes I_{l_2}](I_{k_2}\otimes
+\vect(I_{l_2}))$. This is clearly not something we want to write
+explicitely. It is unlikely to encounter very large $l_2$ and $k_2$,
+but we want to avoid creating large matrices just in case. If we write
+$W_2$ as a $k_2\times k_2$ block matrix, with $A_{ij}$ being the
+$l_2\times l_2$ matrix in the ith row and jth column, then
+$\Phi_{ij}=\tr(A_{ij})$. The following shows that the function
+`psiMat`, which uses this trace argument, produces the right matrix:
+
+
+```{r}
+w2 <- matrix(1:144, 12, 12)
+w2[lower.tri(w2)] <- t(w2)[lower.tri(w2)]
+k2 <- 3
+l2 <- 4
+phiMatT <- function(w2, k2, l2)
+{
+    A <- kronecker(diag(k2), c(diag(l2)))
+    B <- kronecker(w2, diag(l2))
+    t(A)%*%B%*%A
+}
+
+phiMat <- function(w2, k2, l2)
+{
+    psi <- matrix(NA, k2,k2)
+    for (i in 1:k2)
+    {
+        c0 <- 1+(i-1)*l2
+        c1 <- ncol(w2)
+        di <- diag(w2[,c0:c1])
+        tmp <- colSums(matrix(di, nrow=l2))
+        if (i == 1)
+        {
+            diag(psi) <- tmp
+        } else if (i==k2) {
+            psi[1,k2] <- psi[k2,1] <- tmp
+        } else {
+            j <- seq_len(length(tmp))
+            j <- cbind(j,j)
+            psi[-(1:(i-1)),][j] <- psi[,-(1:(i-1))][j] <- tmp
+        }
+    }
+    psi
+}
+phiMatT(w2,k2,l2)
+phiMat(w2,k2,l2)
+```
+
+The statistic proposed by the authors is
+
+\[
+g_{min} = \min\eval[n\hat\Phi^{-1/2}\hat{\Pi}_2'\hat{\Pi}_2\hat\Phi^{-1/2}]
+\]
+
+It is clear that this is the MOP effective F test when $k_2=1$,
+because $k_2=1$ implies that $\Phi=\tr(W_2)$.
+
+```{r}
+LewMertest <- function(object, tau=0.10, size=0.05, print=TRUE,
+                       estMethod = c("TSLS", "LIML"), simplified = TRUE,
+                       digits = max(3L, getOption("digits") - 3L), ...)
+{
+    estMethod <- match.arg(estMethod)
+    if (!inherits(object, "linearModel"))
+        stop("object must be of class linearModel")
+    spec <- modelDims(object)    
+    if (sum(spec$isEndo)<1)
+    {
+        warning("The model does not contain endogenous variables")
+        return(NA)
+    }    
+    Z2 <- model.matrix(object, "excludedExo")
+    X1 <- model.matrix(object, "includedExo")
+    X2 <- model.matrix(object, "includedEndo")
+    y <- modelResponse(object)
+    if (!is.null(X1))
+    {
+        fitX1  <- lm.fit(X1, Z2)
+        Z2 <- as.matrix(fitX1$residuals)
+        X2 <- qr.resid(fitX1$qr, X2)
+        y <- qr.resid(fitX1$qr, y)
+    }
+    Z2 <- qr.Q(qr(Z2))*sqrt(nrow(Z2))
+    colnames(Z2) <- paste("Z", 1:ncol(Z2), sep="")
+    colnames(X2) <- paste("endo",1:ncol(X2), sep="")
+    b1 <- c(crossprod(Z2,y)/spec$n)
+    Pi2 <- crossprod(Z2,X2)/spec$n
+    g <- c(reformulate(colnames(Z2), "y", FALSE),
+              lapply(colnames(X2), function(ei)
+                  reformulate(colnames(Z2), ei, FALSE)))
+    h <- reformulate(colnames(Z2), NULL, FALSE)
+    dat <- as.data.frame(cbind(y=y,X2,Z2))
+    m <- sysMomentModel(g=g, list(h), data = dat, vcov=object@vcov,
+                        vcovOptions = object@vcovOptions)
+    v <- cbind(y-Z2%*%b1, X2-Z2%*%Pi2)
+    omega <- crossprod(v)/nrow(v)
+    w <- vcov(m, c(list(b1),lapply(1:ncol(Pi2), function(i) Pi2[,i])))
+    w2 <- w[(ncol(Z2)+1):ncol(w),(ncol(Z2)+1):ncol(w)]
+    phi <- phiMat(w2, ncol(X2), ncol(Z2))
+    gmin <- eigen(solve(phi, nrow(Z2)*crossprod(Pi2)))$val[1]
+    gmin
+}
+LewMertest(mod2)
+LewMertest(mod3)
+```
+
 
 
 ## Data Generating Process (for later use)

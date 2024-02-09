@@ -563,3 +563,5 @@ getMOPw <- function(object)
     w12 <- w[(ncol(Z2)+1):ncol(w), 1:ncol(Z2), drop=FALSE]
     list(w1=w1,w2=w2,w12=w12,omega=omega)
 }
+
+
