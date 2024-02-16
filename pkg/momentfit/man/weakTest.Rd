@@ -3,17 +3,19 @@
 \alias{SWtest}
 \alias{MOPtest}
 \alias{SYTables}
+\alias{LewMertest}
 \title{
 Tests for weak Instruments
 }
 \description{
 This is a collection of tests for weak instruments. It includes the
 Cragg and Donald test for the reduced rank hypothesis, the conditional
-F-test of Sanderson and Windmeijer (2016) and the robust effective F
-test of Montiel Olea and Pflueger (2013). The critical values of Stock
-and Yogo (2005) for the null hypothesis of weak instruments are also
-provided.  
-}
+F-test of Sanderson and Windmeijer (2016), the robust effective F
+test of Montiel Olea and Pflueger (2013) and the Lewis and Mertens
+(2022) robust test with multiple endogenous variables. The critical
+values of Stock and Yogo (2005) for the null hypothesis of weak
+instruments are also provided.}
+
 \usage{
 
 SWtest(object, j=1, print=TRUE, ...)
@@ -23,6 +25,10 @@ CDtest(object, print=TRUE, SWcrit=FALSE, ...)
 MOPtest(object, tau=0.10, size=0.05, print=TRUE,
         estMethod = c("TSLS", "LIML"), simplified = TRUE,
         digits = max(3L, getOption("digits") - 3L), ...)
+
+LewMertest(object, tau=0.10, size=0.05, print=TRUE,
+           estMethod = c("TSLS", "LIML"), simplified = TRUE,
+           digits = max(3L, getOption("digits") - 3L), ...)
 
 SYTables(object, print=TRUE, SWcrit=FALSE)
 

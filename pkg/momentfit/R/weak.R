@@ -565,3 +565,127 @@ getMOPw <- function(object)
 }
 
 
+## Lewis and Mertens (2022)
+
+phiMat <- function(w2, k2, l2)
+{
+    phi <- matrix(NA, k2,k2)
+    if (length(w2) == 1)
+        return(matrix(w2,1,1))
+    for (i in 1:k2)
+    {
+        c0 <- 1+(i-1)*l2
+        c1 <- ncol(w2)
+        di <- diag(w2[,c0:c1])
+        tmp <- colSums(matrix(di, nrow=l2))
+        if (i == 1)
+        {
+            diag(phi) <- tmp
+        } else if (i==k2) {
+            phi[1,k2] <- phi[k2,1] <- tmp
+        } else {
+            j <- seq_len(length(tmp))
+            j <- cbind(j,j)
+            phi[-(1:(i-1)),][j] <- phi[,-(1:(i-1))][j] <- tmp
+        }
+    }
+    phi
+}
+
+LewMertest <- function(object, tau=0.10, size=0.05, print=TRUE,
+                       estMethod = c("TSLS", "LIML"), simplified = TRUE,
+                       digits = max(3L, getOption("digits") - 3L), ...)
+{
+    estMethod <- match.arg(estMethod)
+    if (!inherits(object, "linearModel"))
+        stop("object must be of class linearModel")
+    spec <- modelDims(object)    
+    if (sum(spec$isEndo)<1)
+    {
+        warning("The model does not contain endogenous variables")
+        return(NA)
+    } 
+    Z2 <- model.matrix(object, "excludedExo")
+    X1 <- model.matrix(object, "includedExo")
+    X2 <- model.matrix(object, "includedEndo")
+    y <- modelResponse(object)
+    if (!is.null(X1))
+    {
+        fitX1  <- lm.fit(X1, Z2)
+        Z2 <- as.matrix(fitX1$residuals)
+        X2 <- qr.resid(fitX1$qr, X2)
+        y <- qr.resid(fitX1$qr, y)
+    }
+    Z2 <- qr.Q(qr(Z2))*sqrt(nrow(Z2))
+    colnames(Z2) <- paste("Z", 1:ncol(Z2), sep="")
+    colnames(X2) <- paste("endo",1:ncol(X2), sep="")
+    b1 <- c(crossprod(Z2,y)/spec$n)
+    Pi2 <- crossprod(Z2,X2)/spec$n
+    g <- c(reformulate(colnames(Z2), "y", FALSE),
+              lapply(colnames(X2), function(ei)
+                  reformulate(colnames(Z2), ei, FALSE)))
+    h <- reformulate(colnames(Z2), NULL, FALSE)
+    dat <- as.data.frame(cbind(y=y,X2,Z2))
+    m <- sysMomentModel(g=g, list(h), data = dat, vcov=object@vcov,
+                        vcovOptions = object@vcovOptions)
+    v <- cbind(y-Z2%*%b1, X2-Z2%*%Pi2)
+    omega <- crossprod(v)/nrow(v)
+    w <- vcov(m, c(list(b1),lapply(1:ncol(Pi2), function(i) Pi2[,i])))
+    w2 <- w[(ncol(Z2)+1):ncol(w),(ncol(Z2)+1):ncol(w)]
+    phi <- phiMat(w2, ncol(X2), ncol(Z2))
+    if (dim(phi)[1] == 1)
+    {
+        gmin <- nrow(Z2)*c(crossprod(Pi2))/c(phi)
+        sqPhi <- 1/sqrt(phi)
+    } else {
+        svPhi <- svd(phi)
+        sqPhi <- svPhi$u%*%diag(1/sqrt(svPhi$d))%*%t(svPhi$v)
+        gmin <- c(nrow(Z2)*min(eigen(sqPhi%*%crossprod(Pi2)%*%sqPhi)$value))
+    }
+    lam <- 1/tau
+    cumul <- getCumul(w2, lam, sqPhi, ncol(Z2))    
+    list(gmin=gmin, cumul=cumul,
+         crit=crit(size, cumul$k1, cumul$k2, cumul$k3))
+}
+
+getCumul <- function(w2, lam, phi, l2)
+{
+    if (length(phi)==1)
+    {
+        sig <- w2/c(phi)*l2
+    } else {
+        tmp <- kronecker(phi, diag(l2))
+        sig <- l2*(tmp%*%w2%*%tmp)
+        svSig <- svd(sig)
+        sig2 <- svSig$u%*%diag(svSig$d^2)%*%t(svSig$v)
+        sig3 <- svSig$u%*%diag(svSig$d^3)%*%t(svSig$v)
+    }
+    k1 <- l2*(1+lam)
+    if (length(sig) == 1)
+    {
+        k2 <- 2*(sig^2+2*lam*l2*sig)
+        k3 <- 8*(sig^3+3*lam*l2*sig^2)
+    } else {
+    svSig <- svd(sig)
+    sig2 <- svSig$u%*%diag(svSig$d^2)%*%t(svSig$v)
+    sig3 <- svSig$u%*%diag(svSig$d^3)%*%t(svSig$v)
+    tmp <- phiMat(sig2, dim(phi)[1], l2)
+    k2 <- 2*(max(eigen(tmp)$val)+2*lam*l2*max(svSig$d))
+    tmp <- phiMat(sig3, dim(phi)[1], l2)    
+    k3 <- 8*(max(eigen(tmp)$val)+3*lam*l2*max(svSig$d)^2)
+    }
+    w <- k2/k3
+    v <- 8*k2*w^2
+    list(k1=k1, k2=k2, k3=k3, w=w, v=v)
+}
+
+crit <- function(alpha, k1, k2, k3)
+{
+    w <- k2/k3
+    v <- 8*k2*w^2
+    cr <- qchisq(1-alpha, v)
+    (cr-v)/(4*w)+k1
+}
+
+
+
