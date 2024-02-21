@@ -19,7 +19,7 @@ importFrom("stats", "ar", "as.formula", "model.matrix","vcov",
            "constrOptim", "kernel", "confint", "qnorm", "uniroot", "getCall", "qchisq", "optimize")
 importFrom("sandwich", "vcovHAC", "estfun","kernHAC","vcovCL", "meatCL",
            "bread","bwAndrews","bwNeweyWest","weightsAndrews",
-           "weightsLumley", "vcovHC")
+           "weightsLumley", "vcovHC", "meatHAC")
 
 ### S4 Methods and Classes
 exportClasses("nonlinearModel", "linearModel", "functionModel", "momentModel",

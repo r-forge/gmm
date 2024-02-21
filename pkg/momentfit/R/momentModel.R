@@ -9,7 +9,7 @@
                                crit = 1e-06,
                                bw = "Andrews", prewhite = 1L,
                                ar.method = "ols", approx = "AR(1)", 
-                               tol = 1e-07)
+                               tol = 1e-07, adjust=TRUE)
                 if (length(addO) > 0)
                     {
                         if (!all(names(addO) %in% names(option)))

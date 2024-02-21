@@ -594,7 +594,8 @@ phiMat <- function(w2, k2, l2)
 
 LewMertest <- function(object, tau=0.10, size=0.05, print=TRUE,
                        estMethod = c("TSLS", "LIML"), simplified = TRUE,
-                       digits = max(3L, getOption("digits") - 3L), ...)
+                       digits = max(3L, getOption("digits") - 3L),
+                       dfCorr = TRUE, ...)
 {
     estMethod <- match.arg(estMethod)
     if (!inherits(object, "linearModel"))
@@ -631,6 +632,8 @@ LewMertest <- function(object, tau=0.10, size=0.05, print=TRUE,
     v <- cbind(y-Z2%*%b1, X2-Z2%*%Pi2)
     omega <- crossprod(v)/nrow(v)
     w <- vcov(m, c(list(b1),lapply(1:ncol(Pi2), function(i) Pi2[,i])))
+    if (dfCorr)
+        w <- w*nrow(Z2)/(nrow(Z2)-ncol(X1)-ncol(Z2))
     w2 <- w[(ncol(Z2)+1):ncol(w),(ncol(Z2)+1):ncol(w)]
     phi <- phiMat(w2, ncol(X2), ncol(Z2))
     if (dim(phi)[1] == 1)
