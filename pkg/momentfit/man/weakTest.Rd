@@ -27,9 +27,8 @@ MOPtest(object, tau=0.10, size=0.05, print=TRUE,
         digits = max(3L, getOption("digits") - 3L), ...)
 
 LewMertest(object, tau=0.10, size=0.05, print=TRUE,
-           estMethod = c("TSLS", "LIML"), simplified = TRUE,
-           digits = max(3L, getOption("digits") - 3L),
-           dfCorr = TRUE, ...)
+           simplified = TRUE, digits = max(3L, getOption("digits") -
+           3L), npoints=10, ...)
 
 SYTables(object, print=TRUE, SWcrit=FALSE)
 
@@ -67,14 +66,17 @@ SYTables(object, print=TRUE, SWcrit=FALSE)
   \item{digits}{The number of digits to print when \code{print} is set
   to \code{TRUE}.}
 
-\item{dfCorr}{Should we correct the covariance matrix estimator for the
-  degrees of freedom?} 
-
   \item{SWcrit}{If true, the critical values and the test are ajusted to
   Sanderson and Windmeijer (2016). See details.}
-  
+
+\item{npoints}{The number of minimizations to run in order to find the
+  global minimum, which is used for the Lewis and Mertens critical
+  value. It affects the results only when \code{simplified} is set to
+  \code{TRUE}.} 
+
   \item{...}{Arguments passed to \code{\link{formatC}} to print the
-  statistic. For \code{MOPtest}, they are passed to \code{momentfit:::getMOPx}.
+  statistic. For \code{MOPtest}, they are passed to
+  \code{momentfit:::getMOPx}. 
   }
 }
 

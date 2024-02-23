@@ -16,7 +16,8 @@ importFrom("stats", "ar", "as.formula", "model.matrix","vcov",
            "D", "numericDeriv", "sd", "optim", "lm", "pf", "coef", "update",
            "fitted", "lm.fit", "pchisq", "pnorm", "printCoefmat", "anova",
            "model.frame", "reformulate", "formula", "nlminb", "kernapply",
-           "constrOptim", "kernel", "confint", "qnorm", "uniroot", "getCall", "qchisq", "optimize")
+           "constrOptim", "kernel", "confint", "qnorm", "uniroot", "getCall", "qchisq", "optimize",
+           "integrate", "rnorm")
 importFrom("sandwich", "vcovHAC", "estfun","kernHAC","vcovCL", "meatCL",
            "bread","bwAndrews","bwNeweyWest","weightsAndrews",
            "weightsLumley", "vcovHC", "meatHAC")

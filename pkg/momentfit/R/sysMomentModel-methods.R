@@ -758,9 +758,9 @@ setMethod("vcovHAC", "sysModel",
               }
               weights <- weightsAndrews(x = gmat, bw = bw, kernel = options$kernel, 
                                         prewhite = options$prewhite, tol = options$tol)
-              w <- vcovHAC(x = gmat, order.by = NULL, weights = weights, 
-                           prewhite = options$prewhite, sandwich = FALSE,
-                           ar.method = options$ar.method)
+              w <- meatHAC(x = gmat, order.by = NULL, weights = weights, 
+                           prewhite = options$prewhite, diagnostics = FALSE,
+                           adjust = options$adjust, ar.method = options$ar.method)
               attr(w, "Spec") <- list(weights = weights, bw = bw, kernel = options$kernel)
               w
           })

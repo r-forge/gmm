@@ -748,52 +748,25 @@ we can see, it is the same as long as we choose the HC0 type.
 momentStrength(update(mod4, vcovOptions=list(type="HC0")))$strength
 ```
 
-## Testing for weak instruments: @lewis-mertens22 (very early stage)
+## Testing for weak instruments: @lewis-mertens22
 
 The authors generalize the MOP test for models with multiple
-endogenous variables. We first need to compute the matrix $\Phi =
-(I_{k_2}\otimes \vect(I_{l_2}))'[W_2\otimes I_{l_2}](I_{k_2}\otimes
-\vect(I_{l_2}))$. This is clearly not something we want to write
-explicitely. It is unlikely to encounter very large $l_2$ and $k_2$,
-but we want to avoid creating large matrices just in case. If we write
-$W_2$ as a $k_2\times k_2$ block matrix, with $A_{ij}$ being the
-$l_2\times l_2$ matrix in the ith row and jth column, then
-$\Phi_{ij}=\tr(A_{ij})$. The following shows that the function
-`psiMat`, which uses this trace argument, produces the right matrix:
+endogenous variables. The statistic proposed by the authors is
 
-
-```{r}
-w2 <- matrix(1:144, 12, 12)
-w2[lower.tri(w2)] <- t(w2)[lower.tri(w2)]
-k2 <- 3
-l2 <- 4
-phiMatT <- function(w2, k2, l2)
-{
-    A <- kronecker(diag(k2), c(diag(l2)))
-    B <- kronecker(w2, diag(l2))
-    t(A)%*%B%*%A
-}
-
-phiMatT(w2,k2,l2)
-momentfit:::phiMat(w2,k2,l2)
-```
-
-The statistic proposed by the authors is
-
-\[
-g_{min} = \min\eval[n\hat\Phi^{-1/2}\hat{\Pi}_2'\hat{\Pi}_2\hat\Phi^{-1/2}]
+\[ g_{min} =
+\min\eval[n\hat\Phi^{-1/2}\hat{\Pi}_2'\hat{\Pi}_2\hat\Phi^{-1/2}] \,,
 \]
 
-It is clear that this is the MOP effective F test when $k_2=1$,
-because $k_2=1$ implies that $\Phi=\tr(W_2)$.
+where $\Phi = (I_{k_2}\otimes \vect(I_{l_2}))'[W_2\otimes
+I_{l_2}](I_{k_2}\otimes \vect(I_{l_2}))$. If we write $W_2$ as a
+$k_2\times k_2$ block matrix, with $A_{ij}$ being the $l_2\times l_2$
+matrix in the ith row and jth column, then $\Phi_{ij}=\tr(A_{ij})$. It
+is clear that this is the MOP effective F test when $k_2=1$, because
+$k_2=1$ implies that $\Phi=\tr(W_2)$.
 
 ```{r}
-LewMertest(mod2)$gmin
-LewMertest(mod4)$gmin
+LewMertest(mod3, simplified=FALSE)
 ```
-
-
-
 
 
 ## Data Generating Process (for later use)
