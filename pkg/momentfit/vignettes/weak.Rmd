@@ -750,8 +750,10 @@ momentStrength(update(mod4, vcovOptions=list(type="HC0")))$strength
 
 ## Testing for weak instruments: @lewis-mertens22
 
-The authors generalize the MOP test for models with multiple
-endogenous variables. The statistic proposed by the authors is
+The authors generalize the test by @montiel-olea-pflueger13 for models
+with multiple endogenous variables. The test is therefore robust to
+non-iid errors. The statistic proposed by the authors is a
+generalization of the Cragg and Donald test. It is defined as:
 
 \[ g_{min} =
 \min\eval[n\hat\Phi^{-1/2}\hat{\Pi}_2'\hat{\Pi}_2\hat\Phi^{-1/2}] \,,
@@ -760,14 +762,45 @@ endogenous variables. The statistic proposed by the authors is
 where $\Phi = (I_{k_2}\otimes \vect(I_{l_2}))'[W_2\otimes
 I_{l_2}](I_{k_2}\otimes \vect(I_{l_2}))$. If we write $W_2$ as a
 $k_2\times k_2$ block matrix, with $A_{ij}$ being the $l_2\times l_2$
-matrix in the ith row and jth column, then $\Phi_{ij}=\tr(A_{ij})$. It
-is clear that this is the MOP effective F test when $k_2=1$, because
-$k_2=1$ implies that $\Phi=\tr(W_2)$.
+matrix in the ith row and jth column, then
+$\Phi_{ij}=\tr(A_{ij})$. The bock matrix $A_{ij}$ is a robust
+estimator of the covariance matrix between $(Z_2'e_i)$ and
+$(Z_2'e_j)$. It is clear that this is the MOP effective F test when
+$k_2=1$, because $k_2=1$ implies $\Phi=\tr(W_2)$. As for the MOP test,
+we have the choice between a less computationally demanding but more
+conservative critical value, called simplified, and the generalized
+one. The function `LewMertest` computes only the simplified version by
+default. To obtain both, we set the argument `simplified` to `FALSE`.
 
 ```{r}
 LewMertest(mod3, simplified=FALSE)
 ```
 
+The function is based on the Matlab code the authors provided with
+their paper. As for the other tests, the instruments are weak under the
+null hypothesis. And by weak, we mean that it is weak enough for the
+bias to exceed the bias of the benchmark by 10% (the selected $\tau$
+by default). Therefore, we fail to reject the hypothesis that the
+instruments are weak in `mod3` using both the simplified and
+generalized critical values.
+
+Note that the critical values for the generalized approach are
+obtained by solving a maximization problem numerically. The function
+seems to have more than one local minimum, so the procedure is to
+solve the problem using random starting values and to keep the largest
+solution. The number of starting values is determined by the argument
+`npoints`. By default, it is equal to 10. The authors suggest 1000 in
+their Matlab code, but it seems that there is very little effect of
+going from 10 to 1000. We can see what happens if we increase the
+number of points.
+
+```{r}
+LewMertest(mod3, simplified=FALSE, print=FALSE, npoints=1)$crit
+LewMertest(mod3, simplified=FALSE, print=FALSE, npoints=20)$crit
+```
+
+Finally, note that the authors do not provide any method to obtain the
+critical values for the LIML estimator. These are only for TSLS.
 
 ## Data Generating Process (for later use)
 

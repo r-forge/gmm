@@ -556,8 +556,7 @@ MOPtest <- function(object, tau=0.10, size=0.05, print=TRUE,
         " for ", estMethod, "\n", sep="")
     cat("Type of LS covariance matrix: ", vcov, "\n", sep="")
     cat("Number of included Endogenous: ", ncol(X2), "\n", sep="")
-    cat("Effective degrees of freedom: ", Keff, "\n", sep="")
-    cat("x: ", x, "\n", sep="")
+    cat("Effective degrees of freedom: ", Keff, "(with x = ", x, ")\n", sep="")
     cat("Statistics: ", formatC(Feff, ...), "\n", sep="")
     cat(paste("Critical Value (size=",size,"): ", formatC(crit, digits=digits),
               "\n", sep=""))
@@ -662,8 +661,6 @@ LewMertest <- function(object, tau=0.10, size=0.05, print=TRUE,
     invisible()
 }
 
-
-
 nearestSPD <- function (A) 
 {
     stopifnot(is.numeric(A), is.matrix(A))
@@ -747,7 +744,10 @@ LewMerCrit <- function(model, W, K, alpha=0.05, tau=0.1, points=10,
     {
         if (is.null(eA))
             eA <- eigen(A)
-        eA$vec%*%diag(FUN(eA$val))%*%t(eA$vec)
+        if (length(eA$val) == 1)
+            FUN(A)
+        else
+            eA$vec%*%diag(FUN(eA$val))%*%t(eA$vec)
     }
     
     N <- nrow(W)/K-1
