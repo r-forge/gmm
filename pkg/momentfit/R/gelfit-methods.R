@@ -553,7 +553,8 @@ setMethod("specTest", signature("gelfit", "missing"),
               }
               if (type %in% c("All","J"))
               {
-                  J <- sum(lm.fit(gt, rep(1,n))$fitted.values)
+                  J <- sum(lm.fit(gt, rep(1,NROW(gt)))$fitted.values)/
+                      object@model@sSpec@k[1]^2
                   test <- c(test, J)
                   names(test)[length(test)] <- " J: "                  
               }

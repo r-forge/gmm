@@ -667,11 +667,14 @@ nearestSPD <- function (A)
     eps <- .Machine$double.eps
     m <- nrow(A)
     n <- ncol(A)
-    if (m != n) {
+    if (m != n)
+    {
         stop("Argument 'A' must be a square matrix.")
-    }
-    else if (n == 1 && A <= 0) 
+    } else if (n == 1 && A <= 0) {
         return(as.matrix(eps))
+    } else if (n == 1) {
+        return(A)
+    }
     B <- (A + t(A))/2
     svdB <- svd(B)
     H <- svdB$v %*% diag(svdB$d) %*% t(svdB$v)
@@ -859,7 +862,7 @@ LewMerCrit <- function(model, W, K, alpha=0.05, tau=0.1, points=10,
         RR <- qr.R(res)
         diagRR <- sign(diag(RR))
         if (any(diagRR < 0))
-            Q <- Q%*%diag(diagRR)
+            Q <- Q%*%diag(diagRR, length(diagRR))
         list(Q=Q, R=RR)
     }
 
@@ -946,7 +949,6 @@ LewMerCrit <- function(model, W, K, alpha=0.05, tau=0.1, points=10,
         Qp <- Q
         Q <- gamma*Qp + 1
         Cval = (gamma*Qp*Cval + F)/Q
-
     }
     if (itr >= opts$mxitr)
         out$msg = "exceed max iteration"

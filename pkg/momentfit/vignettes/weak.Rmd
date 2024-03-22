@@ -538,7 +538,7 @@ variables using the `CDtest` function, if we set the argument `SWcrit`
 to `TRUE`.
 
 
-## Testing for weak instrument: @montiel-olea-pflueger13
+## Testing for weak instruments: @montiel-olea-pflueger13
 
 In most applied economic studies, it is unrealistic to assume that the
 errors are conditionally homoskedastic. When the errors are
@@ -676,7 +676,7 @@ bottom left block of $\hat W$:
 ```{r}
 w2
 ```
-	
+
 This is what the function `getMOPW` computes. For now, it is not
 exported, so we need to run it using `momentfit:::`.  The function
 returns the different $\hat{W}$'s separately for convenience. Here we
@@ -717,7 +717,7 @@ is the one obtained above. For the generalized test, we set the
 argument `simplified` to `FALSE`.
 
 ```{r}
-MOPtest(mod2, simplified=FALSE, estMethod="LIML")
+MOPtest(mod5, simplified=FALSE, estMethod="LIML")
 ```
 
 The test is the same as above, but the critical value is smaller,
@@ -726,11 +726,8 @@ critical value, especially when the number of excluded instruments is
 small. We can compare the test with the one for TSLS:
 
 ```{r}
-MOPtest(mod2, simplified=FALSE, estMethod="TSLS")
+MOPtest(mod5,  simplified=FALSE, estMethod="TSLS")
 ```
-
-It seems that we are rejecting the weak instrument hypothesis for TSLS
-and not for LIML. This is surprising. We'll need to investigate.
 
 As mentioned by the authors, the efficient F is the robust F when the
 model is just identified. The model `mod4` created above is
@@ -858,6 +855,42 @@ dat <- getIVDat(n, R2, k, rho)
 m <- momentModel(g, h, data=dat, vcov="MDS")
 ``` 
 
+```{r, echo=FALSE}
+## n: sample size
+## N: number of endogenous
+## K: number of Instruments
+## Nx: number of exogenous regressors
+
+genDat <- function(n=200, N=2, K=5, Nx=2)
+{
+    beta <- rep(1,N) 
+    DL <- 0.08
+    X <- qr.R(qr(matrix(rnorm(K^2),K,K)))
+    L0 <- t(X[,1:N])
+    Pi <- sqrt(K)*DL^0.5*L0
+    Pi <- t(Pi)
+    By <- rnorm(Nx+1)
+    BY <- matrix(rnorm((Nx+1)*N), Nx+1, N)
+    u <- rnorm(n)
+    v <- matrix(rnorm(n*N), n, N)
+    X <- cbind(matrix(rnorm(n*Nx), n, Nx), 1)
+    Z <- matrix(rnorm(n*K), n, K)
+    Y <- Z%*%Pi+X%*%BY+v
+    y <- c(Y%*%beta+X%*%By+u)
+    X <- X[,-ncol(X),drop=FALSE]    
+    colnames(Y) <- paste("Y", 1:ncol(Y), sep="")
+    colnames(X) <- paste("X", 1:ncol(X), sep="")
+    colnames(Z) <- paste("Z", 1:ncol(Z), sep="")
+    dat <- as.data.frame(cbind(Y,X,Z))
+    dat$y <- y
+    dat
+}
+dat <- genDat()
+m <- momentModel(y~Y1+X1+X2, ~Z1+Z2+Z3+Z4+Z5+X1+X2, data=dat,
+                 vcov="MDS")
+LewMertest(m, simplified=FALSE, npoints=100)
+MOPtest(m, estMethod="TSLS", simplified=FALSE)
+```
 
 
 # References
