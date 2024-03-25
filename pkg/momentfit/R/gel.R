@@ -136,7 +136,16 @@ getLambda <- function (gmat, lambda0=NULL, gelType=NULL, rhoFct=NULL,
             algo <- "Wu"
     }
     algo <- match.arg(algo)
-    gmat <- as.matrix(gmat)    
+    gmat <- as.matrix(gmat)
+    chk1 <- any(apply(gmat, 2, function(x) all(x>0) | all(x<0)))
+    chk2 <- any(is.na(gmat))
+    chk3 <- any(!is.finite(gmat))
+    if (chk1 | chk2 | chk3)
+    {
+        return(list(lambda = as.numeric(rep(NA, ncol(gmat))),
+                    convergence = list(convergence=1, message='gt has some wrong values'),
+                    obj= NA))
+    }
     if (length(restrictedLam))
     {
         if (length(restrictedLam) > ncol(gmat))

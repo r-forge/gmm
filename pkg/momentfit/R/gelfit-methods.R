@@ -207,6 +207,15 @@ setMethod("getImpProb", "gelfit",
 setMethod("vcov", "gelfit",
           function(object, withImpProb=FALSE, tol=1e-10, robToMiss=FALSE) {
               spec <- modelDims(object@model)
+              if (any(is.na(object@lambda)))
+              {
+                  Sigma <- matrix(NA, spec$k, spec$k)
+                  if (spec$k>0)
+                      dimnames(Sigma) <- list(spec$parNames, spec$parNames)
+                  SigmaLam <- matrix(NA, spec$q, spec$q)
+                  dimnames(SigmaLam) <- list(spec$momNames, spec$momNames)
+                  return(list(vcov_par = Sigma, vcov_lambda = SigmaLam))
+              }
               if (robToMiss)
               {
                   eta <- c(coef(object), object@lambda)
@@ -215,8 +224,13 @@ setMethod("vcov", "gelfit",
                   fit <- evalGmm(mod, theta=eta)
                   v <- vcov(fit)
                   spec <- modelDims(object@model)
-                  Sigma <- v[1:spec$k, 1:spec$k]
-                  dimnames(Sigma) <- list(spec$parNames, spec$parNames)
+                  if (spec$k>0)
+                  {
+                      Sigma <- v[1:spec$k, 1:spec$k]
+                      dimnames(Sigma) <- list(spec$parNames, spec$parNames)
+                  } else {
+                      Sigma <- matrix(nrow=0, ncol=0)
+                  }
                   SigmaLam <- v[(spec$k+1):nrow(v), (spec$k+1):ncol(v)]
                   dimnames(SigmaLam) <- list(spec$momNames, spec$momNames)
                   return(list(vcov_par = Sigma, vcov_lambda = SigmaLam))
@@ -237,22 +251,47 @@ setMethod("vcov", "gelfit",
                   G <- G/k[1]
                   gt <- gt * sqrt(bw/k[2]/n)
               }
-              qrGt <- qr(gt)
-              piv <- qrGt$pivot
-              R <- qr.R(qrGt)
-              X <- forwardsolve(t(R), G[piv,])
-              Y <- forwardsolve(t(R), diag(q)[piv,])
-              res <- lm.fit(as.matrix(X), Y)
-              u <- res$residuals
-              Sigma <- chol2inv(res$qr$qr)/n
-              diag(Sigma)[diag(Sigma) < 0] <- tol
-              if (q == ncol(G)) {
+              if (ncol(G) > 0)
+              {
+                  qrGt <- qr(gt)
+                  piv <- qrGt$pivot
+                  R <- qr.R(qrGt)
+                  X <- forwardsolve(t(R), G[piv,])
+                  Y <- forwardsolve(t(R), diag(q)[piv,])
+                  res <- lm.fit(as.matrix(X), Y)
+                  u <- res$residuals
+                  Sigma <- try(chol2inv(res$qr$qr)/n, silent=TRUE)
+                  if (inherits(Sigma, "try-error"))
+                  {
+                      Sigma <- matrix(NA, ncol(G), ncol(G))
+                      warning("Failed to compute the variance of the coefficients")
+                  } else {
+                      diag(Sigma)[diag(Sigma) < 0] <- tol
+                  }
+                  dimnames(Sigma) <- list(spec$parNames,spec$parNames)                  
+              } else {
+                  Sigma <- matrix(nrow=0, ncol=0)
+              }
+              if (q == ncol(G))
+              {
                   SigmaLam <- matrix(0, q, q)
               } else {
-                  SigmaLam <- crossprod(Y, u)/n * bw^2
-                  diag(SigmaLam)[diag(SigmaLam) < 0] <- tol
+                  if (ncol(G) > 0)
+                  {
+                      SigmaLam <- crossprod(Y, u)/n * bw^2
+                      diag(SigmaLam)[diag(SigmaLam) < 0] <- tol
+                  } else {
+                      SigmaLam <- try(solve(crossprod(gt))/n * bw^2, silent=TRUE)
+                      if (inherits(SigmaLam, "try-error"))
+                      {
+                          SigmaLam <- matrix(NA, q, q)
+                          warning("Failed to compute the variance of the lambdas")
+                      } else {
+                          diag(SigmaLam)[diag(SigmaLam) < 0] <- tol
+                      }
+                  }
               }
-              piv <- sort.int(piv, index.return = TRUE)$ix
+              dimnames(SigmaLam) <- list(spec$momNames, spec$momNames)
               list(vcov_par = Sigma, vcov_lambda = SigmaLam)
           })
 

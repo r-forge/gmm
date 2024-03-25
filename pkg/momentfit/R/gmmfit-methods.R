@@ -47,6 +47,13 @@ setMethod("residuals", "gmmfit", function(object) {
 setMethod("vcov", "gmmfit",
           function(object, sandwich=NULL, df.adj=FALSE, breadOnly=FALSE,
                    modelVcov=NULL) {
+              if (length(coef(object)) == 0)
+              {
+                  vcov <- matrix(nrow=0, ncol=0)
+                  attr(vcov, "type") <- list(sandwich=sandwich, df.adj=df.adj,
+                                             breadOnly=breadOnly)
+                  return(vcov)
+              }
               if (!is.null(modelVcov))
                   {
                       if (modelVcov != object@model@vcov)
