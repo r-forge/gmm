@@ -137,15 +137,6 @@ getLambda <- function (gmat, lambda0=NULL, gelType=NULL, rhoFct=NULL,
     }
     algo <- match.arg(algo)
     gmat <- as.matrix(gmat)
-    chk1 <- any(apply(gmat, 2, function(x) all(x>0) | all(x<0)))
-    chk2 <- any(is.na(gmat))
-    chk3 <- any(!is.finite(gmat))
-    if (chk1 | chk2 | chk3)
-    {
-        return(list(lambda = as.numeric(rep(NA, ncol(gmat))),
-                    convergence = list(convergence=1, message='gt has some wrong values'),
-                    obj= NA))
-    }
     if (length(restrictedLam))
     {
         if (length(restrictedLam) > ncol(gmat))
@@ -156,6 +147,21 @@ getLambda <- function (gmat, lambda0=NULL, gelType=NULL, rhoFct=NULL,
         gmat <- gmat[,-restrictedLam,drop=FALSE]
     } else {
         restrictedLam <- integer()
+    }
+    mes <- character()
+    chk1 <- any(apply(gmat, 2, function(x) all(x>0) | all(x<0)))
+    if (chk1)
+        mes <- c(mes, "0 is not inside the convex hull of gt")
+    chk2 <- any(is.na(gmat))
+    if (chk2)
+        mes <- c(mes, "Some values of the moment matrix gt are NA's")
+    chk3 <- any(!is.finite(gmat))
+    if (chk3)
+        mes <- c(mes, "Some values of the moment matrix gt are not finite")
+    if (length(mes))
+    {        
+        return(list(lambda = as.numeric(rep(NA, ncol(gmat))),
+                    convergence = list(convergence=1, message=mes), obj= NA))
     }
     if (is.null(lambda0))
     {

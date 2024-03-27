@@ -811,7 +811,8 @@ setMethod("gelFit", signature("rmomentModel"), valueClass="gelfit",
                   Call <- NULL
               k <- modelDims(model)$k
               if (k == 0)
-                  return(evalGel(model, numeric(), ...))
+                  return(evalGel(model=model, theta=numeric(), gelType=gelType,
+                                 rhoFct=rhoFct, ...))
               initTheta <- match.arg(initTheta)
               if (is.null(theta0))
               {

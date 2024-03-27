@@ -1317,6 +1317,10 @@ setMethod("solveGel", signature("momentModel"),
               }
               if (is.null(lamSlv))
                   lamSlv <- getLambda
+              if (modelDims(object)$k == 0)
+                  return(evalGel(object, theta=numeric(), gelType=gelType,
+                                 rhoFct=rhoFct, lambda0=lambda0, lamSlv=lamSlv,
+                                 lControl=lControl))
               if (coefSlv == "nlminb")
               {
                   args <- c(list(start=theta0, objective=f, gelType=gelType,
@@ -1328,12 +1332,27 @@ setMethod("solveGel", signature("momentModel"),
                                  slv=lamSlv, lcont=lControl, gelType=gelType,
                                  rhoFct=rhoFct, restrictedLam=.restrictedLam), tControl)
               }
-              res <- do.call(get(coefSlv), args)
-              resl <- f(res$par,  object, lambda0, lamSlv, gelType=gelType,
-                        rhoFct=rhoFct, lControl, TRUE, .restrictedLam)
-              names(resl$lambda) <- modelDims(object)$momNames
-              theta <- res$par
-              names(theta) <- modelDims(object)$parNames                  
+              res <- suppressWarnings(try(do.call(get(coefSlv), args), silent=TRUE))
+              if (inherits(res, "try-error"))
+              {
+                  theta <- as.numeric(rep(NA), length(theta0))
+                  resl <- f(theta0,  object, lambda0, lamSlv, gelType=gelType,
+                            rhoFct=rhoFct, lControl, TRUE, .restrictedLam)
+                  warning(paste("Failed to estimate the model\n",
+                                "The error message from the the solver is:\n\t",
+                                res, "\n",
+                                ifelse(resl$convergence$convergence==0, "",
+                                       paste("Error from the Lambda solver at the initial parameter value:\n",
+                                             paste(resl$convergence$message, collapse="\n")))))
+                            
+                  res <- list(convergence=12)
+              } else {                  
+                  resl <- f(res$par,  object, lambda0, lamSlv, gelType=gelType,
+                            rhoFct=rhoFct, lControl, TRUE, .restrictedLam)
+                  names(resl$lambda) <- modelDims(object)$momNames
+                  theta <- res$par
+                  names(theta) <- modelDims(object)$parNames
+              }
               list(theta=theta, convergence=res$convergence,
                    lambda=resl$lambda, lconvergence=resl$convergence,
                    restrictedLam=.restrictedLam)
@@ -1405,12 +1424,18 @@ setMethod("evalGel", signature("momentModel"),
                   k <- model@sSpec@k
                   args <- c(list(gmat=gt, gelType=gelType,
                                  rhoFct=rhoFct, restrictedLam=.restrictedLam),
-                            lControl, k=k[1]/k[2])
+                            lControl, k=k[1]/k[2], list(...))
                   if (is.null(lamSlv))
                       lamSlv <- getLambda
                   res <- do.call(lamSlv, args)
                   lambda <- res$lambda
+                  mes <- res$convergence$message
                   lconvergence <- res$convergence$convergence
+                  if (lconvergence != 0)
+                      warning(paste("Failed to solve for the Lambdas\n",
+                                    ifelse(is.null(mes), "",
+                                           paste("Error from the Lambda solver:\n",
+                                                 paste(mes, collapse="\n")))))
                   type <- paste(type, " with optimal lambda", sep="")
               } else {
                   lconvergence <- 1
@@ -1419,7 +1444,7 @@ setMethod("evalGel", signature("momentModel"),
               }
               names(lambda) <- spec$momNames
               if (!is.null(rhoFct))
-                  gelType <- "Other"
+                  gelType <- "Other"              
               new("gelfit", theta=theta, convergence=1, lconvergence=lconvergence,
                   lambda=lambda, call=Call, gelType=list(name=gelType, rhoFct=rhoFct),
                   vcov=list(), model=model, restrictedLam = .restrictedLam)
