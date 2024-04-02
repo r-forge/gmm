@@ -1309,18 +1309,18 @@ setMethod("solveGel", signature("momentModel"),
               }
               if (is.null(lambda0))
                   lambda0 <- rep(0, modelDims(object)$q)
-              if (is.null(theta0))
-              {
-                  if (!("theta0"%in%slotNames(object)))
-                      stop("theta0 must be provided")
-                  theta0 <- modelDims(object)$theta0
-              }
               if (is.null(lamSlv))
                   lamSlv <- getLambda
               if (modelDims(object)$k == 0)
                   return(evalGel(object, theta=numeric(), gelType=gelType,
                                  rhoFct=rhoFct, lambda0=lambda0, lamSlv=lamSlv,
                                  lControl=lControl))
+             if (is.null(theta0))
+              {
+                  if (!("theta0"%in%slotNames(object)))
+                      stop("theta0 must be provided")
+                  theta0 <- modelDims(object)$theta0
+              }              
               if (coefSlv == "nlminb")
               {
                   args <- c(list(start=theta0, objective=f, gelType=gelType,
@@ -1438,14 +1438,15 @@ setMethod("evalGel", signature("momentModel"),
                                                  paste(mes, collapse="\n")))))
                   type <- paste(type, " with optimal lambda", sep="")
               } else {
-                  lconvergence <- 1
+                  lconvergence <- as.numeric(NA)
                   type <- paste(type, " with fixed lambda", sep="")
                   .restrictedLam <- integer()
               }
               names(lambda) <- spec$momNames
               if (!is.null(rhoFct))
                   gelType <- "Other"              
-              new("gelfit", theta=theta, convergence=1, lconvergence=lconvergence,
+              new("gelfit", theta=theta, convergence=as.numeric(NA),
+                  lconvergence=lconvergence,
                   lambda=lambda, call=Call, gelType=list(name=gelType, rhoFct=rhoFct),
                   vcov=list(), model=model, restrictedLam = .restrictedLam)
           })

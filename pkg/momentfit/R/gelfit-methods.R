@@ -135,12 +135,16 @@ setMethod("print", "gelfit",
                       "\n", sep="")
               }
               cat("coefficients:\n")
-              print.default(format(theta, ...), print.gap=2L, quote=FALSE)
+              if (length(theta))
+                  print.default(format(theta, ...), print.gap=2L, quote=FALSE)
+              else
+                  cat("\tNo estimated coefficients\n")
               if (lambda)
               {
                   cat("lambdas:\n")
                   print.default(format(x@lambda, ...), print.gap=2L, quote=FALSE)
               }
+              invisible()
           })
 
 ## show
@@ -629,7 +633,10 @@ setMethod("print", "summaryGel",
                                               digits=5), "\n", sep="")
               
               cat("\ncoefficients:\n")
-              printCoefmat(x@coef, digits=digits, ...)
+              if (nrow(x@coef))
+                  printCoefmat(x@coef, digits=digits, ...)
+              else
+                  cat("\tNo estimated coefficients\n")
               if (lambda)
                   {
                       cat("\nLambdas:\n")

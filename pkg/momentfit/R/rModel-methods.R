@@ -699,16 +699,6 @@ setMethod("coef", "rformulaModel",
           )
 
 
-## Subsetting '['
-
-setMethod("[", c("rfunctionModel", "numeric", "missing"),
-          function(x, i, j){
-              Call <- match.call(call=sys.call(sys.parent()))
-              obj <- callNextMethod()
-              obj@call <- Call
-              obj
-          })
-
 ## gmmfit
 
 setMethod("gmmFit", signature("rlinearModel"), valueClass="gmmfit", 
@@ -722,12 +712,17 @@ setMethod("gmmFit", signature("rlinearModel"), valueClass="gmmfit",
               if (cst$k==0)
                   {
                       theta <- coef(model, numeric())
-                      model <- as(model, "linearModel")                      
+                      model2 <- as(model, "linearModel")                      
                       if (inherits(weights,"momentWeights"))
                           wObj <- weights
                       else
-                          wObj <- evalWeights(model, theta=theta, w=weights)
-                      obj <- evalGmm(model, theta, wObj)
+                          wObj <- evalWeights(model2, theta=theta, w=weights)
+                      ## obj <- evalGmm(model, theta, wObj)
+                      ## Not really evalGmm. it is a model without estimation
+                      obj <- new("gmmfit", theta=numeric(), convergence=as.numeric(NA),
+                                 convIter=NULL, call=Call,
+                                 type="No estimation needed",
+                                 wObj=wObj, niter=1L, efficientGmm=FALSE, model=model)
                   } else {
                       obj <- callNextMethod()
                   }
@@ -746,12 +741,17 @@ setMethod("gmmFit", signature("rnonlinearModel"), valueClass="gmmfit",
               if (cst$k==0)
                   {
                       theta <- coef(model, numeric())
-                      model <- as(model, "nonlinearModel")                      
+                      model2 <- as(model, "nonlinearModel")                      
                       if (inherits(weights,"momentWeights"))
                           wObj <- weights
                       else
-                          wObj <- evalWeights(model, theta=theta, w=weights)
-                      obj <- evalGmm(model, theta, wObj, Call=FALSE)
+                          wObj <- evalWeights(model2, theta=theta, w=weights)
+                      ## obj <- evalGmm(model, theta, wObj)
+                      ## Not really evalGmm. it is a model without estimation
+                      obj <- new("gmmfit", theta=numeric(), convergence=as.numeric(NA),
+                                 convIter=NULL, call=Call,
+                                 type="No estimation needed",
+                                 wObj=wObj, niter=1L, efficientGmm=FALSE, model=model)
                   } else {
                       obj <- callNextMethod()
                   }
@@ -770,12 +770,46 @@ setMethod("gmmFit", signature("rformulaModel"), valueClass="gmmfit",
               if (cst$k==0)
                   {
                       theta <- coef(model, numeric())
-                      model <- as(model, "formulaModel")                      
+                      model2 <- as(model, "formulaModel")                      
                       if (inherits(weights,"momentWeights"))
                           wObj <- weights
                       else
-                          wObj <- evalWeights(model, theta=theta, w=weights)
-                      obj <- evalGmm(model, theta, wObj)
+                          wObj <- evalWeights(model2, theta=theta, w=weights)
+                      ## obj <- evalGmm(model, theta, wObj)
+                      ## Not really evalGmm. it is a model without estimation
+                      obj <- new("gmmfit", theta=numeric(), convergence=as.numeric(NA),
+                                 convIter=NULL, call=Call,
+                                 type="No estimation needed",
+                                 wObj=wObj, niter=1L, efficientGmm=FALSE, model=model)
+                  } else {
+                      obj <- callNextMethod()
+                  }
+              obj@call <- Call
+              obj              
+          })
+
+setMethod("gmmFit", signature("rfunctionModel"), valueClass="gmmfit", 
+          definition = function(model, type=c("twostep", "iter","cue", "onestep"),
+              itertol=1e-7, initW=c("ident", "tsls"), weights="optimal", 
+              itermaxit=100, efficientWeights=FALSE, theta0=NULL, ...) {
+              Call <- try(match.call(call=sys.call(sys.parent())), silent=TRUE)
+              if (inherits(Call,"try-error"))              
+                  Call <- NULL
+              cst <- model@cstSpec
+              if (cst$k==0)
+                  {
+                      theta <- coef(model, numeric())
+                      model2 <- as(model, "functionModel")                      
+                      if (inherits(weights,"momentWeights"))
+                          wObj <- weights
+                      else
+                          wObj <- evalWeights(model2, theta=theta, w=weights)
+                      ## obj <- evalGmm(model, theta, wObj)
+                      ## Not really evalGmm. it is a model without estimation
+                      obj <- new("gmmfit", theta=numeric(), convergence=as.numeric(NA),
+                                 convIter=NULL, call=Call,
+                                 type="No estimation needed",
+                                 wObj=wObj, niter=1L, efficientGmm=FALSE, model=model)
                   } else {
                       obj <- callNextMethod()
                   }

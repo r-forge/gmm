@@ -21,16 +21,24 @@ setMethod("print", "gmmfit",
                                 "twostep","iter","cue","onestep","tsls", "eval","mde"),
                               ncol=2)
               type <- ntype[match(x@type, ntype[,2]),1]
+              if (is.na(type))
+                  type <- x@type
               spec <- modelDims(x@model)
               if (spec$q==spec$k && x@type != "eval")
                   type <- "One-Step, Just-Identified"
               cat("\nEstimation: ", type,"\n")
-              if (!is.null(x@convergence))
-                  cat("Convergence Optim: ", x@convergence, "\n")              
-              if (!is.null(x@convIter))
-                  cat("Convergence Iteration: ", x@convIter, "\n")
-              cat("coefficients:\n")
-              print.default(format(theta, ...), print.gap=2L, quote=FALSE)
+              if (length(theta))
+              {
+                  if (!is.null(x@convergence))
+                      cat("Convergence Optim: ", x@convergence, "\n")              
+                  if (!is.null(x@convIter))
+                      cat("Convergence Iteration: ", x@convIter, "\n")
+                  cat("coefficients:\n")
+                  print.default(format(theta, ...), print.gap=2L, quote=FALSE)
+              } else {
+                   cat("coefficients:\n\tNo estimated coefficients\n")
+              }
+              invisible()
           })
 
 ## show
@@ -50,7 +58,7 @@ setMethod("vcov", "gmmfit",
               if (length(coef(object)) == 0)
               {
                   vcov <- matrix(nrow=0, ncol=0)
-                  attr(vcov, "type") <- list(sandwich=sandwich, df.adj=df.adj,
+                  attr(vcov, "type") <- list(sandwich=TRUE, df.adj=FALSE,
                                              breadOnly=breadOnly)
                   return(vcov)
               }

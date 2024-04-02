@@ -159,8 +159,10 @@ getLambda <- function (gmat, lambda0=NULL, gelType=NULL, rhoFct=NULL,
     if (chk3)
         mes <- c(mes, "Some values of the moment matrix gt are not finite")
     if (length(mes))
-    {        
-        return(list(lambda = as.numeric(rep(NA, ncol(gmat))),
+    {
+        lambda <- rep(NA, length(restrictedLam)+ncol(gmat))
+        lambda[restrictedLam] <- 0
+        return(list(lambda = lambda,
                     convergence = list(convergence=1, message=mes), obj= NA))
     }
     if (is.null(lambda0))
