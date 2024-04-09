@@ -208,7 +208,10 @@ setClass("stsls", contains="sgmmfit")
 setClass("gelfit", representation(theta = "numeric", convergence = "numeric",
                                   lambda = "numeric", lconvergence = "numeric",
                                   call="callORNULL", gelType="list", vcov="list",
-                                  model="momentModel", restrictedLam="integer"))
+                                  model="momentModel", restrictedLam="integer",
+                                  argsCall="list"),
+         prototype=list(argsCall=list(iniTheta="gmm", theta0=NULL, lambda0=NULL,
+                                      vcov=FALSE)))
 
 setClass("summaryGel", representation(coef="matrix", specTest = "specTest",
                                       model="momentModel", lambda="matrix",

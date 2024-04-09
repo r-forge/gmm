@@ -33,7 +33,11 @@
             fit <- suppressWarnings(update(obj, cstLHS=R))
         } else {
             mod <- restModel(obj@model, R)
-            fit <- suppressWarnings(update(obj, newModel=mod))
+            args <- c(list(model=mod, gelType=obj@gelType$name,
+                           rhoFct=obj@gelType$rhoFct),
+                      obj@argsCall)
+            args$theta0 <- coef(obj)[-which]
+            fit <- suppressWarnings(do.call(gelFit, args))            
         }
         test <- c(specTest(fit, type=type)@test)[1]-test0
         test-qchisq(level, 2)
@@ -43,9 +47,16 @@
                          test0=test0, level=level), silent=TRUE)
         b <- coef(object)[which]
         if (inherits(r, "try-error"))
+        {
             c(NA,NA)
-        else
-            b*(1-r$root) + p[i,]*r$root        
+            mess <- "Could not compute the confidence area: \n"
+            mess <- paste(mess, "uniroot failed to find the interval bounds inside ",
+                          "+- fact*SD around the estimate, with fact=", fact, ". ",
+                          "Try changing the value of fact")
+            warning(mess, call.=FALSE)
+        } else {
+            b*(1-r$root) + p[i,]*r$root
+        }
     }, mc.cores=cores))
     do.call(rbind, res)
 }
@@ -80,8 +91,11 @@
             fit2 <- suppressWarnings(update(fit, cstLHS=R))
         } else {
             model <- restModel(fit@model, R)
-            fit2 <- suppressWarnings(update(fit, newModel=model,
-                                            theta0=coef(fit)[-which]))
+            args <- c(list(model=model, gelType=fit@gelType$name,
+                           rhoFct=fit@gelType$rhoFct),
+                      fit@argsCall)
+            args$theta0 <- coef(fit)[-which]
+            fit2 <- suppressWarnings(do.call(gelFit, args))
         }
         test <- specTest(fit2, type=type, ...)@test[1] - test0
         crit <- qchisq(level, 1)
@@ -98,12 +112,11 @@
     if (any(c(class(res1), class(res2)) == "try-error"))
     {
         test <- c(NA,NA)
-        mess <- "Could not compute the confidence interval because: \n"
-        if (inherits(res1,"try-error"))
-            mess <- paste(mess, "(1) ", res1[1], "\n", sep="")
-        if (inherits(res2,"try-error"))
-            mess <- paste(mess, "(2) ", res2[1], "\n", sep="")
-        warning(mess)        
+        mess <- "Could not compute the confidence interval: \n"
+        mess <- paste(mess, "uniroot failed to find the interval bounds inside ",
+                      "+- fact*SD around the estimate, with fact=", fact, ". ",
+                      "Try changing the value of fact")
+        warning(mess, call.=FALSE)        
     } else {
         test <- sort(c(res1$root, res2$root))
     }
@@ -438,12 +451,8 @@ setMethod("confint", "numeric",
               if (!is.null(Call))
                   names(object) <- as.character(Call)[2]
               g <- as.formula(paste(names(object),"~1",sep=""))
-              n <- nrow(object)
-              s <- sd(object[[1]], na.rm=TRUE)/sqrt(n)
-              m <- mean(object[[1]], na.rm=TRUE)
               mod <- momentModel(g, ~1, vcov=vcov, data=object)
-              fit <- gelFit(model=mod, gelType=gelType,
-                            tControl=list(method="Brent",lower=m-s,upper=m+s))
+              fit <- suppressWarnings(gelFit(model=mod, gelType=gelType))
               ans <- confint(fit, parm=1, level=level, type=type,
                              fact=fact, corr=corr)
               rownames(ans@interval) <- names(object)

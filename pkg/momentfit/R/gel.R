@@ -128,7 +128,7 @@ ETXX_lam <- function(gmat, lambda0, k, gelType, algo, method, control)
 getLambda <- function (gmat, lambda0=NULL, gelType=NULL, rhoFct=NULL, 
                        tol = 1e-07, maxiter = 100, k = 1, method="BFGS", 
                        algo = c("nlminb", "optim", "Wu"), control = list(),
-                       restrictedLam=integer()) 
+                       restrictedLam=integer(), ...) 
 {
     if (!is.null(gelType))
     {

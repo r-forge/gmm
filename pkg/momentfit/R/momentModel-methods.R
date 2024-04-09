@@ -1372,6 +1372,10 @@ setMethod("gelFit", signature("momentModel"), valueClass="gelfit",
                   Call <- NULL
               spec <- modelDims(model)
               initTheta = match.arg(initTheta)
+              argsCall <- c(list(initTheta=initTheta, theta0=theta0, lambda0=lambda0,
+                                 vcov=vcov),
+                            list(...))
+                  
               if (is.null(theta0))
               {
                   if (initTheta == "gmm")
@@ -1390,7 +1394,8 @@ setMethod("gelFit", signature("momentModel"), valueClass="gelfit",
                             lambda=res$lambda, call=Call,
                             gelType=list(name=gelType, rhoFct=rhoFct),
                             vcov=list(), model=model,
-                            restrictedLam = res$restrictedLam)
+                            restrictedLam = res$restrictedLam,
+                            argsCall=argsCall)
               if (vcov)
                   gelfit@vcov <- vcov(gelfit)
               gelfit
