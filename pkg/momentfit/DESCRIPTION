@@ -1,6 +1,6 @@
 Package: momentfit
-Version: 0.6
-Date: 2024-03-21
+Version: 1.0
+Date: 2024-05-27
 Title: Methods of Moments
 Author: Pierre Chausse <pchausse@uwaterloo.ca>
 Maintainer: Pierre Chausse <pchausse@uwaterloo.ca>

@@ -58,7 +58,7 @@ SYTables(object, print=TRUE, SWcrit=FALSE)
   computationally more demanding.}
   
   \item{print}{
-    If code{TRUE}, the result is printed and nothing is returned. See
+    If \code{TRUE}, the result is printed and nothing is returned. See
     below for details on what the functions return when it is set to
     \code{FALSE}
   }
