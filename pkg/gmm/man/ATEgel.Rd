@@ -21,7 +21,7 @@ ATEgel(g, balm, w=NULL, y=NULL, treat=NULL, tet0=NULL,momType=c("bal","balSample
 checkConv(obj, tolConv=1e-4, verbose=TRUE, ...)
 }
 \arguments{
-\item{g}{A formula as \code{y~z}, where code{y} is the response and
+\item{g}{A formula as \code{y~z}, where \code{y} is the response and
   \code{z} the treatment indicator. If there is more than one
   treatment, more indicators can be added or \code{z} can be set as a
   factor. It can also be of the form
