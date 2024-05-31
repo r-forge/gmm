@@ -427,7 +427,7 @@ setMethod("printRestrict", "rnonlinearModel",
               for (i in 1:length(object@R))
                   {
                       cat("\t")
-                      print(object@R[[i]])
+                      print(object@R[[i]], FALSE)
                   }
           })
 
@@ -437,7 +437,7 @@ setMethod("printRestrict", "rformulaModel",
               for (i in 1:length(object@R))
                   {
                       cat("\t")
-                      print(object@R[[i]])
+                      print(object@R[[i]], FALSE)
                   }
           })
 
@@ -446,7 +446,7 @@ setMethod("printRestrict", "rfunctionModel",
               cat("Constraints:\n")
               for (i in 1:length(object@R)) {
                   cat("\t")
-                  print(object@R[[i]])
+                  print(object@R[[i]], FALSE)
               }})
 
 ## print
@@ -719,7 +719,7 @@ setMethod("gmmFit", signature("rlinearModel"), valueClass="gmmfit",
                           wObj <- evalWeights(model2, theta=theta, w=weights)
                       ## obj <- evalGmm(model, theta, wObj)
                       ## Not really evalGmm. it is a model without estimation
-                      obj <- new("gmmfit", theta=numeric(), convergence=as.numeric(NA),
+                      obj <- new("gmmfit", theta=numeric(), convergence=list(),
                                  convIter=NULL, call=Call,
                                  type="No estimation needed",
                                  wObj=wObj, niter=1L, efficientGmm=FALSE, model=model)
@@ -748,7 +748,7 @@ setMethod("gmmFit", signature("rnonlinearModel"), valueClass="gmmfit",
                           wObj <- evalWeights(model2, theta=theta, w=weights)
                       ## obj <- evalGmm(model, theta, wObj)
                       ## Not really evalGmm. it is a model without estimation
-                      obj <- new("gmmfit", theta=numeric(), convergence=as.numeric(NA),
+                      obj <- new("gmmfit", theta=numeric(), convergence=list(),
                                  convIter=NULL, call=Call,
                                  type="No estimation needed",
                                  wObj=wObj, niter=1L, efficientGmm=FALSE, model=model)
@@ -777,7 +777,7 @@ setMethod("gmmFit", signature("rformulaModel"), valueClass="gmmfit",
                           wObj <- evalWeights(model2, theta=theta, w=weights)
                       ## obj <- evalGmm(model, theta, wObj)
                       ## Not really evalGmm. it is a model without estimation
-                      obj <- new("gmmfit", theta=numeric(), convergence=as.numeric(NA),
+                      obj <- new("gmmfit", theta=numeric(), convergence=list(),
                                  convIter=NULL, call=Call,
                                  type="No estimation needed",
                                  wObj=wObj, niter=1L, efficientGmm=FALSE, model=model)
@@ -806,7 +806,7 @@ setMethod("gmmFit", signature("rfunctionModel"), valueClass="gmmfit",
                           wObj <- evalWeights(model2, theta=theta, w=weights)
                       ## obj <- evalGmm(model, theta, wObj)
                       ## Not really evalGmm. it is a model without estimation
-                      obj <- new("gmmfit", theta=numeric(), convergence=as.numeric(NA),
+                      obj <- new("gmmfit", theta=numeric(), convergence=list(),
                                  convIter=NULL, call=Call,
                                  type="No estimation needed",
                                  wObj=wObj, niter=1L, efficientGmm=FALSE, model=model)

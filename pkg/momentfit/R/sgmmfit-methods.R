@@ -43,8 +43,13 @@ setMethod("print", "sgmmfit",
               if (all(spec$q == spec$k) && x@type != "eval") 
                   type <- "Equation by Equation One-Step: Just-Identified"
               cat("\nEstimation: ", type, "\n", sep="")
-              if (!is.null(x@convergence)) 
-                  cat("Convergence Optim: ", x@convergence, "\n")
+              if (length(x@convergence))
+              {
+                  cat("Convergence code: ", x@convergence$code,
+                      " (see help(", x@convergence$algo, "))\n", sep="")
+                  if (!is.null(x@convergence$message))
+                      cat("Convergence message: ", x@convergence$message, "\n", sep="")
+              }
               if (!is.null(x@convIter)) 
                   cat("Convergence Iteration: ", x@convIter, "\n")
               cat("coefficients:")

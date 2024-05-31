@@ -146,7 +146,7 @@ setClass("specTest", representation(test = "matrix", testname="character"))
 
 ## gmmfit
 
-setClass("gmmfit", representation(theta = "numeric", convergence = "numericORNULL",
+setClass("gmmfit", representation(theta = "numeric", convergence = "list",
                                   convIter="numericORNULL",call="callORNULL",
                                   type="character", wObj="momentWeights",niter="integer",
                                   efficientGmm="logical", model="momentModel"))
@@ -156,7 +156,7 @@ setClass("gmmfit", representation(theta = "numeric", convergence = "numericORNUL
 
 setClass("summaryGmm", representation(coef="matrix", specTest = "specTest",
                                       strength="list", model="momentModel",sandwich="logical",
-                                      type="character", convergence = "numericORNULL",
+                                      type="character", convergence = "list",
                                       convIter="numericORNULL", wSpec="list",niter="integer",
                                       df.adj="logical", breadOnly="logical"))
 
@@ -172,7 +172,7 @@ setClass("hypothesisTest", representation(test="numeric", hypothesis="character"
 setClass("summarySysGmm",
          representation(coef="list", specTest = "specTest",
                         strength="list", model="sysModel",sandwich="logical",
-                        type="character", convergence = "numericORNULL",
+                        type="character", convergence = "list",
                         convIter="numericORNULL", wSpec="list",niter="integer",
                         df.adj="logical", breadOnly="logical"))
 
@@ -196,7 +196,7 @@ setClass("mconfint",
 
 ### system GMM fit
 
-setClass("sgmmfit", representation(theta = "list", convergence = "numericORNULL",
+setClass("sgmmfit", representation(theta = "list", convergence = "list",
                                    convIter="numericORNULL",call="callORNULL",
                                    type="character", wObj="sysMomentWeights",niter="integer",
                                    efficientGmm="logical", model="sysModel"))
@@ -233,6 +233,24 @@ setClass("summaryKclass", slots = list(kappa = "numeric",
                                        method = "character", origModel='linearModel'),
          contains="summaryGmm")
 
+
+## Classes for minimization solver
+
+setClass("minAlgoStd", representation(algo="character", start="character", fct="character",
+                                   grad="character", solution="character", value="character",
+                                   message="character", convergence="character"),
+         prototype=list(algo="optim", start="par", fct="fn", grad="gr", solution="par",
+                        value="value", message="message", convergence="convergence"))
+
+setClass("minAlgoNlm", representation(algo="character", start="character", fct="character",
+                                      solution="character",
+                                      value="character",
+                                      message="character", convergence="character"),
+         prototype=list(algo="nlm", start="p", fct="f",
+                        solution="estimate", value="minimum", message=as.character(NA),
+                        convergence="code"))
+### They are all common
+setClassUnion("minAlgo", c("minAlgoStd", "minAlgoNlm"))
 
 ## class converted
 

@@ -554,7 +554,7 @@ setMethod("Dresiduals", signature("rsnonlinearModel"),
 ## solveGmm
 
 setMethod("solveGmm", c("rslinearModel","sysMomentWeights"),
-          function (object, wObj, theta0 = NULL) 
+          function (object, wObj, theta0 = NULL, ...) 
           {
               if (object@cstSpec$crossEquRest)
               {
@@ -572,13 +572,13 @@ setMethod("solveGmm", c("rslinearModel","sysMomentWeights"),
               G <- evalDMoment(object)
               Syz <- lapply(1:length(Y), function(i) colMeans(Y[[i]]*Z[[i]]))
               Syz <- do.call("c", Syz)
-              G <- momentfit:::.GListToMat(G)
+              G <- .GListToMat(G)
               T1 <- quadra(wObj, G)
               T2 <- quadra(wObj, G, Syz)
               theta <- -solve(T1, T2)
               spec <- modelDims(object)
-              theta <- momentfit:::.tetReshape(theta, object@eqnNames, spec$parNames)
-              list(theta = theta, convergence = NULL)
+              theta <- .tetReshape(theta, object@eqnNames, spec$parNames)
+              list(theta = theta, convergence = list())
           })
 
 

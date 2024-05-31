@@ -570,3 +570,42 @@ setValidity("momentWeights", .checkMomentWeights)
 setValidity("sysMomentWeights", .checkSysWeights)
 
 
+.checkAlgo <- function(object)
+{
+    error <- character()
+    fct <- try(get(object@algo), silent=TRUE)
+    if (inherits(fct, "try-error"))
+    {
+        msg <- paste("The algorithm ", object@algo,
+                     " does not exist (have you loaded the package?)", sep="")
+        error <- c(error, msg)
+    } else {
+        if (!is.function(fct))
+        {
+            msg <- paste("The algorithm ", object@algo,
+                         " must be a function.", sep="")
+            error <- c(error, msg)
+        } else {
+            args <- names(as.list(args(fct)))
+            if (!(object@fct %in% args))
+                error <- c(error,
+                           paste(object@fct,
+                                 " is not an argument of ", object@algo, sep=""))
+            if (!(object@start %in% args))
+                error <- c(error,
+                           paste(object@start,
+                                 " is not an argument of ", object@algo, sep=""))
+            if ("grad" %in% slotNames(object))
+                if (!is.na(object@grad))
+                    if (!(object@start %in% args))
+                        error <- c(error,
+                                   paste(object@grad,
+                                         " is not an argument of ", object@algo, sep=""))
+        }
+    }
+    error
+}
+
+setValidity("minAlgo", .checkAlgo) 
+
+

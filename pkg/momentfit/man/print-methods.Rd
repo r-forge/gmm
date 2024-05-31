@@ -23,6 +23,7 @@
 \alias{print,sysModel-method}
 \alias{print,hypothesisTest-method}
 \alias{print,sSpec-method}
+\alias{print,minAlgo-method}
 
 \title{ Methods for Function \code{print} in Package \pkg{base}}
 \description{
@@ -88,6 +89,9 @@ Print methods for all \code{"momentModel"}, \code{"gmmfit"},
 }
 
 \item{\code{signature(x = "momentWeights")}}{
+}
+
+\item{\code{signature(x = "minAlgo")}}{
 }
 
 }}

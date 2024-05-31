@@ -659,7 +659,8 @@ setMethod("evalGmmObj", signature("momentModel", "numeric", "momentWeights"),
 
 #########################  solveGmm  #########################
 
-setGeneric("solveGmm", function(object, wObj, ...) standardGeneric("solveGmm"))
+setGeneric("solveGmm", function(object, wObj, theta0=NULL, ...)
+    standardGeneric("solveGmm"))
 
 setMethod("solveGmm", signature("linearModel", "momentWeights"),
           function(object, wObj, theta0=NULL, ...)
@@ -681,43 +682,39 @@ setMethod("solveGmm", signature("linearModel", "momentWeights"),
               }
               theta <- c(solve(T1, T2))
               names(theta) <- d$parNames
-              list(theta=theta, convergence=NULL)
+              list(theta=theta, convergence=list())
           })
 
 setMethod("solveGmm", signature("allNLModel", "momentWeights"),
-          function(object, wObj, theta0=NULL, algo=c("optim","nlminb"), ...)
+          function(object, wObj, theta0=NULL, algo=algoObj("optim"), ...)
           {
-                  algo <- match.arg(algo)
-                  if (is.null(theta0))
-                      theta0 <- modelDims(object)$theta0
-                  g <- function(theta, wObj, object)
-                      evalGmmObj(object, theta, wObj)
-                  dg <- function(theta, wObj, object)
-                      {
-                          gt <- evalMoment(object, theta)
-                          n <- nrow(gt)
-                          gt <- colMeans(gt)
-                          G <- evalDMoment(object, theta)
-                          obj <- 2*n*quadra(wObj, G, gt)
-                          obj
-                      }
-                  if (algo == "optim")
-                      {
-                          if ("method" %in% names(list(...)))
-                              res <- optim(par=theta0, fn=g, gr=dg, 
-                                           object=object, wObj=wObj, ...)
-                          else
-                              res <- optim(par=theta0, fn=g, gr=dg, method="BFGS",
-                                           object=object, wObj=wObj, ...)
-                      } else {
-                          res <- nlminb(start=theta0, objective=g, gradient=dg,
-                                        object=object, wObj=wObj, ...)
-                      }
-                  theta <- res$par
-                  names(theta) <- modelDims(object)$parNames
-                  list(theta=theta, convergence=res$convergence)
-              })
-
+              if (!inherits(algo, "minAlgo"))
+                  stop("algo must be an object of class algoObj created by the algoObj function")
+              if (is.null(theta0))
+                  theta0 <- modelDims(object)$theta0
+              g <- function(theta, wObj, model)
+                  evalGmmObj(model, theta, wObj)
+              dg <- function(theta, wObj, model)
+              {
+                  gt <- evalMoment(model, theta)
+                  n <- nrow(gt)
+                  gt <- colMeans(gt)
+                  G <- evalDMoment(model, theta)
+                  obj <- 2*n*quadra(wObj, G, gt)
+                  obj
+              }
+              if (algo@algo == "optim" & !("method" %in% names(list(...))))
+              {
+                  sol <- minFit(object=algo, start=theta0, fct=g, gr=dg, wObj=wObj,
+                                model=object, method="BFGS", ...)
+              } else {
+                  sol <- minFit(object=algo, start=theta0, fct=g, gr=dg, wObj=wObj,
+                                model=object, ...)
+              }
+              list(theta=sol$solution, convergence=list(message=sol$message,
+                                                        code=sol$convergence,
+                                                        algo=algo@algo))
+          })
 
 ##################### momentStrength ####################
 
@@ -1041,10 +1038,21 @@ setMethod("gmmFit", signature("momentModel"), valueClass="gmmfit",
                      wObj <- evalWeights(model, theta, "optimal")
                      evalGmmObj(model, theta, wObj)
                  }
-                 res <- optim(theta0, obj, model=model,
-                              ...)
-                 theta1 <- res$par
-                 convergence <- res$convergence
+                 dots <- list(...)
+                 if (is.null(dots$algo))
+                 {
+                     algo <- algoObj("optim")
+                 } else {
+                     algo <- dots$algo
+                     dots$algo <-  NULL
+                 }
+                 if (algo@algo == "optim" & !("method" %in% names(dots)))
+                     dots$method <- "BFGS"
+                 dots <- c(dots, list(object=algo, start=theta0, fct=obj, model=model))
+                 res <- do.call("minFit", dots)
+                 theta1 <- res$solution
+                 convergence <- list(message=res$message, code=res$convergence,
+                                     algo=algo@algo)
                  wObj <- evalWeights(model, theta1, "optimal")                 
              }
              model@vcovOptions$bw <- bw
@@ -1082,7 +1090,7 @@ setMethod("tsls", signature("linearModel"), valueClass="tsls",
               efficientGmm <- vcov == "iid"
               wObj <- evalWeights(model, theta, "optimal")
               model@vcov <- vcov
-              obj <- new("tsls", theta=theta, convergence=NULL, type="tsls",
+              obj <- new("tsls", theta=theta, convergence=list(), type="tsls",
                          wObj=wObj, model=model, convIter=NULL, call=Call,
                          niter=1L, efficientGmm=efficientGmm)
               obj
@@ -1102,7 +1110,7 @@ setMethod("evalGmm", signature("momentModel"),
               theta <- setCoef(model, theta)
               if (is.null(wObj))
                   wObj <- evalWeights(model, theta)
-              new("gmmfit", theta=theta, convergence=NULL, convIter=NULL,
+              new("gmmfit", theta=theta, convergence=list(), convIter=NULL,
                   call=Call, type="eval", wObj=wObj, niter=0L, efficientGmm=FALSE,
                   model=model)
           })

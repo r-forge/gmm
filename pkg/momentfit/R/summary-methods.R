@@ -20,8 +20,13 @@ setMethod("print", "summaryGmm",
               cat("\nEstimation: ", type, "\n")
               if (nrow(x@coef))
               {
-                  if (!is.null(x@convergence)) 
-                      cat("Convergence Optim: ", x@convergence, "\n")
+                  if (length(x@convergence))
+                  {
+                      cat("Convergence code: ", x@convergence$code,
+                          " (see help(", x@convergence$algo, "))\n", sep="")
+                      if (!is.null(x@convergence$message))
+                          cat("Convergence message: ", x@convergence$message, "\n", sep="")
+                  }
                   if (!is.null(x@convIter)) 
                       cat("Convergence Iteration: ", x@convIter, "\n")
                   if (x@type == "iter")
@@ -104,8 +109,14 @@ setMethod("print", "summarySysGmm",
                                       "\n", sep = "")
                               else cat(x@model@vcovOptions$bw, " Bandwidth: ",
                                        round(x@wSpec$bw, 3), "\n", sep = "")
-                              if (!is.null(x@convergence)) 
-                                  cat("Convergence Optim: ", x@convergence, "\n")
+                              if (length(x@convergence))
+                              {
+                                  cat("Convergence code: ", x@convergence$code,
+                                      " (see help(", x@convergence$algo, "))\n", sep="")
+                                  if (!is.null(x@convergence$message))
+                                      cat("Convergence message: ",
+                                          x@convergence$message, "\n", sep="")
+                              }
                           }
                       }
                   if (x@breadOnly) {
@@ -139,8 +150,15 @@ setMethod("print", "summarySysGmm",
                                       else cat(x@model@bw, " Bandwidth: ",
                                                round(x@wSpec$bw, 3), "\n", sep = "")
                                   }
-                                  if (!is.null(x@convergence)) 
-                                      cat("Convergence Optim: ", x@convergence[i], "\n")
+                                  if (length(x@convergence[[i]]))
+                                  {
+                                      cat("Convergence code: ", x@convergence[[i]]$code,
+                                          " (see help(", x@convergence[[i]]$algo,
+                                          "))\n", sep="")
+                                      if (!is.null(x@convergence[[i]]$message))
+                                          cat("Convergence message: ",
+                                              x@convergence[[i]]$message, "\n", sep="")
+                                  }
                               }
                           printCoefmat(x@coef[[i]], digits = digits, signif.legend=sleg, ...)
                           if (!is.null(str$strength)) {
