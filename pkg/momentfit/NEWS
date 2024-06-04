@@ -8,6 +8,8 @@ o Nonlinear GMM models have shown to be hard to estimate with the default optim.
 
 o Related to the previous point, there is now an option to select a different optimization algorithm, even from different packages. It is explained in the vignette. For that matter, the argument algo is no longer defined as vector of character with the option "optim" and "nlminb". Instead, it is a new object. See the vignette.
 
+o The gmm estimation does not work well when the weighting matrix is singular or nearly singular. It was shown that using a generalized inverse instead of the regular inverse is preferred. It is now optional to use a Moore-Penrose inverse when ever it is needed.
+
 Changes in version 0.5
 
 o The Makevars was modified. The previous version was hard to install on most MAC because of an unnecessary flag. It is no longer the case. 

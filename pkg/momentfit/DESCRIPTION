@@ -14,7 +14,7 @@ Collate: 'allClasses.R' 'validity.R' 'momentData.R' 'momentModel-methods.R'
 	 'hypothesisTest-methods.R' 'sysMomentModel.R'
 	 'sysMomentModel-methods.R' 'rsysMomentModel-methods.R'
 	 'sgmmfit-methods.R' 'gmm4.R' 'gel.R' 'gelfit-methods.R' 'gel4.R' 'weak.R'
-	 'minAlgo.R'
+	 'minAlgo.R' 'utils.R'
 License: GPL (>= 2)
 NeedsCompilation: yes
 VignetteBuilder: knitr

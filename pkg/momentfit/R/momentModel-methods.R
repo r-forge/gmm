@@ -629,12 +629,12 @@ setMethod("evalWeights", signature("momentModel"),valueClass="momentWeights",
                           class(gt) <- "momentFct"
                           opt <- object@vcovOptions
                           opt$x <- gt
-                          w <- chol(do.call(meatCL, opt))
+                          w <- chol(do.call(meatCL, opt), pivot=TRUE)
                           type <- "chol"
                       } else {
                           w <- vcovHAC(object, theta)
                           wSpec <- attr(w,"Spec")
-                          w <- chol(w[,])
+                          w <- chol(w[,], pivot=TRUE)
                           type <- "chol"
                       }
                   }
