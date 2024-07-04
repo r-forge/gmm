@@ -70,6 +70,8 @@ sysMomentModel <- function(g, h=NULL, theta0=NULL,grad=NULL,
     if (!is.list(vcovOptions) | !is.list(survOptions))
         stop("vcovOptions and survOptions must be a list")
     vcovOptions <- .getVcovOptions(vcov, data, vcovOptions, FALSE)
+    if (!is.null(vcovOptions$order.by))
+        stop("The HAC option order.by is not available for systems of equations")
     survOptions <- .getSurvOptions(data, survOptions)
     if (!is.list(data) && !is.environment(data)) 
         stop("'data' must be a list or an environment")

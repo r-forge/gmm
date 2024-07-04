@@ -546,10 +546,10 @@ setMethod("vcovHAC", "momentModel",
               }
               weights <- weightsAndrews(x = gmat, bw = bw, kernel = options$kernel, 
                                         prewhite = options$prewhite, tol = options$tol)
-              w <- meatHAC(x = gmat, order.by = NULL, weights = weights, 
+              w <- meatHAC(x = gmat, order.by = options$order.by, weights = weights, 
                            prewhite = options$prewhite, ar.method = options$ar.method,
                            adjust = options$adjust, diagnostics = FALSE)
-              attr(w, "Spec") <- list(weights = weights, bw = bw, kernel = options$kernel)
+              attr(w, "Spec") <- list(weights = weights, bw = bw, kernel = options$kernel, order.by = options$order.by)
               w
           })
 

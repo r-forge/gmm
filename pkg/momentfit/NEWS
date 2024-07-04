@@ -10,6 +10,8 @@ o Related to the previous point, there is now an option to select a different op
 
 o The gmm estimation does not work well when the weighting matrix is singular or nearly singular. It was shown that using a generalized inverse instead of the regular inverse is preferred. It is now optional to use a Moore-Penrose inverse when ever it is needed.
 
+o It is now possible to add the argument order.by to the vcovOptions argument of momentModel. This is passed to vcovHAC and is relevant when the data are not properly ordered.
+
 Changes in version 0.5
 
 o The Makevars was modified. The previous version was hard to install on most MAC because of an unnecessary flag. It is no longer the case. 

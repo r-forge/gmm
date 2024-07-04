@@ -445,9 +445,9 @@ setValidity("rformulaModel", .checkAllNLRest)
     }
     if (length(object@wSpec)>0)
     {
-        if (!all(names(object@wSpec) %in% c("bw", "kernel","weights")))
+        if (!all(names(object@wSpec) %in% c("bw", "kernel","weights", "order.by")))
         {
-            msg <- "wSpec must contain 'bw', 'kernel', and 'weights'"
+            msg <- "wSpec must contain 'bw', 'kernel', order.by and 'weights'"
             error <- c(error, msg)
         }
     }
