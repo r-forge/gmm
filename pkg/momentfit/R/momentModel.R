@@ -130,7 +130,7 @@ momentModel <- function(g, x=NULL, theta0=NULL,grad=NULL,
                     {
                         model <- .lModelData(g,x,data, survOptions, vcovOptions, na.action)
                         if (!is.null(model$eqnNames))
-                        {                            
+                        {
                             gmodel <- new("slinearModel", data = model$data,
                                           instT=model$instT, 
                                           modelT = model$modelT, vcov = vcov,

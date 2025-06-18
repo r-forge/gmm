@@ -533,6 +533,7 @@ setMethod("evalWeights", "sysModel",
               sameMom <- object@sameMom
               n <- object@n
               neqn <- length(spec$eqnNames)
+              wSpec <- list()
               if (is.matrix(w))
               {
                   if (!all(dim(w) == sum(spec$q)))
@@ -573,10 +574,13 @@ setMethod("evalWeights", "sysModel",
                   w <- qr(do.call(cbind, gt)/sqrt(n))
                   Sigma <- NULL
               } else {
-                  stop("Only identity, iid and MDS if allowed for now")
+                  w <- vcovHAC(object, theta)
+                  wSpec <- attr(w,"Spec")
+                  type <- "vcov"
+                  Sigma <- NULL
               }
               return(new("sysMomentWeights", type=type,momNames=object@momNames,
-                         wSpec=list(), w=w, Sigma=Sigma, sameMom=sameMom,
+                         wSpec=wSpec, w=w, Sigma=Sigma, sameMom=sameMom,
                          eqnNames=object@eqnNames))
           })
 

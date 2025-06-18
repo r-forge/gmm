@@ -49,8 +49,9 @@
     {
         modelF <- model.frame(formula, data, na.action="na.pass",
                               drop.unused.levels=TRUE)
+        
         if (is.matrix(modelF[[1]]))
-            return(.multiToSys(formula, h, data))
+            return(.multiToSys(formula, h, data, survOptions, vcovOptions, na.action))
         parNames <- colnames(model.matrix(attr(modelF, "terms"), modelF))
         k <- length(parNames)
         if (any(class(h) == "formula"))
