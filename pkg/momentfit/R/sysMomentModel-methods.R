@@ -1025,7 +1025,7 @@ setMethod("gmmFit", signature("sysModel"), valueClass="sgmmfit",
                   else
                       wObj0 <- NULL
                   wObj <- evalWeights(model, theta0, "optimal", wObj0)
-                  if (model@vcov=="HAC" && is.character(model@bw))
+                  if (model@vcov=="HAC" && is.character(model@vcovOptions$bw))
                       model@vcovOptions$bw <- wObj@wSpec$bw
                   res <- solveGmm(model, wObj, theta0, ...)
                   theta1 <- res$theta
