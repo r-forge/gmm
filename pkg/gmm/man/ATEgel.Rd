@@ -95,8 +95,8 @@ checkConv(obj, tolConv=1e-4, verbose=TRUE, ...)
 \item{data}{A data.frame or a matrix with column names (Optional). }
 
 \item{Lambdacontrol}{Controls for the optimization of the vector of
-  Lagrange multipliers used by either \code{\link{optim}},
-  \code{\link{nlminb}} or \code{\link{constrOptim}}}
+  Lagrange multipliers used by either \code{\link[stats]{optim}},
+  \code{\link[stats]{nlminb}} or \code{\link[stats]{constrOptim}}}
 
 \item{model, X, Y}{logicals.  If \code{TRUE} the corresponding
   components of the fit (the model frame, the model matrix, the response)
@@ -106,8 +106,8 @@ checkConv(obj, tolConv=1e-4, verbose=TRUE, ...)
 
 \item{tolConv}{The tolerance for comparing moments between groups}
 
-\item{...}{More options to give to \code{\link{optim}} or
-  \code{\link{nlminb}}. In \code{checkConv}, they are options passed to
+\item{...}{More options to give to \code{\link[stats]{optim}} or
+  \code{\link[stats]{nlminb}}. In \code{checkConv}, they are options passed to
   \code{\link{getImpProb}}.}
 
 }
