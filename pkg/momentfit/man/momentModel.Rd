@@ -40,7 +40,7 @@ momentModel(g, x=NULL, theta0=NULL,grad=NULL,
   provide this function when it is possible. This gradient is used to
   compute the asymptotic covariance matrix of \eqn{\hat{\theta}} and to
   obtain the analytical gradient of the objective function if the method
-  is set to "CG" or "BFGS" in \code{\link{optim}} and if "type" is not
+  is set to "CG" or "BFGS" in \code{\link[stats]{optim}} and if "type" is not
   set to "cue". If "g" is a formula, the gradiant is not required (see
   the details below).}
 

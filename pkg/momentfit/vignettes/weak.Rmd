@@ -43,8 +43,10 @@ library(knitr)
 opts_chunk$set(size='footnotesize')
 ```
 
-**Important**: This document is incomplete (so is the package for what is covered
-here).
+**Important**: This document is incomplete (so is the package for what
+is covered here). The treatment of weak instruments is under
+development. Feel free to test the different functions and provide
+feedback to the author.
 
 # The model
 
