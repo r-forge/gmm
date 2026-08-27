@@ -1,6 +1,6 @@
 Package: momentfit
-Version: 1.0
-Date: 2025-08-25
+Version: 1.0-1
+Date: 2026-08-26
 Title: Methods of Moments
 Authors@R: person(given="Pierre", family="Chausse", role=c("aut","cre"),
 	     	    email="pchausse@uwaterloo.ca")
